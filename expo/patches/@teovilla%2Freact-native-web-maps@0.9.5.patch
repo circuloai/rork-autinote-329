@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+index fd1b53063906cb1ca7ec5543bc6844ca2f4aaeca..9c71548fe46230f5b71b4f6596725116e5d0e9ee 100644
+--- a/package.json
++++ b/package.json
+@@ -105,7 +105,6 @@
+   },
+   "dependencies": {
+     "@react-google-maps/api": "^2.12.0",
+-    "expo-location": "~15.1.1",
+     "supercluster": "^7.1.5"
+   }
+ }

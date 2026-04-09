@@ -1,0 +1,29 @@
+{
+  "cli": {
+    "version": ">= 18.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "production": {
+      "distribution": "store",
+      "env": {
+        "EAS_NO_FROZEN_LOCKFILE": "1",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
+      }
+    },
+    "production-fresh": {
+      "extends": "production",
+      "cache": {
+        "disabled": true
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "gaurav_k5@yahoo.com",
+        "ascAppId": "6761547452"
+      }
+    }
+  }
+}
