@@ -141,79 +141,119 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: Colors.background }]}>
-        <View>
-          <Text style={styles.greeting}>Hello!</Text>
-          <Text style={styles.childName}>{activeChild?.name || 'Guest'}</Text>
-        </View>
-      </View>
+      <View style={{ paddingTop: insets.top + 8 }} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.profileCard}
           onPress={() => router.push('/profile' as any)}
           activeOpacity={0.9}
         >
-          <LinearGradient
-            colors={[Colors.primary, Colors.secondary]}
-            style={styles.profileGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.profileHeader}>
-              <View style={styles.profileInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
-                  </Text>
-                </View>
-                <View style={styles.profileMainInfo}>
-                  <Text style={styles.profileName}>{activeChild?.name || 'Guest'}</Text>
-                  <Text style={styles.profileAge}>Age {activeChild?.age || '-'}</Text>
-                </View>
-              </View>
-              
-              <View style={styles.streakContainer}>
-                <Flame size={20} color={Colors.accent} />
-                <View>
-                  <Text style={styles.streakNumber}>{streak}</Text>
-                  <Text style={styles.streakLabel}>days</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.profileDetails}>
-              {activeChild?.diagnosis && (
-                <View style={styles.profileDetailItem}>
-                  <Text style={styles.profileDetailLabel}>Diagnosis:</Text>
-                  <Text style={styles.profileDetailValue}>{activeChild.diagnosis}</Text>
-                </View>
-              )}
-              {activeChild?.schoolName && (
-                <View style={styles.profileDetailItem}>
-                  <Text style={styles.profileDetailLabel}>School:</Text>
-                  <Text style={styles.profileDetailValue}>{activeChild.schoolName}</Text>
-                </View>
-              )}
-              {activeChild?.commonTriggers && activeChild.commonTriggers.length > 0 && (
-                <View style={styles.profileDetailItem}>
-                  <Text style={styles.profileDetailLabel}>Known Triggers:</Text>
-                  <View style={styles.triggersContainer}>
-                    {activeChild.commonTriggers.slice(0, 3).map((trigger: string, idx: number) => (
-                      <View key={idx} style={styles.triggerChip}>
-                        <Text style={styles.triggerChipText}>{trigger}</Text>
-                      </View>
-                    ))}
-                    {activeChild.commonTriggers.length > 3 && (
-                      <Text style={styles.triggerMore}>+{activeChild.commonTriggers.length - 3} more</Text>
-                    )}
+          {Platform.OS === 'ios' ? (
+            <GlassCard style={styles.profileGlass} glassEffectStyle="regular" fallbackStyle={{ backgroundColor: Colors.surface }}>
+              <View style={styles.profileTopRow}>
+                <View style={styles.profileInfo}>
+                  <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
+                    <Text style={[styles.avatarText, { color: Colors.primary }]}>
+                      {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
+                    </Text>
+                  </View>
+                  <View style={styles.profileMainInfo}>
+                    <Text style={[styles.profileName, { color: Colors.text }]}>{activeChild?.name || 'Guest'}</Text>
+                    <Text style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</Text>
                   </View>
                 </View>
-              )}
+
+                <View style={styles.profileBadges}>
+                  {recentLog && (
+                    <View style={[styles.moodBadge, { backgroundColor: Colors.primary + '18' }]}>
+                      <Text style={styles.moodBadgeEmoji}>{getMoodEmoji(recentLog)}</Text>
+                      <Text style={[styles.moodBadgeLabel, { color: Colors.text }]}>{getMoodLabel(recentLog)}</Text>
+                    </View>
+                  )}
+                  <View style={[styles.streakBadge, { backgroundColor: Colors.accent + '20' }]}>
+                    <Flame size={14} color={Colors.accent} />
+                    <Text style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.profileMeta}>
+                {activeChild?.diagnosis && (
+                  <View style={[styles.metaChip, { backgroundColor: Colors.primary + '14' }]}>
+                    <Text style={[styles.metaChipText, { color: Colors.text }]}>{activeChild.diagnosis}</Text>
+                  </View>
+                )}
+                {activeChild?.schoolName && (
+                  <View style={[styles.metaChip, { backgroundColor: Colors.primary + '14' }]}>
+                    <Text style={[styles.metaChipText, { color: Colors.text }]}>{activeChild.schoolName}</Text>
+                  </View>
+                )}
+                {activeChild?.commonTriggers && activeChild.commonTriggers.length > 0 && activeChild.commonTriggers.slice(0, 2).map((trigger: string, idx: number) => (
+                  <View key={idx} style={[styles.metaChip, { backgroundColor: Colors.warning + '18' }]}>
+                    <Text style={[styles.metaChipText, { color: Colors.text }]}>{trigger}</Text>
+                  </View>
+                ))}
+                {(activeChild?.commonTriggers?.length ?? 0) > 2 && (
+                  <Text style={[styles.metaMore, { color: Colors.textSecondary }]}>+{(activeChild?.commonTriggers?.length ?? 0) - 2}</Text>
+                )}
+              </View>
+
+              <Text style={[styles.tapToViewProfile, { color: Colors.textSecondary }]}>Tap to view full profile ›</Text>
+            </GlassCard>
+          ) : (
+            <View style={[styles.profileGlass, { backgroundColor: Colors.surface, borderColor: Colors.border, borderWidth: 1 }]}>
+              <View style={styles.profileTopRow}>
+                <View style={styles.profileInfo}>
+                  <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
+                    <Text style={[styles.avatarText, { color: Colors.primary }]}>
+                      {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
+                    </Text>
+                  </View>
+                  <View style={styles.profileMainInfo}>
+                    <Text style={[styles.profileName, { color: Colors.text }]}>{activeChild?.name || 'Guest'}</Text>
+                    <Text style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.profileBadges}>
+                  {recentLog && (
+                    <View style={[styles.moodBadge, { backgroundColor: Colors.primary + '18' }]}>
+                      <Text style={styles.moodBadgeEmoji}>{getMoodEmoji(recentLog)}</Text>
+                      <Text style={[styles.moodBadgeLabel, { color: Colors.text }]}>{getMoodLabel(recentLog)}</Text>
+                    </View>
+                  )}
+                  <View style={[styles.streakBadge, { backgroundColor: Colors.accent + '20' }]}>
+                    <Flame size={14} color={Colors.accent} />
+                    <Text style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.profileMeta}>
+                {activeChild?.diagnosis && (
+                  <View style={[styles.metaChip, { backgroundColor: Colors.primary + '14' }]}>
+                    <Text style={[styles.metaChipText, { color: Colors.text }]}>{activeChild.diagnosis}</Text>
+                  </View>
+                )}
+                {activeChild?.schoolName && (
+                  <View style={[styles.metaChip, { backgroundColor: Colors.primary + '14' }]}>
+                    <Text style={[styles.metaChipText, { color: Colors.text }]}>{activeChild.schoolName}</Text>
+                  </View>
+                )}
+                {activeChild?.commonTriggers && activeChild.commonTriggers.length > 0 && activeChild.commonTriggers.slice(0, 2).map((trigger: string, idx: number) => (
+                  <View key={idx} style={[styles.metaChip, { backgroundColor: Colors.warning + '18' }]}>
+                    <Text style={[styles.metaChipText, { color: Colors.text }]}>{trigger}</Text>
+                  </View>
+                ))}
+                {(activeChild?.commonTriggers?.length ?? 0) > 2 && (
+                  <Text style={[styles.metaMore, { color: Colors.textSecondary }]}>+{(activeChild?.commonTriggers?.length ?? 0) - 2}</Text>
+                )}
+              </View>
+
+              <Text style={[styles.tapToViewProfile, { color: Colors.textSecondary }]}>Tap to view full profile ›</Text>
             </View>
-            
-            <Text style={styles.tapToViewProfile}>Tap to view full profile</Text>
-          </LinearGradient>
+          )}
         </TouchableOpacity>
 
         {hasReminders && (
@@ -332,23 +372,6 @@ export default function HomeScreen() {
           )
         )}
 
-        {recentLog && (
-          <View style={styles.recentMoodCard}>
-            <Text style={styles.recentMoodTitle}>Recent Mood</Text>
-            <View style={styles.moodDisplay}>
-              <Text style={styles.moodEmoji}>{getMoodEmoji(recentLog)}</Text>
-              <View>
-                <Text style={styles.moodLabel}>
-                  {getMoodLabel(recentLog)}
-                </Text>
-                <Text style={styles.moodDate}>
-                  {new Date(recentLog.date).toLocaleDateString()}
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-
         <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>Log Your Day</Text>
           
@@ -459,162 +482,110 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: Colors.background,
-  },
-  greeting: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  childName: {
-    fontSize: 28,
-    fontWeight: '700' as const,
-    color: Colors.text,
-  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
   profileCard: {
     marginBottom: 20,
-    borderRadius: 20,
+    borderRadius: 18,
     overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
   },
-  profileGradient: {
-    padding: 20,
+  profileGlass: {
+    padding: 16,
+    borderRadius: 18,
+    overflow: 'hidden',
   },
-  profileHeader: {
+  profileTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   profileInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
   profileMainInfo: {
     flex: 1,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.background,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '700' as const,
-    color: Colors.primary,
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: '600' as const,
-    color: Colors.background,
-    marginBottom: 2,
+    fontSize: 17,
+    fontWeight: '700' as const,
+    marginBottom: 1,
   },
   profileAge: {
-    fontSize: 14,
-    color: Colors.background,
-    opacity: 0.9,
+    fontSize: 13,
   },
-  streakContainer: {
+  profileBadges: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
   },
-  streakNumber: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    color: Colors.background,
-  },
-  streakLabel: {
-    fontSize: 11,
-    color: Colors.background,
-    opacity: 0.9,
-  },
-  profileDetails: {
-    gap: 12,
-  },
-  profileDetailItem: {
+  moodBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
-  profileDetailLabel: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    color: Colors.background,
-    opacity: 0.8,
-    textTransform: 'uppercase' as const,
-  },
-  profileDetailValue: {
+  moodBadgeEmoji: {
     fontSize: 14,
-    color: Colors.background,
-    fontWeight: '500' as const,
   },
-  triggersContainer: {
+  moodBadgeLabel: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  streakBadgeText: {
+    fontSize: 12,
+    fontWeight: '700' as const,
+  },
+  profileMeta: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 4,
+    marginBottom: 10,
   },
-  triggerChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  metaChip: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  triggerChipText: {
+  metaChipText: {
     fontSize: 12,
-    color: Colors.background,
     fontWeight: '500' as const,
   },
-  triggerMore: {
+  metaMore: {
     fontSize: 12,
-    color: Colors.background,
-    opacity: 0.7,
-    fontStyle: 'italic' as const,
     alignSelf: 'center',
+    fontWeight: '500' as const,
   },
   tapToViewProfile: {
     fontSize: 12,
-    color: Colors.background,
-    opacity: 0.7,
     textAlign: 'center',
-    marginTop: 12,
-    fontStyle: 'italic' as const,
-  },
-  recentMoodCard: {
-    backgroundColor: Colors.surface,
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 24,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  recentMoodTitle: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.textSecondary,
-    marginBottom: 12,
+    marginTop: 2,
   },
   cardTitle: {
     fontSize: 14,
