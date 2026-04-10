@@ -42,12 +42,46 @@ export const [AppProvider, useApp] = createContextHook(() => {
           return null;
         }
 
-        console.log('[AppContext] Profile fetched:', profile.id);
+        console.log('[AppContext] Profile fetched:', profile.id, 'activeChildId:', profile.active_child_id);
 
         const { data: children } = await supabase
           .from('children')
           .select('*')
           .eq('profile_id', profile.id);
+
+        const mappedChildren = (children || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          age: c.age,
+          diagnosis: c.diagnosis || undefined,
+          gradeLevel: c.grade_level || undefined,
+          schoolName: c.school_name || undefined,
+          height: c.height || undefined,
+          weight: c.weight || undefined,
+          commonTriggers: c.common_triggers || [],
+          strengths: c.strengths || undefined,
+          interests: c.interests || undefined,
+          avatar: c.avatar || undefined,
+          createdAt: c.created_at,
+        }));
+
+        console.log('[AppContext] Children loaded:', mappedChildren.length, mappedChildren.map((c: any) => c.id));
+
+        let resolvedActiveChildId = profile.active_child_id || null;
+        if (mappedChildren.length > 0) {
+          const activeExists = resolvedActiveChildId && mappedChildren.some((c: any) => c.id === resolvedActiveChildId);
+          if (!activeExists) {
+            console.log('[AppContext] activeChildId invalid, auto-setting to first child:', mappedChildren[0].id);
+            resolvedActiveChildId = mappedChildren[0].id;
+            supabase.from('profiles')
+              .update({ active_child_id: resolvedActiveChildId })
+              .eq('id', profile.id)
+              .then(({ error: updateErr }) => {
+                if (updateErr) console.error('[AppContext] Failed to auto-set activeChildId:', updateErr);
+                else console.log('[AppContext] Auto-set activeChildId to:', resolvedActiveChildId);
+              });
+          }
+        }
 
         return {
           id: profile.id,
@@ -56,22 +90,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
           caregiverEmail: profile.caregiver_email || undefined,
           caregiverPhone: profile.caregiver_phone || undefined,
           therapistPhone: profile.therapist_phone || undefined,
-          children: (children || []).map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            age: c.age,
-            diagnosis: c.diagnosis || undefined,
-            gradeLevel: c.grade_level || undefined,
-            schoolName: c.school_name || undefined,
-            height: c.height || undefined,
-            weight: c.weight || undefined,
-            commonTriggers: c.common_triggers || [],
-            strengths: c.strengths || undefined,
-            interests: c.interests || undefined,
-            avatar: c.avatar || undefined,
-            createdAt: c.created_at,
-          })),
-          activeChildId: profile.active_child_id || null,
+          children: mappedChildren,
+          activeChildId: resolvedActiveChildId,
           createdAt: profile.created_at,
           isExploreMode: profile.is_explore_mode || false,
         };
@@ -398,24 +418,60 @@ export const [AppProvider, useApp] = createContextHook(() => {
       }
 
       if (profile.children && profile.children.length > 0) {
-        await supabase.from('children').delete().eq('profile_id', savedProfile.id);
-        
-        const childrenData = profile.children.map(child => ({
-          profile_id: savedProfile.id,
-          name: child.name,
-          age: child.age,
-          diagnosis: child.diagnosis || null,
-          grade_level: child.gradeLevel || null,
-          school_name: child.schoolName || null,
-          height: child.height || null,
-          weight: child.weight || null,
-          common_triggers: child.commonTriggers || [],
-          strengths: child.strengths || null,
-          interests: child.interests || null,
-          avatar: child.avatar || null,
-        }));
+        const existingChildIds = profile.children
+          .filter(child => child.id && !child.id.startsWith('temp_'))
+          .map(child => child.id);
 
-        await supabase.from('children').insert(childrenData);
+        if (existingChildIds.length > 0) {
+          await supabase.from('children').delete()
+            .eq('profile_id', savedProfile.id)
+            .not('id', 'in', `(${existingChildIds.join(',')})`);
+        } else {
+          await supabase.from('children').delete().eq('profile_id', savedProfile.id);
+        }
+
+        for (const child of profile.children) {
+          const childData = {
+            profile_id: savedProfile.id,
+            name: child.name,
+            age: child.age,
+            diagnosis: child.diagnosis || null,
+            grade_level: child.gradeLevel || null,
+            school_name: child.schoolName || null,
+            height: child.height || null,
+            weight: child.weight || null,
+            common_triggers: child.commonTriggers || [],
+            strengths: child.strengths || null,
+            interests: child.interests || null,
+            avatar: child.avatar || null,
+          };
+
+          if (child.id && !child.id.startsWith('temp_')) {
+            const { error: upsertError } = await supabase.from('children')
+              .upsert({ id: child.id, ...childData }, { onConflict: 'id' });
+            if (upsertError) {
+              console.error('[AppContext] Child upsert error:', upsertError);
+            }
+          } else {
+            const { error: insertError } = await supabase.from('children')
+              .insert(childData);
+            if (insertError) {
+              console.error('[AppContext] Child insert error:', insertError);
+            }
+          }
+        }
+
+        const { data: freshChildren } = await supabase
+          .from('children')
+          .select('id')
+          .eq('profile_id', savedProfile.id)
+          .limit(1);
+
+        if (freshChildren && freshChildren.length > 0 && !profile.activeChildId) {
+          await supabase.from('profiles')
+            .update({ active_child_id: freshChildren[0].id })
+            .eq('id', savedProfile.id);
+        }
       }
 
       return profile;
@@ -766,8 +822,13 @@ export const [AppProvider, useApp] = createContextHook(() => {
   }, [profileQuery.data, saveProfileMutate]);
 
   const activeChild = useMemo(() => {
-    if (!profileQuery.data?.activeChildId || !profileQuery.data?.children) return null;
-    return profileQuery.data.children.find(c => c.id === profileQuery.data?.activeChildId) || null;
+    if (!profileQuery.data?.children || profileQuery.data.children.length === 0) return null;
+    if (profileQuery.data.activeChildId) {
+      const found = profileQuery.data.children.find(c => c.id === profileQuery.data?.activeChildId);
+      if (found) return found;
+    }
+    console.log('[AppContext] activeChildId missing or stale, falling back to first child');
+    return profileQuery.data.children[0] ?? null;
   }, [profileQuery.data]);
 
   const activeChildLogs = useMemo(() => {

@@ -141,6 +141,7 @@ export default function CalendarScreen() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{
+          headerShown: true,
           title: 'Calendar',
           headerStyle: {
             backgroundColor: Colors.background,
