@@ -492,7 +492,7 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     overflow: 'hidden',
   },
   profileGlass: {
-    padding: 16,
+    padding: 20,
     borderRadius: 18,
     overflow: 'hidden',
   },
@@ -500,7 +500,7 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   profileInfo: {
     flexDirection: 'row',
@@ -512,23 +512,23 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     flex: 1,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '700' as const,
   },
   profileName: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700' as const,
-    marginBottom: 1,
+    marginBottom: 2,
   },
   profileAge: {
-    fontSize: 13,
+    fontSize: 14,
   },
   profileBadges: {
     flexDirection: 'row',
@@ -565,16 +565,16 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   profileMeta: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 10,
+    gap: 7,
+    marginBottom: 12,
   },
   metaChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   metaChipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500' as const,
   },
   metaMore: {
@@ -583,9 +583,9 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     fontWeight: '500' as const,
   },
   tapToViewProfile: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: 4,
   },
   cardTitle: {
     fontSize: 14,
