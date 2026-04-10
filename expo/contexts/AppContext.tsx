@@ -17,7 +17,7 @@ const STORAGE_KEYS = {
 
 export const [AppProvider, useApp] = createContextHook(() => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isAuthenticated: authIsAuthenticated } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const profileQuery = useQuery({
@@ -346,10 +346,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
   });
 
   useEffect(() => {
-    if (profileQuery.data) {
+    if (authIsAuthenticated || profileQuery.data) {
       setIsAuthenticated(true);
+    } else if (!authIsAuthenticated && !profileQuery.data) {
+      setIsAuthenticated(false);
     }
-  }, [profileQuery.data]);
+  }, [authIsAuthenticated, profileQuery.data]);
 
   const { mutate: saveProfileMutate } = useMutation({
     mutationFn: async (profile: UserProfile) => {

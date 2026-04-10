@@ -24,39 +24,12 @@ export default function LoginScreen() {
     const hasKey = !!(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
     
     try {
-      console.log('[Login] === DEBUG INFO ===');
-      console.log('[Login] SUPABASE_URL env:', supabaseUrl);
-      console.log('[Login] ANON_KEY present:', hasKey);
-      console.log('[Login] Platform:', Platform.OS);
-      console.log('[Login] Email:', email.trim());
-      
-      // Test raw fetch to Supabase first
-      const testUrl = supabaseUrl.startsWith('https://') ? supabaseUrl : 'https://kedbkwjhwylctwbqdslb.supabase.co';
-      console.log('[Login] Testing fetch to:', testUrl);
-      
-      let fetchTestResult = 'not tested';
-      try {
-        const testResp = await fetch(`${testUrl}/auth/v1/health`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        fetchTestResult = `status=${testResp.status}, ok=${testResp.ok}`;
-        const testBody = await testResp.text();
-        console.log('[Login] Health check response:', fetchTestResult, testBody);
-      } catch (fetchErr: any) {
-        fetchTestResult = `FAILED: ${fetchErr?.message || fetchErr}`;
-        console.error('[Login] Health check failed:', fetchErr);
-      }
-      
-      console.log('[Login] Now attempting signInWithPassword...');
+      console.log('[Login] Attempting sign in for:', email.trim());
       const { error } = await signIn(email.trim(), password);
       
       if (error) {
         console.error('[Login] Sign in error:', error.message);
-        Alert.alert(
-          'Login Debug',
-          `Error: ${error.message}\n\nSupabase URL: ${supabaseUrl}\nAnon Key present: ${hasKey}\nHealth check: ${fetchTestResult}\nPlatform: ${Platform.OS}`
-        );
+        Alert.alert('Login Failed', error.message);
       } else {
         console.log('[Login] Sign in successful!');
         router.replace('/(tabs)/home' as any);
@@ -64,10 +37,9 @@ export default function LoginScreen() {
     } catch (err: any) {
       console.error('[Login] Unexpected error:', err);
       const errMsg = err?.message ?? String(err);
-      Alert.alert(
-        'Login Debug (Catch)',
-        `Exception: ${errMsg}\n\nSupabase URL: ${supabaseUrl}\nAnon Key present: ${hasKey}\nPlatform: ${Platform.OS}\n\nStack: ${err?.stack?.substring(0, 300) || 'none'}`
-      );
+      Alert.alert('Error', errMsg.includes('Network') || errMsg.includes('fetch')
+        ? 'Unable to connect. Please check your internet connection and try again.'
+        : errMsg);
     } finally {
       setIsLoading(false);
     }
