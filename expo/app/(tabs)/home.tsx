@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
 import { TrendingUp, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
 import GlassCard from '@/components/GlassCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo, useCallback } from 'react';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { getAvatarById } from '@/constants/avatars';
 import type { QuickReminder, CustomReminder } from '@/types';
 
 export default function HomeScreen() {
@@ -16,6 +16,8 @@ export default function HomeScreen() {
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   
   const styles = useMemo(() => createStyles(Colors), [Colors]);
+
+  const avatarOption = useMemo(() => getAvatarById(activeChild?.avatar), [activeChild?.avatar]);
 
   const recentLog = activeChildLogs.length > 0 
     ? activeChildLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
@@ -152,10 +154,14 @@ export default function HomeScreen() {
           {Platform.OS === 'ios' ? (
             <GlassCard style={styles.profileGlass} glassEffectStyle="regular" fallbackStyle={{ backgroundColor: Colors.surface }}>
               <View style={styles.profileTopRow}>
-                <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
-                  <Text style={[styles.avatarText, { color: Colors.primary }]}>
-                    {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
-                  </Text>
+                <View style={[styles.avatar, { backgroundColor: avatarOption?.bg || Colors.primary + '22' }]}>
+                  {avatarOption ? (
+                    <Image source={{ uri: avatarOption.url }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={[styles.avatarText, { color: Colors.primary }]}>
+                      {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.profileMainInfo}>
                   <View style={styles.nameRow}>
@@ -201,10 +207,14 @@ export default function HomeScreen() {
           ) : (
             <View style={[styles.profileGlass, { backgroundColor: Colors.surface, borderColor: Colors.border, borderWidth: 1 }]}>
               <View style={styles.profileTopRow}>
-                <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
-                  <Text style={[styles.avatarText, { color: Colors.primary }]}>
-                    {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
-                  </Text>
+                <View style={[styles.avatar, { backgroundColor: avatarOption?.bg || Colors.primary + '22' }]}>
+                  {avatarOption ? (
+                    <Image source={{ uri: avatarOption.url }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={[styles.avatarText, { color: Colors.primary }]}>
+                      {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.profileMainInfo}>
                   <View style={styles.nameRow}>
@@ -518,6 +528,11 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     fontSize: 28,
