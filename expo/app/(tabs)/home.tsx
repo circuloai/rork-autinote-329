@@ -152,33 +152,30 @@ export default function HomeScreen() {
           {Platform.OS === 'ios' ? (
             <GlassCard style={styles.profileGlass} glassEffectStyle="regular" fallbackStyle={{ backgroundColor: Colors.surface }}>
               <View style={styles.profileTopRow}>
-                <View style={styles.profileInfo}>
-                  <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
-                    <Text style={[styles.avatarText, { color: Colors.primary }]}>
-                      {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
-                    </Text>
-                  </View>
-                  <View style={styles.profileMainInfo}>
-                    <Text style={[styles.profileName, { color: Colors.text }]}>{activeChild?.name || 'Guest'}</Text>
-                    <Text style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</Text>
-                  </View>
+                <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
+                  <Text style={[styles.avatarText, { color: Colors.primary }]}>
+                    {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
+                  </Text>
                 </View>
-
-                <View style={styles.profileBadges}>
-                  {recentLog && (
-                    <View style={[styles.moodBadge, { backgroundColor: Colors.primary + '18' }]}>
-                      <Text style={styles.moodBadgeEmoji}>{getMoodEmoji(recentLog)}</Text>
-                      <Text style={[styles.moodBadgeLabel, { color: Colors.text }]}>{getMoodLabel(recentLog)}</Text>
+                <View style={styles.profileMainInfo}>
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.profileName, { color: Colors.text }]} numberOfLines={1} ellipsizeMode="tail">{activeChild?.name || 'Guest'}</Text>
+                    <View style={[styles.streakBadge, { backgroundColor: Colors.accent + '20' }]}>
+                      <Flame size={14} color={Colors.accent} />
+                      <Text style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</Text>
                     </View>
-                  )}
-                  <View style={[styles.streakBadge, { backgroundColor: Colors.accent + '20' }]}>
-                    <Flame size={14} color={Colors.accent} />
-                    <Text style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</Text>
                   </View>
+                  <Text style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</Text>
                 </View>
               </View>
 
               <View style={styles.profileMeta}>
+                {recentLog && (
+                  <View style={[styles.moodBadge, { backgroundColor: Colors.primary + '18' }]}>
+                    <Text style={styles.moodBadgeEmoji}>{getMoodEmoji(recentLog)}</Text>
+                    <Text style={[styles.moodBadgeLabel, { color: Colors.text }]}>{getMoodLabel(recentLog)}</Text>
+                  </View>
+                )}
                 {activeChild?.diagnosis && (
                   <View style={[styles.metaChip, { backgroundColor: Colors.primary + '14' }]}>
                     <Text style={[styles.metaChipText, { color: Colors.text }]}>{activeChild.diagnosis}</Text>
@@ -204,33 +201,30 @@ export default function HomeScreen() {
           ) : (
             <View style={[styles.profileGlass, { backgroundColor: Colors.surface, borderColor: Colors.border, borderWidth: 1 }]}>
               <View style={styles.profileTopRow}>
-                <View style={styles.profileInfo}>
-                  <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
-                    <Text style={[styles.avatarText, { color: Colors.primary }]}>
-                      {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
-                    </Text>
-                  </View>
-                  <View style={styles.profileMainInfo}>
-                    <Text style={[styles.profileName, { color: Colors.text }]}>{activeChild?.name || 'Guest'}</Text>
-                    <Text style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</Text>
-                  </View>
+                <View style={[styles.avatar, { backgroundColor: Colors.primary + '22' }]}>
+                  <Text style={[styles.avatarText, { color: Colors.primary }]}>
+                    {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
+                  </Text>
                 </View>
-
-                <View style={styles.profileBadges}>
-                  {recentLog && (
-                    <View style={[styles.moodBadge, { backgroundColor: Colors.primary + '18' }]}>
-                      <Text style={styles.moodBadgeEmoji}>{getMoodEmoji(recentLog)}</Text>
-                      <Text style={[styles.moodBadgeLabel, { color: Colors.text }]}>{getMoodLabel(recentLog)}</Text>
+                <View style={styles.profileMainInfo}>
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.profileName, { color: Colors.text }]} numberOfLines={1} ellipsizeMode="tail">{activeChild?.name || 'Guest'}</Text>
+                    <View style={[styles.streakBadge, { backgroundColor: Colors.accent + '20' }]}>
+                      <Flame size={14} color={Colors.accent} />
+                      <Text style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</Text>
                     </View>
-                  )}
-                  <View style={[styles.streakBadge, { backgroundColor: Colors.accent + '20' }]}>
-                    <Flame size={14} color={Colors.accent} />
-                    <Text style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</Text>
                   </View>
+                  <Text style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</Text>
                 </View>
               </View>
 
               <View style={styles.profileMeta}>
+                {recentLog && (
+                  <View style={[styles.moodBadge, { backgroundColor: Colors.primary + '18' }]}>
+                    <Text style={styles.moodBadgeEmoji}>{getMoodEmoji(recentLog)}</Text>
+                    <Text style={[styles.moodBadgeLabel, { color: Colors.text }]}>{getMoodLabel(recentLog)}</Text>
+                  </View>
+                )}
                 {activeChild?.diagnosis && (
                   <View style={[styles.metaChip, { backgroundColor: Colors.primary + '14' }]}>
                     <Text style={[styles.metaChipText, { color: Colors.text }]}>{activeChild.diagnosis}</Text>
@@ -499,8 +493,8 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   },
   profileTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 14,
     marginBottom: 18,
   },
   profileInfo: {
@@ -511,6 +505,12 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   },
   profileMainInfo: {
     flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 4,
   },
   avatar: {
     width: 64,
@@ -526,8 +526,8 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   profileName: {
     fontSize: 24,
     fontWeight: '700' as const,
-    marginBottom: 3,
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
   profileAge: {
     fontSize: 15,
