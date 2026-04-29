@@ -104,16 +104,103 @@ export const [AppProvider, useApp] = createContextHook(() => {
     retry: isSupabaseConfigured && !!user ? 2 : false,
   });
 
+  const therapistClientsQuery = useQuery({
+    queryKey: ['therapistClients', user?.id, profileQuery.data?.id, profileQuery.data?.role],
+    queryFn: async () => {
+      if (!user || !profileQuery.data?.id || profileQuery.data?.role !== 'therapist') {
+        return [];
+      }
+
+      const { data: accessRows, error: accessErr } = await supabase
+        .from('shared_access')
+        .select('*')
+        .eq('therapist_id', profileQuery.data.id)
+        .eq('status', 'accepted');
+
+      if (accessErr) {
+        console.log('[AppContext] therapist clients access fetch error:', accessErr);
+        return [];
+      }
+
+      if (!accessRows || accessRows.length === 0) return [];
+
+      const childIds = accessRows.map((sa: any) => sa.child_id);
+      const parentIds = Array.from(new Set(accessRows.map((sa: any) => sa.parent_id)));
+
+      const [childrenRes, parentsRes] = await Promise.all([
+        supabase.from('children').select('*').in('id', childIds),
+        supabase.from('profiles').select('id, caregiver_name, caregiver_email').in('id', parentIds),
+      ]);
+
+      const childrenById = new Map<string, any>();
+      (childrenRes.data || []).forEach((c: any) => childrenById.set(c.id, c));
+      const parentsById = new Map<string, any>();
+      (parentsRes.data || []).forEach((p: any) => parentsById.set(p.id, p));
+
+      return accessRows
+        .filter((sa: any) => childrenById.has(sa.child_id))
+        .map((sa: any) => {
+          const c = childrenById.get(sa.child_id);
+          const p = parentsById.get(sa.parent_id);
+          return {
+            sharedAccessId: sa.id as string,
+            parentId: sa.parent_id as string,
+            parentName: (p?.caregiver_name as string) || 'Caregiver',
+            parentEmail: (p?.caregiver_email as string) || '',
+            permissions: {
+              canViewLogs: !!sa.can_view_logs,
+              canViewProgress: !!sa.can_view_progress,
+              canViewProfile: !!sa.can_view_profile,
+              canAddNotes: !!sa.can_add_notes,
+              canAddSessions: !!sa.can_add_sessions,
+              canComment: !!sa.can_comment,
+              canExport: !!sa.can_export,
+              readonlyMode: !!sa.readonly_mode,
+            },
+            child: {
+              id: c.id as string,
+              name: c.name as string,
+              age: c.age as number,
+              diagnosis: c.diagnosis || undefined,
+              gradeLevel: c.grade_level || undefined,
+              schoolName: c.school_name || undefined,
+              height: c.height || undefined,
+              weight: c.weight || undefined,
+              commonTriggers: c.common_triggers || [],
+              strengths: c.strengths || undefined,
+              interests: c.interests || undefined,
+              avatar: c.avatar || undefined,
+              createdAt: c.created_at,
+            },
+          };
+        });
+    },
+    enabled: !!user && !!profileQuery.data?.id && profileQuery.data?.role === 'therapist' && isSupabaseConfigured,
+    retry: isSupabaseConfigured ? 2 : false,
+  });
+
+  const therapistClientChildIds = useMemo<string[]>(() => {
+    return (therapistClientsQuery.data || []).map((tc: any) => tc.child.id);
+  }, [therapistClientsQuery.data]);
+
+  const therapistClientChildIdsKey = useMemo(() => {
+    return [...therapistClientChildIds].sort().join(',');
+  }, [therapistClientChildIds]);
+
   const logsQuery = useQuery({
-    queryKey: ['logEntries', user?.id, profileQuery.data?.children?.length],
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
+    queryKey: ['logEntries', user?.id, profileQuery.data?.children?.length, profileQuery.data?.role, therapistClientChildIdsKey],
     queryFn: async () => {
       try {
-        if (!user || !isSupabaseConfigured || !profileQuery.data?.children) {
+        if (!user || !isSupabaseConfigured || !profileQuery.data) {
           const stored = await AsyncStorage.getItem(STORAGE_KEYS.LOG_ENTRIES);
           return stored ? JSON.parse(stored) as LogEntry[] : [];
         }
 
-        const childIds = profileQuery.data.children.map(c => c.id);
+        const ownIds = (profileQuery.data.children || []).map(c => c.id);
+        const childIds = profileQuery.data.role === 'therapist'
+          ? therapistClientChildIds
+          : ownIds;
         if (childIds.length === 0) return [];
 
         const { data, error } = await supabase
@@ -175,7 +262,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         return [];
       }
     },
-    enabled: !!profileQuery.data?.children,
+    enabled: !!profileQuery.data,
     retry: isSupabaseConfigured && !!user ? 2 : false,
   });
 
@@ -288,11 +375,15 @@ export const [AppProvider, useApp] = createContextHook(() => {
   });
 
   const therapistNotesQuery = useQuery({
-    queryKey: ['therapistNotes', user?.id, profileQuery.data?.children, !!user],
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
+    queryKey: ['therapistNotes', user?.id, profileQuery.data?.children, profileQuery.data?.role, therapistClientChildIdsKey, !!user],
     queryFn: async () => {
-      if (!user || !profileQuery.data?.children) return [];
+      if (!user || !profileQuery.data) return [];
 
-      const childIds = profileQuery.data.children.map(c => c.id);
+      const ownIds = (profileQuery.data.children || []).map(c => c.id);
+      const childIds = profileQuery.data.role === 'therapist'
+        ? therapistClientChildIds
+        : ownIds;
       if (childIds.length === 0) return [];
 
       const { data, error } = await supabase
@@ -321,7 +412,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         updatedAt: note.updated_at,
       }));
     },
-    enabled: !!profileQuery.data?.children && isSupabaseConfigured && !!user,
+    enabled: !!profileQuery.data && isSupabaseConfigured && !!user,
     retry: isSupabaseConfigured ? 2 : false,
   });
 
@@ -911,6 +1002,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     sharedAccess: sharedAccessQuery.data || [],
     therapistNotes: therapistNotesQuery.data || [],
     chatMessages: chatMessagesQuery.data || [],
+    therapistClients: therapistClientsQuery.data || [],
     activeChild,
     activeChildLogs,
     streak,
@@ -929,7 +1021,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     saveTherapistNote,
     saveChatMessage,
     markMessageAsRead,
-  }), [isAuthenticated, profileQuery.data, profileQuery.isLoading, logsQuery.data, logsQuery.isLoading, preferencesQuery.data, preferencesQuery.isLoading, chatHistoryQuery.data, chatHistoryQuery.isLoading, sharedAccessQuery.data, sharedAccessQuery.isLoading, therapistNotesQuery.data, therapistNotesQuery.isLoading, chatMessagesQuery.data, chatMessagesQuery.isLoading, activeChild, activeChildLogs, streak, saveProfile, saveLog, deleteLog, savePreferences, saveChatHistory, clearChatHistory, logout, setActiveChild, saveSharedAccess, addSharedAccess, deleteSharedAccess, saveTherapistNote, saveChatMessage, markMessageAsRead]);
+  }), [isAuthenticated, profileQuery.data, profileQuery.isLoading, logsQuery.data, logsQuery.isLoading, preferencesQuery.data, preferencesQuery.isLoading, chatHistoryQuery.data, chatHistoryQuery.isLoading, sharedAccessQuery.data, sharedAccessQuery.isLoading, therapistNotesQuery.data, therapistNotesQuery.isLoading, chatMessagesQuery.data, chatMessagesQuery.isLoading, therapistClientsQuery.data, activeChild, activeChildLogs, streak, saveProfile, saveLog, deleteLog, savePreferences, saveChatHistory, clearChatHistory, logout, setActiveChild, saveSharedAccess, addSharedAccess, deleteSharedAccess, saveTherapistNote, saveChatMessage, markMessageAsRead]);
 });
 
 export function useActiveChildLogs(startDate?: Date, endDate?: Date) {

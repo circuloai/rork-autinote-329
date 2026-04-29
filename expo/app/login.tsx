@@ -32,7 +32,7 @@ export default function LoginScreen() {
         Alert.alert('Login Failed', error.message);
       } else {
         console.log('[Login] Sign in successful!');
-        router.replace('/(tabs)/home' as any);
+        router.replace('/' as any);
       }
     } catch (err: any) {
       console.error('[Login] Unexpected error:', err);
@@ -58,7 +58,7 @@ export default function LoginScreen() {
           Alert.alert('Login Error', error.message);
         }
       } else {
-        router.replace('/(tabs)/home' as any);
+        router.replace('/' as any);
       }
     } catch (err) {
       console.error('[Login] OAuth unexpected error:', err);

@@ -8,13 +8,17 @@ import { useApp } from '@/contexts/AppContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useApp();
+  const { isAuthenticated, isLoading, profile } = useApp();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/(tabs)/home' as any);
+      if (profile?.role === 'therapist') {
+        router.replace('/(therapist)/clients' as any);
+      } else {
+        router.replace('/(tabs)/home' as any);
+      }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, profile?.role, router]);
 
   if (isLoading) {
     return (

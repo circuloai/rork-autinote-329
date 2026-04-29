@@ -1,21 +1,26 @@
-# Redesign Home Screen Layout & Style
+# Therapist Experience
 
-## Changes
+A minimal, secure therapist-side experience that mirrors what they need without polluting the caregiver flow.
 
-**Child Profile Box**
-- Remove the "Hello! name" greeting text at the top of the screen
-- Replace the purple gradient profile box with a frosted glass style (using the existing GlassCard component on iOS, translucent fallback on other platforms)
-- Condense the profile box: smaller avatar, tighter spacing, single-row layout for details like diagnosis and school
-- Integrate the recent mood emoji + label directly into the profile card (top-right area near the streak badge) — no separate mood section
-- Keep "Tap to view full profile" link at the bottom of the card
-- Use readable text colors that work on the glass/translucent background (no dark blue on purple)
+## Routing
+- [x] On app load (and after login), if `profile.role === 'therapist'`, route to `/(therapist)/clients` instead of `/(tabs)/home`.
+- [x] Add a separate `(therapist)` tab group so caregiver tabs are not shown to therapists.
+- [x] Register `(therapist)` group + nested screens in root `app/_layout.tsx`.
 
-**Section Order (top to bottom)**
-1. **Child Profile Card** — compact glass card with name, age, streak, recent mood, diagnosis, triggers
-2. **Log Your Day** — Daily Log and Meltdown Log buttons (unchanged functionality)
-3. **Calendar & Insights** — the two side-by-side buttons (unchanged functionality)
-4. **AI Insights** — the chat prompt card (unchanged functionality)
+## Data
+- [x] Add `therapistClients` query to `AppContext` — for therapists, fetches `shared_access` rows where `therapist_id = profile.id AND status = 'accepted'`, joined with the corresponding `children` and parent `profiles` rows. Relies on existing RLS policies (already permit therapists to read shared children, logs, notes).
+- [x] Reuse existing `logsQuery`, `therapistNotesQuery`, `chatMessagesQuery` for therapist views — they already use `IN (childIds)` and shared_access RLS lets the therapist see only what's been shared.
+- [x] For therapists, `childIds` is derived from `therapistClients` (not `profile.children`).
 
-**Removed**
-- "Hello! name" header
-- Separate "Recent Mood" card (moved into profile card)
+## Screens
+- [x] **Tabs `(therapist)`** — Clients · Messages · Settings (no built-in header, each tab owns its UI).
+- [x] **Clients tab** (`(therapist)/clients.tsx`) — list of accepted shared children with avatar, name, age, parent name, last log date, unread message badge. Tap → client detail.
+- [x] **Messages tab** (`(therapist)/messages.tsx`) — list of conversations across all clients. Tap → existing `/therapist-chat?sharedAccessId=...`.
+- [x] **Settings tab** (`(therapist)/settings.tsx`) — profile, customization, log out (lightweight version).
+- [x] **Client detail** (`/therapist/client/[childId].tsx`) — child profile summary (read-only), recent logs timeline, list of session notes, "Add session note" CTA, "Message caregiver" CTA.
+- [x] **Note composer** (`/therapist/note/[childId].tsx`) — modal form with session date, goals worked on, skills practiced, behaviors observed, strategies used, recommendations, next session goals. Save creates a `therapist_notes` row.
+
+## Security
+- [x] All reads/writes go through existing RLS policies — no new policies required.
+- [x] Therapist UI never queries other therapists' or non-shared children.
+- [x] Notes are scoped to a specific `shared_access_id`.
