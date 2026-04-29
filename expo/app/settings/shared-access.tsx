@@ -1,8 +1,9 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Users, Plus, ChevronLeft, Mail, Shield, CheckCircle, Clock, XCircle, MessageCircle } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { SharedAccess } from '@/types';
@@ -14,6 +15,24 @@ export default function SharedAccessScreen() {
   const { sharedAccess, activeChild, preferences, deleteSharedAccess } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const refreshAccess = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['sharedAccess'] });
+      await queryClient.refetchQueries({ queryKey: ['sharedAccess'] });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [queryClient]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void queryClient.invalidateQueries({ queryKey: ['sharedAccess'] });
+    }, [queryClient])
+  );
 
   const activeChildAccess = useMemo(() => {
     if (!activeChild) return [];
@@ -91,7 +110,17 @@ export default function SharedAccessScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refreshAccess}
+            tintColor={Colors.primary}
+          />
+        }
+      >
         <View style={styles.childCard}>
           <Text style={styles.childCardTitle}>Managing access for</Text>
           <Text style={styles.childCardName}>{activeChild.name}</Text>
