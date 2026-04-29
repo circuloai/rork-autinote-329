@@ -1,18 +1,44 @@
 import { useRouter } from 'expo-router';
-import { Users, ChevronRight, Calendar as CalendarIcon, MessageCircle } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { Users, ChevronRight, Calendar as CalendarIcon, MessageCircle, RefreshCw } from 'lucide-react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, RefreshControl, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { getAvatarById } from '@/constants/avatars';
+import { supabase } from '@/lib/supabase';
 
 export default function TherapistClientsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { therapistClients, logs, chatMessages, profile, preferences } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const acceptInvitesAndRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.rpc('accept_therapist_invites');
+      if (error) {
+        console.log('[Therapist] accept_therapist_invites error:', error);
+        Alert.alert(
+          'Could not accept invites',
+          error.message + '\n\nMake sure the database migration has been run (MIGRATION_THERAPIST_INVITES.sql).',
+        );
+      } else {
+        console.log('[Therapist] linked invites:', data);
+      }
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      await queryClient.invalidateQueries({ queryKey: ['therapistClients'] });
+      await queryClient.invalidateQueries({ queryKey: ['sharedAccess'] });
+      await queryClient.refetchQueries({ queryKey: ['therapistClients'] });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [queryClient]);
 
   const clientCards = useMemo(() => {
     return therapistClients.map((tc) => {
@@ -61,6 +87,13 @@ export default function TherapistClientsScreen() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={acceptInvitesAndRefresh}
+            tintColor={Colors.primary}
+          />
+        }
       >
         {clientCards.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -70,6 +103,21 @@ export default function TherapistClientsScreen() {
             <Text style={styles.emptyTitle}>No clients yet</Text>
             <Text style={styles.emptyText}>
               When a caregiver invites you to collaborate on their child&apos;s care, they&apos;ll appear here.
+            </Text>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={acceptInvitesAndRefresh}
+              disabled={refreshing}
+              activeOpacity={0.7}
+              testID="check-invites"
+            >
+              <RefreshCw size={16} color={Colors.surface} />
+              <Text style={styles.refreshButtonText}>
+                {refreshing ? 'Checking…' : 'Check for invitations'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.emptyHint}>
+              Pull to refresh anytime. Make sure the caregiver invited you using {profile?.caregiverEmail || 'this email'}.
             </Text>
           </View>
         ) : (
@@ -309,5 +357,28 @@ const createStyles = (Colors: ReturnType<typeof getColors>) =>
       fontSize: 12,
       color: Colors.primary,
       fontWeight: '600' as const,
+    },
+    refreshButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: Colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+      borderRadius: 12,
+      marginTop: 24,
+    },
+    refreshButtonText: {
+      fontSize: 14,
+      fontWeight: '700' as const,
+      color: Colors.surface,
+    },
+    emptyHint: {
+      fontSize: 12,
+      color: Colors.textLight,
+      textAlign: 'center',
+      marginTop: 16,
+      paddingHorizontal: 20,
+      lineHeight: 18,
     },
   });
