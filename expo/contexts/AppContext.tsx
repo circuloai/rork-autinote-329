@@ -44,6 +44,35 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
         console.log('[AppContext] Profile fetched:', profile.id, 'activeChildId:', profile.active_child_id);
 
+        if (profile.role === 'therapist') {
+          const therapistEmail = (user.email || profile.caregiver_email || '').toLowerCase().trim();
+          if (therapistEmail) {
+            console.log('[AppContext] Linking pending invites for therapist email:', therapistEmail);
+            const { data: linked, error: linkErr } = await supabase
+              .from('shared_access')
+              .update({
+                therapist_id: profile.id,
+                status: 'accepted',
+                accepted_at: new Date().toISOString(),
+              })
+              .eq('therapist_email', therapistEmail)
+              .eq('status', 'pending')
+              .is('therapist_id', null)
+              .select('id');
+            if (linkErr) {
+              console.log('[AppContext] Invite link error:', linkErr);
+            } else if (linked && linked.length > 0) {
+              console.log('[AppContext] Linked', linked.length, 'pending invites to therapist profile');
+              if (!profile.caregiver_email) {
+                await supabase
+                  .from('profiles')
+                  .update({ caregiver_email: therapistEmail })
+                  .eq('id', profile.id);
+              }
+            }
+          }
+        }
+
         const { data: children } = await supabase
           .from('children')
           .select('*')
