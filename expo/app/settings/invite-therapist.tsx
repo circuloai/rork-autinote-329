@@ -64,7 +64,6 @@ export default function InviteTherapistScreen() {
 
     try {
       const inviteToken = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-      const inviteId = `invite-${Date.now()}`;
 
       const profileQuery = await supabase
         .from('profiles')
@@ -78,7 +77,6 @@ export default function InviteTherapistScreen() {
       }
 
       const accessData = {
-        id: inviteId,
         child_id: activeChild.id,
         parent_id: profileQuery.data.id,
         therapist_id: null,
