@@ -226,12 +226,16 @@ CREATE INDEX idx_chat_messages_sender_id        ON public.chat_messages(sender_i
 -- ============================================================
 -- 2.5 SECURITY DEFINER helpers (bypass RLS to avoid recursion)
 -- ============================================================
+-- All helpers run with row_security disabled so they never re-trigger
+-- RLS policies on the tables they query (this is what was causing the
+-- 42P17 infinite recursion error during onboarding INSERT...RETURNING).
 CREATE OR REPLACE FUNCTION public.current_profile_id()
 RETURNS uuid
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $func$
   SELECT id FROM public.profiles WHERE user_id = auth.uid() LIMIT 1;
 $func$;
@@ -242,12 +246,15 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.shared_access sa
      WHERE sa.parent_id = p_parent_id
        AND sa.status    = 'accepted'
-       AND sa.therapist_id = public.current_profile_id()
+       AND sa.therapist_id = (
+         SELECT id FROM public.profiles WHERE user_id = auth.uid() LIMIT 1
+       )
   );
 $func$;
 
@@ -257,12 +264,15 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.shared_access sa
      WHERE sa.child_id    = p_child_id
        AND sa.status      = 'accepted'
-       AND sa.therapist_id = public.current_profile_id()
+       AND sa.therapist_id = (
+         SELECT id FROM public.profiles WHERE user_id = auth.uid() LIMIT 1
+       )
   );
 $func$;
 
@@ -272,13 +282,16 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.shared_access sa
      WHERE sa.child_id     = p_child_id
        AND sa.status       = 'accepted'
        AND sa.can_view_logs = true
-       AND sa.therapist_id = public.current_profile_id()
+       AND sa.therapist_id = (
+         SELECT id FROM public.profiles WHERE user_id = auth.uid() LIMIT 1
+       )
   );
 $func$;
 
@@ -314,8 +327,22 @@ CREATE POLICY "profiles_owner_update" ON public.profiles
 CREATE POLICY "profiles_owner_delete" ON public.profiles
   FOR DELETE USING (user_id = auth.uid());
 
+-- Therapist read access to parent profiles. We use an inline subquery
+-- here (instead of a helper function) so that this policy can never
+-- recurse back into profiles policies during evaluation.
 CREATE POLICY "profiles_therapist_select" ON public.profiles
-  FOR SELECT USING (public.is_therapist_for_parent(profiles.id));
+  FOR SELECT USING (
+    profiles.id IN (
+      SELECT sa.parent_id
+        FROM public.shared_access sa
+       WHERE sa.status = 'accepted'
+         AND sa.therapist_id = (
+           SELECT p.id FROM public.profiles p
+            WHERE p.user_id = auth.uid()
+            LIMIT 1
+         )
+    )
+  );
 
 -- children ----------------------------------------------------
 CREATE POLICY "children_owner_all" ON public.children
