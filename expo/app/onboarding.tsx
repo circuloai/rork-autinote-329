@@ -302,7 +302,13 @@ export default function OnboardingScreen() {
 
       if (profileError) {
         console.error('[Onboarding] Profile insert error:', profileError);
-        Alert.alert('Error', 'Failed to save profile. Please try again.');
+        const detail = [
+          profileError.message,
+          profileError.details,
+          profileError.hint,
+          profileError.code ? `code: ${profileError.code}` : null,
+        ].filter(Boolean).join('\n');
+        Alert.alert('Failed to save profile', detail || 'Unknown error. Check console for details.');
         setIsCreatingAccount(false);
         return;
       }
