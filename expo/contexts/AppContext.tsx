@@ -1063,7 +1063,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
     activeChildLogs,
     streak,
     isLoading: profileQuery.isLoading || logsQuery.isLoading || preferencesQuery.isLoading || chatHistoryQuery.isLoading || sharedAccessQuery.isLoading || therapistNotesQuery.isLoading || chatMessagesQuery.isLoading,
-    isProfileLoading: profileQuery.isLoading,
     saveProfile,
     saveLog,
     deleteLog,

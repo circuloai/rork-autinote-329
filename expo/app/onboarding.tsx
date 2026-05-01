@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
 import { ChevronDown, Chrome, Apple } from 'lucide-react-native';
 import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Moon, Volume2, Sparkles } from 'lucide-react-native';
@@ -24,23 +24,10 @@ const PREDEFINED_TRIGGERS = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { signUp, signInWithOAuth, user, isAuthenticated } = useAuth();
+  const { signUp, signInWithOAuth } = useAuth();
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
   const [isOAuthUser, setIsOAuthUser] = useState(false);
-  const [hasExistingSession, setHasExistingSession] = useState(false);
-
-  // If the user is already authenticated when onboarding mounts (e.g.
-  // they confirmed their email and signed back in, or admin wiped the
-  // profiles table), skip the signup step and just collect profile data.
-  useEffect(() => {
-    if (isAuthenticated && user && !hasExistingSession) {
-      console.log('[Onboarding] Existing auth session detected, skipping signup step');
-      setHasExistingSession(true);
-      setCaregiverEmail(user.email ?? '');
-      setStep((prev) => (prev === 1 ? 2 : prev));
-    }
-  }, [isAuthenticated, user, hasExistingSession]);
   
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   
@@ -209,7 +196,7 @@ export default function OnboardingScreen() {
     try {
       let userId: string | null = null;
 
-      if (isOAuthUser || hasExistingSession) {
+      if (isOAuthUser) {
         console.log('[Onboarding] OAuth user, retrieving session...');
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         userId = currentSession?.user?.id ?? null;
@@ -302,50 +289,38 @@ export default function OnboardingScreen() {
 
       if (profileError) {
         console.error('[Onboarding] Profile insert error:', profileError);
-        const detail = [
-          profileError.message,
-          profileError.details,
-          profileError.hint,
-          profileError.code ? `code: ${profileError.code}` : null,
-        ].filter(Boolean).join('\n');
-        Alert.alert('Failed to save profile', detail || 'Unknown error. Check console for details.');
+        Alert.alert('Error', 'Failed to save profile. Please try again.');
         setIsCreatingAccount(false);
         return;
       }
 
-      console.log('[Onboarding] Profile saved:', profileData.id, 'role:', selectedRole);
+      console.log('[Onboarding] Profile saved:', profileData.id);
 
-      // Therapists do NOT have their own child record — they only see
-      // children shared with them via shared_access. Skip child insert.
-      if (selectedRole !== 'therapist' && childName.trim().length > 0) {
-        const { data: childData, error: childError } = await supabase
-          .from('children')
-          .insert({
-            profile_id: profileData.id,
-            name: childName,
-            age: parseInt(childAge),
-            diagnosis: diagnosis || null,
-            grade_level: gradeLevel || null,
-            school_name: schoolName || null,
-            height: heightFeet ? `${heightFeet}'${heightInches || '0'}"` : null,
-            weight: weight || null,
-            common_triggers: allTriggers,
-          })
-          .select()
-          .single();
+      const { data: childData, error: childError } = await supabase
+        .from('children')
+        .insert({
+          profile_id: profileData.id,
+          name: childName,
+          age: parseInt(childAge),
+          diagnosis: diagnosis || null,
+          grade_level: gradeLevel || null,
+          school_name: schoolName || null,
+          height: heightFeet ? `${heightFeet}'${heightInches || '0'}"` : null,
+          weight: weight || null,
+          common_triggers: allTriggers,
+        })
+        .select()
+        .single();
 
-        if (childError) {
-          console.error('[Onboarding] Child insert error:', childError);
-        } else {
-          console.log('[Onboarding] Child saved:', childData.id);
-
-          await supabase
-            .from('profiles')
-            .update({ active_child_id: childData.id })
-            .eq('id', profileData.id);
-        }
+      if (childError) {
+        console.error('[Onboarding] Child insert error:', childError);
       } else {
-        console.log('[Onboarding] Therapist account — skipping child creation');
+        console.log('[Onboarding] Child saved:', childData.id);
+        
+        await supabase
+          .from('profiles')
+          .update({ active_child_id: childData.id })
+          .eq('id', profileData.id);
       }
 
       const { error: prefsError } = await supabase
@@ -367,12 +342,8 @@ export default function OnboardingScreen() {
         console.log('[Onboarding] Preferences saved');
       }
 
-      console.log('[Onboarding] All data saved, navigating...');
-      if (selectedRole === 'therapist') {
-        router.replace('/(therapist)/clients' as any);
-      } else {
-        router.replace('/(tabs)/home' as any);
-      }
+      console.log('[Onboarding] All data saved, navigating to home...');
+      router.replace('/(tabs)/home' as any);
     } catch (err) {
       console.error('[Onboarding] Unexpected error:', err);
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
@@ -425,7 +396,7 @@ export default function OnboardingScreen() {
 
           {step < 5 && (
             <View style={styles.stepIndicator}>
-              {!isOAuthUser && !hasExistingSession && <View style={[styles.stepDot, step === 1 && styles.stepDotActive]} />}
+              {!isOAuthUser && <View style={[styles.stepDot, step === 1 && styles.stepDotActive]} />}
               <View style={[styles.stepDot, step === 2 && styles.stepDotActive]} />
               <View style={[styles.stepDot, step === 3 && styles.stepDotActive]} />
               <View style={[styles.stepDot, step === 4 && styles.stepDotActive]} />

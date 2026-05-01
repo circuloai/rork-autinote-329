@@ -1,44 +1,59 @@
-# Clean slate — single Supabase setup script
+# Fix therapist ↔ caregiver connection (round 3: RLS on children/profiles)
 
-## What I did
+## What the diagnostic proved
 
-- [x] Deleted all 7 old SQL scripts so there is nothing left to confuse Supabase:
-  - `WIPE_DATA.sql`, `FULL_RESET.sql`, `DUMMY_DATA.sql`,
-    `MIGRATION_FIX_RLS_AUTH_USERS.sql`,
-    `MIGRATION_RESTORE_OWNER_POLICIES.sql`,
-    `MIGRATION_THERAPIST_INVITES.sql`,
-    `MIGRATION_THERAPIST_READ_ACCESS.sql`.
-- [x] Created a single authoritative script: **`expo/SUPABASE_SETUP.sql`**.
-  This is now the only SQL you will ever need to run.
+Therapist (`gauradhika+1@gmail.com`) ran the in-app diagnostic on
+2026-05-01. Output:
 
-The new script does everything in one pass:
+- Profile row exists, role = `therapist`,
+  `profile.id = 536791d5-8776-4b1c-8fb3-08f2191b8f11`.
+- `shared_access` row exists with
+  `therapist_id = 536791d5-…`, `status = 'accepted'`,
+  `child_id = cdef3152-…`.
+- The exact "My Clients" query
+  (`therapist_id = me AND status = 'accepted'`) returns **1 row**.
 
-1. Drops every previous version of the app's tables, functions and triggers.
-2. Creates the full schema with **every column the app actually inserts**
-   (including `is_explore_mode`, `caregiver_phone`, `therapist_phone`,
-   `active_child_id`, `quick_reminders`, `custom_reminders`, etc.)
-   — this is what was causing "Failed to save profile".
-3. Sets up RLS with both owner policies (so users can insert/select their
-   own rows) and therapist-read policies.
-4. Recreates `accept_therapist_invites()` (JWT-email based, so it works
-   without `auth.users` grants).
-5. Adds a guard trigger so a therapist's role can never be silently
-   flipped back to parent by a future script.
-6. Prints row counts and policy list at the end for verification.
+So the database and `shared_access` RLS are correct. The bug is on the
+read side, one layer deeper.
 
-Safe to re-run any time.
+## Root cause
 
-## What you need to do
+`AppContext.therapistClientsQuery` does three queries:
+
+1. `shared_access WHERE therapist_id = me AND status = 'accepted'`
+   ✅ returns the row.
+2. `children WHERE id IN (childIds)`
+   ❌ returns `[]` — RLS on `children` only allows the *owning*
+   caregiver to read. Therapist gets nothing back.
+3. `profiles WHERE id IN (parentIds)`
+   ❌ returns `[]` for the same reason.
+
+Then it filters: `accessRows.filter(sa => childrenById.has(sa.child_id))`.
+With an empty `childrenById` map, every row is filtered out → UI shows
+"No clients yet". Same shape on the caregiver side once profile reads
+become asymmetric.
+
+## What I just shipped
+
+- [x] `expo/MIGRATION_THERAPIST_READ_ACCESS.sql` — adds two SELECT-only
+      RLS policies:
+      - `children_therapist_select`: a therapist can read a child if
+        an `accepted` `shared_access` row links them to that child.
+      - `profiles_therapist_select`: a therapist can read a caregiver
+        profile if an `accepted` `shared_access` row links them to
+        that parent (so the caregiver name/email render on My Clients).
+      No write access is granted. Script is idempotent.
+- [x] Includes a verification SELECT at the bottom that joins
+      `shared_access` → `children` → both `profiles` rows; for the
+      test pair it should return one row with both emails populated.
+
+## How to apply
 
 1. Open Supabase → SQL editor → paste the contents of
-   `expo/SUPABASE_SETUP.sql` → Run.
-2. Confirm the verification block at the bottom returns all zeros and
-   lists the policies.
-3. On the device, sign out of every test account.
-4. Sign in fresh:
-   - Therapist email → choose **Therapist** in onboarding.
-   - Parent email   → choose **Parent**, add a child, invite the
-     therapist by email from Settings.
-5. The therapist app auto-accepts the invite on next load. Both
-   dashboards should now show the connection.
-6. Run the connection diagnostic on both accounts to confirm.
+   `expo/MIGRATION_THERAPIST_READ_ACCESS.sql` → **Run**.
+2. In the app, sign out of the therapist account and back in (or
+   pull-to-refresh on *My Clients*). The connected child should now
+   appear.
+3. If you want to confirm at the data layer first, re-run the in-app
+   diagnostic on the therapist account — section 6 already returned
+   the row; after the migration the My Clients UI will too.

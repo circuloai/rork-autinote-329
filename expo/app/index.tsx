@@ -5,32 +5,20 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, profile, isProfileLoading } = useApp();
-  const { signOut } = useAuth();
+  const { isAuthenticated, isLoading, profile } = useApp();
 
   useEffect(() => {
-    if (isLoading || isProfileLoading) return;
-    if (!isAuthenticated) return;
-
-    // Authenticated but no profile row — stay on Welcome so the user
-    // can decide to continue onboarding, log in as a different user,
-    // or explore. Auto-redirecting straight into the onboarding form
-    // is disorienting (lands on "Child Information" with no context).
-    if (!profile) {
-      console.log('[Welcome] Authenticated but no profile — staying on Welcome');
-      return;
+    if (!isLoading && isAuthenticated) {
+      if (profile?.role === 'therapist') {
+        router.replace('/(therapist)/clients' as any);
+      } else {
+        router.replace('/(tabs)/home' as any);
+      }
     }
-
-    if (profile.role === 'therapist') {
-      router.replace('/(therapist)/clients' as any);
-    } else {
-      router.replace('/(tabs)/home' as any);
-    }
-  }, [isAuthenticated, isLoading, isProfileLoading, profile, router]);
+  }, [isAuthenticated, isLoading, profile?.role, router]);
 
   if (isLoading) {
     return (
@@ -40,18 +28,7 @@ export default function WelcomeScreen() {
     );
   }
 
-  const handleGetStarted = async () => {
-    // Always start the signup flow at step 1 (account creation).
-    // If a stale session exists, sign out first so onboarding doesn't
-    // auto-skip to the Child Information step.
-    if (isAuthenticated) {
-      try {
-        console.log('[Welcome] Signing out stale session before onboarding');
-        await signOut();
-      } catch (e) {
-        console.error('[Welcome] signOut before onboarding failed:', e);
-      }
-    }
+  const handleGetStarted = () => {
     router.push('/onboarding' as any);
   };
 
