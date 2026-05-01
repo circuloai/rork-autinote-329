@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
 import { ChevronDown, Chrome, Apple } from 'lucide-react-native';
 import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Moon, Volume2, Sparkles } from 'lucide-react-native';
@@ -24,10 +24,23 @@ const PREDEFINED_TRIGGERS = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { signUp, signInWithOAuth } = useAuth();
+  const { signUp, signInWithOAuth, user, isAuthenticated } = useAuth();
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
   const [isOAuthUser, setIsOAuthUser] = useState(false);
+  const [hasExistingSession, setHasExistingSession] = useState(false);
+
+  // If the user is already authenticated when onboarding mounts (e.g.
+  // they confirmed their email and signed back in, or admin wiped the
+  // profiles table), skip the signup step and just collect profile data.
+  useEffect(() => {
+    if (isAuthenticated && user && !hasExistingSession) {
+      console.log('[Onboarding] Existing auth session detected, skipping signup step');
+      setHasExistingSession(true);
+      setCaregiverEmail(user.email ?? '');
+      setStep((prev) => (prev === 1 ? 2 : prev));
+    }
+  }, [isAuthenticated, user, hasExistingSession]);
   
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   
@@ -196,7 +209,7 @@ export default function OnboardingScreen() {
     try {
       let userId: string | null = null;
 
-      if (isOAuthUser) {
+      if (isOAuthUser || hasExistingSession) {
         console.log('[Onboarding] OAuth user, retrieving session...');
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         userId = currentSession?.user?.id ?? null;
@@ -406,7 +419,7 @@ export default function OnboardingScreen() {
 
           {step < 5 && (
             <View style={styles.stepIndicator}>
-              {!isOAuthUser && <View style={[styles.stepDot, step === 1 && styles.stepDotActive]} />}
+              {!isOAuthUser && !hasExistingSession && <View style={[styles.stepDot, step === 1 && styles.stepDotActive]} />}
               <View style={[styles.stepDot, step === 2 && styles.stepDotActive]} />
               <View style={[styles.stepDot, step === 3 && styles.stepDotActive]} />
               <View style={[styles.stepDot, step === 4 && styles.stepDotActive]} />

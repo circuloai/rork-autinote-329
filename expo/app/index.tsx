@@ -8,17 +8,25 @@ import { useApp } from '@/contexts/AppContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, profile } = useApp();
+  const { isAuthenticated, isLoading, profile, isProfileLoading } = useApp();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      if (profile?.role === 'therapist') {
-        router.replace('/(therapist)/clients' as any);
-      } else {
-        router.replace('/(tabs)/home' as any);
-      }
+    if (isLoading || isProfileLoading) return;
+    if (!isAuthenticated) return;
+
+    // Authenticated but no profile row exists in Supabase — finish onboarding.
+    if (!profile) {
+      console.log('[Welcome] Authenticated but no profile, routing to onboarding');
+      router.replace('/onboarding' as any);
+      return;
     }
-  }, [isAuthenticated, isLoading, profile?.role, router]);
+
+    if (profile.role === 'therapist') {
+      router.replace('/(therapist)/clients' as any);
+    } else {
+      router.replace('/(tabs)/home' as any);
+    }
+  }, [isAuthenticated, isLoading, isProfileLoading, profile, router]);
 
   if (isLoading) {
     return (
