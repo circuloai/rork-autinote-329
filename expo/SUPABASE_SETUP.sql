@@ -35,6 +35,10 @@ DROP TRIGGER IF EXISTS trg_set_therapist_notes_updated_at ON public.therapist_no
 DROP FUNCTION IF EXISTS public.prevent_therapist_role_flip()        CASCADE;
 DROP FUNCTION IF EXISTS public.accept_therapist_invites()           CASCADE;
 DROP FUNCTION IF EXISTS public.set_updated_at()                     CASCADE;
+DROP FUNCTION IF EXISTS public.current_profile_id()                 CASCADE;
+DROP FUNCTION IF EXISTS public.is_therapist_for_parent(uuid)        CASCADE;
+DROP FUNCTION IF EXISTS public.is_therapist_for_child(uuid)         CASCADE;
+DROP FUNCTION IF EXISTS public.can_view_child_logs(uuid)            CASCADE;
 
 DROP TABLE IF EXISTS public.chat_messages    CASCADE;
 DROP TABLE IF EXISTS public.note_comments    CASCADE;
@@ -220,6 +224,71 @@ CREATE INDEX idx_chat_messages_sender_id        ON public.chat_messages(sender_i
 
 
 -- ============================================================
+-- 2.5 SECURITY DEFINER helpers (bypass RLS to avoid recursion)
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.current_profile_id()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $
+  SELECT id FROM public.profiles WHERE user_id = auth.uid() LIMIT 1;
+$;
+
+CREATE OR REPLACE FUNCTION public.is_therapist_for_parent(p_parent_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $
+  SELECT EXISTS (
+    SELECT 1 FROM public.shared_access sa
+     WHERE sa.parent_id = p_parent_id
+       AND sa.status    = 'accepted'
+       AND sa.therapist_id = public.current_profile_id()
+  );
+$;
+
+CREATE OR REPLACE FUNCTION public.is_therapist_for_child(p_child_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $
+  SELECT EXISTS (
+    SELECT 1 FROM public.shared_access sa
+     WHERE sa.child_id    = p_child_id
+       AND sa.status      = 'accepted'
+       AND sa.therapist_id = public.current_profile_id()
+  );
+$;
+
+CREATE OR REPLACE FUNCTION public.can_view_child_logs(p_child_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $
+  SELECT EXISTS (
+    SELECT 1 FROM public.shared_access sa
+     WHERE sa.child_id     = p_child_id
+       AND sa.status       = 'accepted'
+       AND sa.can_view_logs = true
+       AND sa.therapist_id = public.current_profile_id()
+  );
+$;
+
+GRANT EXECUTE ON FUNCTION public.current_profile_id()           TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_therapist_for_parent(uuid)  TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_therapist_for_child(uuid)   TO authenticated;
+GRANT EXECUTE ON FUNCTION public.can_view_child_logs(uuid)      TO authenticated;
+
+
+-- ============================================================
 -- 3. ROW LEVEL SECURITY
 -- ============================================================
 ALTER TABLE public.profiles        ENABLE ROW LEVEL SECURITY;
@@ -246,16 +315,7 @@ CREATE POLICY "profiles_owner_delete" ON public.profiles
   FOR DELETE USING (user_id = auth.uid());
 
 CREATE POLICY "profiles_therapist_select" ON public.profiles
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1
-        FROM public.shared_access sa
-        JOIN public.profiles me ON me.id = sa.therapist_id
-       WHERE sa.parent_id = profiles.id
-         AND sa.status    = 'accepted'
-         AND me.user_id   = auth.uid()
-    )
-  );
+  FOR SELECT USING (public.is_therapist_for_parent(profiles.id));
 
 -- children ----------------------------------------------------
 CREATE POLICY "children_owner_all" ON public.children
@@ -270,16 +330,7 @@ CREATE POLICY "children_owner_all" ON public.children
   );
 
 CREATE POLICY "children_therapist_select" ON public.children
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1
-        FROM public.shared_access sa
-        JOIN public.profiles me ON me.id = sa.therapist_id
-       WHERE sa.child_id = children.id
-         AND sa.status   = 'accepted'
-         AND me.user_id  = auth.uid()
-    )
-  );
+  FOR SELECT USING (public.is_therapist_for_child(children.id));
 
 -- preferences -------------------------------------------------
 CREATE POLICY "preferences_owner_all" ON public.preferences
@@ -289,18 +340,18 @@ CREATE POLICY "preferences_owner_all" ON public.preferences
 -- shared_access ----------------------------------------------
 CREATE POLICY "shared_access_parent_all" ON public.shared_access
   FOR ALL
-  USING (parent_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()))
-  WITH CHECK (parent_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+  USING (parent_id = public.current_profile_id())
+  WITH CHECK (parent_id = public.current_profile_id());
 
 CREATE POLICY "shared_access_therapist_select" ON public.shared_access
   FOR SELECT USING (
-    therapist_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    therapist_id = public.current_profile_id()
     OR LOWER(therapist_email) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
   );
 
 CREATE POLICY "shared_access_therapist_update" ON public.shared_access
   FOR UPDATE USING (
-    therapist_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    therapist_id = public.current_profile_id()
     OR LOWER(therapist_email) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
   );
 
@@ -323,47 +374,37 @@ CREATE POLICY "log_entries_owner_all" ON public.log_entries
   );
 
 CREATE POLICY "log_entries_therapist_select" ON public.log_entries
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1
-        FROM public.shared_access sa
-        JOIN public.profiles me ON me.id = sa.therapist_id
-       WHERE sa.child_id     = log_entries.child_id
-         AND sa.status       = 'accepted'
-         AND sa.can_view_logs = true
-         AND me.user_id      = auth.uid()
-    )
-  );
+  FOR SELECT USING (public.can_view_child_logs(log_entries.child_id));
 
 -- therapist_notes ---------------------------------------------
 CREATE POLICY "therapist_notes_all" ON public.therapist_notes
   FOR ALL
   USING (
-    therapist_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    therapist_id = public.current_profile_id()
     OR EXISTS (
       SELECT 1 FROM public.children c
-      JOIN public.profiles p ON p.id = c.profile_id
-      WHERE c.id = therapist_notes.child_id AND p.user_id = auth.uid()
+      WHERE c.id = therapist_notes.child_id
+        AND c.profile_id = public.current_profile_id()
     )
   )
   WITH CHECK (
-    therapist_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    therapist_id = public.current_profile_id()
   );
 
 -- note_comments -----------------------------------------------
 CREATE POLICY "note_comments_all" ON public.note_comments
   FOR ALL
   USING (
-    commenter_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    commenter_id = public.current_profile_id()
     OR EXISTS (
       SELECT 1 FROM public.therapist_notes tn
       JOIN public.children c ON c.id = tn.child_id
-      JOIN public.profiles p ON p.id = c.profile_id
-      WHERE tn.id = note_comments.note_id AND p.user_id = auth.uid()
+      WHERE tn.id = note_comments.note_id
+        AND c.profile_id = public.current_profile_id()
     )
   )
   WITH CHECK (
-    commenter_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    commenter_id = public.current_profile_id()
   );
 
 -- chat_messages -----------------------------------------------
@@ -371,24 +412,24 @@ CREATE POLICY "chat_messages_select" ON public.chat_messages
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM public.shared_access sa
-      JOIN public.profiles me ON me.user_id = auth.uid()
       WHERE sa.id = chat_messages.shared_access_id
-        AND (sa.parent_id = me.id OR sa.therapist_id = me.id)
+        AND (sa.parent_id = public.current_profile_id()
+             OR sa.therapist_id = public.current_profile_id())
     )
   );
 
 CREATE POLICY "chat_messages_insert" ON public.chat_messages
   FOR INSERT WITH CHECK (
-    sender_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    sender_id = public.current_profile_id()
   );
 
 CREATE POLICY "chat_messages_update" ON public.chat_messages
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM public.shared_access sa
-      JOIN public.profiles me ON me.user_id = auth.uid()
       WHERE sa.id = chat_messages.shared_access_id
-        AND (sa.parent_id = me.id OR sa.therapist_id = me.id)
+        AND (sa.parent_id = public.current_profile_id()
+             OR sa.therapist_id = public.current_profile_id())
     )
   );
 
