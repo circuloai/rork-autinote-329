@@ -44,36 +44,60 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
         console.log('[AppContext] Profile fetched:', profile.id, 'activeChildId:', profile.active_child_id);
 
-        if (profile.role === 'therapist') {
-          const therapistEmail = (user.email || profile.caregiver_email || '').toLowerCase().trim();
-          console.log('[AppContext] Linking pending invites via RPC for therapist email:', therapistEmail);
-          const { data: linkedCount, error: rpcErr } = await supabase.rpc('accept_therapist_invites');
-          if (rpcErr) {
-            console.warn('[AppContext] accept_therapist_invites RPC error:', rpcErr.message, rpcErr);
-            try {
-              const { data: fallback, error: fbErr } = await supabase
-                .from('shared_access')
-                .update({ therapist_id: profile.id, status: 'accepted', accepted_at: new Date().toISOString() })
-                .neq('status', 'declined')
-                .ilike('therapist_email', therapistEmail)
-                .select('id');
-              if (fbErr) {
-                console.warn('[AppContext] fallback link error:', fbErr.message);
-              } else {
-                console.log('[AppContext] fallback linked', fallback?.length ?? 0, 'invites');
-              }
-            } catch (fbCatch) {
-              console.warn('[AppContext] fallback threw:', fbCatch);
+        const authEmail = (user.email || profile.caregiver_email || '').toLowerCase().trim();
+        console.log('[AppContext] Self-repair: linking any invites addressed to', authEmail);
+        let linkedCount = 0;
+        const { data: rpcLinked, error: rpcErr } = await supabase.rpc('accept_therapist_invites');
+        if (rpcErr) {
+          console.warn('[AppContext] accept_therapist_invites RPC error:', rpcErr.message, rpcErr);
+          try {
+            const { data: fallback, error: fbErr } = await supabase
+              .from('shared_access')
+              .update({ therapist_id: profile.id, status: 'accepted', accepted_at: new Date().toISOString() })
+              .neq('status', 'declined')
+              .ilike('therapist_email', authEmail)
+              .select('id');
+            if (fbErr) {
+              console.warn('[AppContext] fallback link error:', fbErr.message);
+            } else {
+              linkedCount = fallback?.length ?? 0;
+              console.log('[AppContext] fallback linked', linkedCount, 'invites');
             }
+          } catch (fbCatch) {
+            console.warn('[AppContext] fallback threw:', fbCatch);
+          }
+        } else {
+          linkedCount = (rpcLinked as number) ?? 0;
+          console.log('[AppContext] Linked', linkedCount, 'invites for', authEmail);
+        }
+
+        const { data: linkedRows } = await supabase
+          .from('shared_access')
+          .select('id')
+          .eq('therapist_id', profile.id)
+          .eq('status', 'accepted')
+          .limit(1);
+        const hasTherapistRows = (linkedRows?.length ?? 0) > 0;
+
+        if (hasTherapistRows && profile.role !== 'therapist') {
+          console.log('[AppContext] Auto-promoting profile to therapist role');
+          const { error: roleErr } = await supabase
+            .from('profiles')
+            .update({ role: 'therapist' })
+            .eq('id', profile.id);
+          if (roleErr) {
+            console.warn('[AppContext] Failed to set therapist role:', roleErr.message);
           } else {
-            console.log('[AppContext] Linked', linkedCount, 'pending invites for', therapistEmail);
+            profile.role = 'therapist';
           }
-          if (therapistEmail && !profile.caregiver_email) {
-            await supabase
-              .from('profiles')
-              .update({ caregiver_email: therapistEmail })
-              .eq('id', profile.id);
-          }
+        }
+
+        if (profile.role === 'therapist' && authEmail && !profile.caregiver_email) {
+          await supabase
+            .from('profiles')
+            .update({ caregiver_email: authEmail })
+            .eq('id', profile.id);
+          profile.caregiver_email = authEmail;
         }
 
         const { data: children } = await supabase
