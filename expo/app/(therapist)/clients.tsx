@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { Users, ChevronRight, Calendar as CalendarIcon, MessageCircle, RefreshCw } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, RefreshControl, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -21,43 +21,91 @@ export default function TherapistClientsScreen() {
   const acceptInvitesAndRefresh = useCallback(async (silent: boolean = false) => {
     setRefreshing(true);
     let linked = 0;
+    let rpcErrorMsg: string | null = null;
+    let fbErrorMsg: string | null = null;
     try {
       const { data, error } = await supabase.rpc('accept_therapist_invites');
       if (error) {
+        rpcErrorMsg = error.message;
         console.log('[Therapist] accept_therapist_invites error:', error);
-        const email = (profile?.caregiverEmail || '').toLowerCase();
-        const { data: fb, error: fbErr } = await supabase
-          .from('shared_access')
-          .update({ therapist_id: profile?.id, status: 'accepted', accepted_at: new Date().toISOString() })
-          .neq('status', 'declined')
-          .ilike('therapist_email', email)
-          .select('id');
-        if (fbErr) {
-          if (!silent) {
-            Alert.alert(
-              'Could not accept invites',
-              `${error.message}\n\nFallback also failed: ${fbErr.message}\n\nPlease run MIGRATION_THERAPIST_INVITES.sql in Supabase.`,
-            );
-          }
-        } else {
-          linked = fb?.length ?? 0;
-          console.log('[Therapist] fallback linked:', linked);
-        }
       } else {
         linked = (data as number) ?? 0;
-        console.log('[Therapist] linked invites:', linked);
+        console.log('[Therapist] RPC linked invites:', linked);
       }
+
+      const email = (profile?.caregiverEmail || '').toLowerCase().trim();
+      if (email && profile?.id) {
+        console.log('[Therapist] safety-net: force-linking rows for', email, '→', profile.id);
+        const { data: lookup, error: lookupErr } = await supabase
+          .from('shared_access')
+          .select('id, status, therapist_id, therapist_email')
+          .ilike('therapist_email', email)
+          .neq('status', 'declined');
+
+        if (lookupErr) {
+          console.log('[Therapist] safety-net lookup error:', lookupErr);
+          fbErrorMsg = lookupErr.message;
+        } else {
+          console.log('[Therapist] safety-net found rows:', lookup?.length ?? 0, lookup);
+          const needsFix = (lookup || []).filter(
+            (r: any) => r.therapist_id !== profile.id || r.status !== 'accepted',
+          );
+          if (needsFix.length > 0) {
+            const { data: fb, error: fbErr } = await supabase
+              .from('shared_access')
+              .update({
+                therapist_id: profile.id,
+                status: 'accepted',
+                accepted_at: new Date().toISOString(),
+              })
+              .in('id', needsFix.map((r: any) => r.id))
+              .select('id');
+            if (fbErr) {
+              console.log('[Therapist] safety-net update error:', fbErr);
+              fbErrorMsg = fbErr.message;
+            } else {
+              const fbLinked = fb?.length ?? 0;
+              console.log('[Therapist] safety-net linked:', fbLinked);
+              linked = Math.max(linked, fbLinked);
+            }
+          }
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       await queryClient.invalidateQueries({ queryKey: ['therapistClients'] });
       await queryClient.invalidateQueries({ queryKey: ['sharedAccess'] });
+      await queryClient.refetchQueries({ queryKey: ['userProfile'] });
       await queryClient.refetchQueries({ queryKey: ['therapistClients'] });
-      if (!silent && linked > 0) {
-        Alert.alert('Connected', `Linked ${linked} new ${linked === 1 ? 'client' : 'clients'}.`);
+
+      if (!silent) {
+        if (rpcErrorMsg && fbErrorMsg) {
+          Alert.alert(
+            'Could not accept invites',
+            `${rpcErrorMsg}\n\nFallback also failed: ${fbErrorMsg}\n\nPlease run MIGRATION_THERAPIST_INVITES.sql in Supabase.`,
+          );
+        } else if (linked > 0) {
+          Alert.alert('Connected', `Linked ${linked} ${linked === 1 ? 'client' : 'clients'}.`);
+        } else {
+          Alert.alert(
+            'No new invitations',
+            `We checked invitations addressed to ${email || 'your email'} and didn't find any pending or unlinked rows. If a caregiver invited you, ask them to confirm the email is exactly: ${email || profile?.caregiverEmail || 'your account email'}.`,
+          );
+        }
       }
     } finally {
       setRefreshing(false);
     }
   }, [queryClient, profile?.id, profile?.caregiverEmail]);
+
+  const didAutoRepairRef = useRef<boolean>(false);
+  useEffect(() => {
+    if (didAutoRepairRef.current) return;
+    if (!profile?.id || !profile?.caregiverEmail) return;
+    didAutoRepairRef.current = true;
+    console.log('[Therapist] auto-repair on mount');
+    acceptInvitesAndRefresh(true).catch((e) => console.log('[Therapist] auto-repair failed', e));
+  }, [profile?.id, profile?.caregiverEmail, acceptInvitesAndRefresh]);
 
   const clientCards = useMemo(() => {
     return therapistClients.map((tc) => {
