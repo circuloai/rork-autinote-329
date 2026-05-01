@@ -187,6 +187,14 @@ export default function TherapistClientsScreen() {
               Pull to refresh anytime. Make sure the caregiver invited you using exactly:{' '}
               <Text style={{ fontWeight: '700' }}>{profile?.caregiverEmail || 'your account email'}</Text>.
             </Text>
+            <TouchableOpacity
+              style={styles.diagnoseLink}
+              onPress={() => router.push('/settings/diagnose-connection' as any)}
+              activeOpacity={0.7}
+              testID="diagnose-link"
+            >
+              <Text style={styles.diagnoseLinkText}>Run connection diagnostic →</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           clientCards.map((client) => {
@@ -448,5 +456,16 @@ const createStyles = (Colors: ReturnType<typeof getColors>) =>
       marginTop: 16,
       paddingHorizontal: 20,
       lineHeight: 18,
+    },
+    diagnoseLink: {
+      marginTop: 14,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    diagnoseLinkText: {
+      fontSize: 13,
+      fontWeight: '600' as const,
+      color: Colors.primary,
+      textDecorationLine: 'underline' as const,
     },
   });

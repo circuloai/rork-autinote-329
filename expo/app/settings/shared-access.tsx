@@ -154,6 +154,16 @@ export default function SharedAccessScreen() {
                 <Plus size={20} color={Colors.primary} />
                 <Text style={styles.emptyCardButtonText}>Invite Therapist</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/settings/diagnose-connection' as any)}
+                activeOpacity={0.7}
+                style={{ marginTop: 14 }}
+                testID="diagnose-link-parent"
+              >
+                <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.primary, textDecorationLine: 'underline' }}>
+                  Already invited? Run diagnostic →
+                </Text>
+              </TouchableOpacity>
             </GlassCard>
           ) : (
             <View style={styles.therapistsList}>

@@ -1,26 +1,54 @@
-# Fix therapist seeing accepted invite as connected client
+# Fix therapist ↔ caregiver connection (round 2: in-app diagnostic)
 
-## What's wrong
+## Why we're not patching again
 
-Your shared_access row already shows **status = accepted**, but the therapist's "My Clients" screen looks up rows where `therapist_id` matches their profile. The row is almost certainly missing a proper `therapist_id` link (or pointing at the wrong one), which is why the therapist still sees "no clients."
+Every previous attempt wrote more SQL/RPC fixes and assumed the read side
+would pick them up. The user kept seeing "status = accepted" in Supabase
+while both dashboards stayed empty. That's a join / data-shape mismatch
+between write- and read-side, not a status bug. We need to **see** what
+the app actually reads for these specific accounts before changing more
+code.
 
-## What I just changed
+## What I just shipped
 
-- [x] **Updated `MIGRATION_THERAPIST_INVITES.sql`** — the one-time repair step (section 6) already heals every non-declined row (pending **and** accepted) whose `therapist_id` is missing or pointing at the wrong account, matching by lowercased email. It also flips role to `therapist` for any account that ends up with an accepted row.
-- [x] **Added an aggressive safety net in `app/(therapist)/clients.tsx`**:
-  - On mount, the screen now silently runs the repair once (no need to pull-to-refresh).
-  - After calling `accept_therapist_invites`, the app **always** also does a direct email-based lookup in `shared_access` and force-updates any row addressed to the therapist's email so its `therapist_id` matches the current profile and `status = 'accepted'`.
-  - When you tap "Check for invitations" and nothing was linked, you now get a clear alert telling you which email we searched for, so it's obvious if the caregiver typed the wrong address.
-  - Verbose `console.log` of the rows we found, so the next time it misbehaves we can see exactly what's in the DB.
+- [x] New screen `app/settings/diagnose-connection.tsx` that, for the
+      currently signed-in user, runs every relevant query directly via
+      the Supabase client and prints the raw rows + a verdict:
+      1. Auth user (`id`, `email`, lowered email).
+      2. **All** `profiles` rows for `user_id = auth.uid()` — catches
+         the silent duplicate-profile bug (`.single()` would otherwise
+         pick whichever Postgres returns first).
+      3. `shared_access WHERE parent_id = my profile.id`.
+      4. `shared_access WHERE therapist_id = my profile.id`.
+      5. `shared_access WHERE therapist_email ILIKE my auth email`.
+      6. Therapist "My Clients" query
+         (`therapist_id = me AND status = 'accepted'`).
+      7. Parent "Connected Therapists" query
+         (`parent_id = me OR therapist_id = me`).
+- [x] Verdict logic that names the actual root cause:
+      duplicate profile / no profile / invite by email but
+      `therapist_id` never written / status still pending /
+      no invite for this email at all.
+- [x] Copy-report button so the output can be pasted back into chat
+      verbatim — no more "query successful, status accepted, UI empty"
+      ambiguity.
+- [x] Entry point on therapist **My Clients** empty state and on
+      caregiver **Shared Access** empty state ("Run connection
+      diagnostic →"), and registered the screen in `app/_layout.tsx`.
 
-## What to do now
+## How to use it
 
-1. **Re-run the SQL script** (Supabase → SQL Editor → New snippet → paste the whole file → Run).
-   - The bottom of the output shows a per-row table with a `link_status` column. Every row for `kalegaur+2@gmail.com → gauradhika+1@gmail.com` should say **OK**. If it says `MISMATCH`, run the script one more time. If it says `NO MATCHING THERAPIST ACCOUNT YET`, the therapist hasn't signed up with that exact email.
-2. **Fully sign out** of the therapist account in the app, then **sign back in** as `gauradhika+1@gmail.com`.
-   - On entering the My Clients screen, the auto-repair will fire and the child from `kalegaur+2@gmail.com` should appear.
-3. If it still doesn't show, pull-to-refresh once. The alert will now tell you exactly what email it searched for — confirm that matches the auth email of the therapist account.
+1. Sign in as the **therapist** (`gauradhika+1@gmail.com`). Open
+   *My Clients* → tap **Run connection diagnostic →**. Tap **Copy
+   report** and paste the output.
+2. Sign in as the **caregiver** (`kalegaur+2@gmail.com`). Open
+   *Settings → Shared Access* → **Run diagnostic →**. Copy that
+   report too.
+3. Send both reports. The verdict on each will pinpoint exactly
+   which of these is true:
+   - duplicate profile rows for one auth user,
+   - invitation row missing `therapist_id` after acceptance,
+   - email casing / alias mismatch,
+   - RLS hiding the row from the requesting user.
 
-## Most likely remaining cause if it still fails
-
-The therapist's auth email and the email used in the invite differ by more than just case (e.g. a typo, an extra dot, a `+` alias not matching). The new alert spells out the email being checked so this is immediately visible.
+Only after we have those two reports do we change any more code.
