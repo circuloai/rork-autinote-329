@@ -5,10 +5,12 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { isAuthenticated, isLoading, profile, isProfileLoading } = useApp();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     if (isLoading || isProfileLoading) return;
@@ -38,7 +40,18 @@ export default function WelcomeScreen() {
     );
   }
 
-  const handleGetStarted = () => {
+  const handleGetStarted = async () => {
+    // Always start the signup flow at step 1 (account creation).
+    // If a stale session exists, sign out first so onboarding doesn't
+    // auto-skip to the Child Information step.
+    if (isAuthenticated) {
+      try {
+        console.log('[Welcome] Signing out stale session before onboarding');
+        await signOut();
+      } catch (e) {
+        console.error('[Welcome] signOut before onboarding failed:', e);
+      }
+    }
     router.push('/onboarding' as any);
   };
 
