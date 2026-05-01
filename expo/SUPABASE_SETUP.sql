@@ -232,9 +232,9 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $func$
   SELECT id FROM public.profiles WHERE user_id = auth.uid() LIMIT 1;
-$;
+$func$;
 
 CREATE OR REPLACE FUNCTION public.is_therapist_for_parent(p_parent_id uuid)
 RETURNS boolean
@@ -242,14 +242,14 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.shared_access sa
      WHERE sa.parent_id = p_parent_id
        AND sa.status    = 'accepted'
        AND sa.therapist_id = public.current_profile_id()
   );
-$;
+$func$;
 
 CREATE OR REPLACE FUNCTION public.is_therapist_for_child(p_child_id uuid)
 RETURNS boolean
@@ -257,14 +257,14 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.shared_access sa
      WHERE sa.child_id    = p_child_id
        AND sa.status      = 'accepted'
        AND sa.therapist_id = public.current_profile_id()
   );
-$;
+$func$;
 
 CREATE OR REPLACE FUNCTION public.can_view_child_logs(p_child_id uuid)
 RETURNS boolean
@@ -272,7 +272,7 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.shared_access sa
      WHERE sa.child_id     = p_child_id
@@ -280,7 +280,7 @@ AS $
        AND sa.can_view_logs = true
        AND sa.therapist_id = public.current_profile_id()
   );
-$;
+$func$;
 
 GRANT EXECUTE ON FUNCTION public.current_profile_id()           TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_therapist_for_parent(uuid)  TO authenticated;
