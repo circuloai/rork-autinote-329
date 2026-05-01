@@ -29,7 +29,7 @@ export default function TherapistClientsScreen() {
         const { data: fb, error: fbErr } = await supabase
           .from('shared_access')
           .update({ therapist_id: profile?.id, status: 'accepted', accepted_at: new Date().toISOString() })
-          .eq('status', 'pending')
+          .neq('status', 'declined')
           .ilike('therapist_email', email)
           .select('id');
         if (fbErr) {

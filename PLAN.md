@@ -1,28 +1,37 @@
-# One clean SQL script + tightened invite/connect code
+# Fix therapist seeing accepted invite as connected client
 
-I'll give you a single SQL script to paste into Supabase that fixes every likely cause at once, and tighten the app so it surfaces real errors instead of silently failing.
+## What's wrong
 
-**The single SQL script (replaces MIGRATION_THERAPIST_INVITES.sql)**
+Your shared_access row already shows **status = accepted**, but the therapist's "My Clients" screen looks up rows where `therapist_id` matches their profile. The row is almost certainly missing a proper `therapist_id` link (or pointing at the wrong one), which is why the therapist still sees "no clients."
 
-When you paste and run it, it will:
+The fix script you have only backfills *pending* rows, so it won't repair an already-accepted row that's missing the link.
 
-- Drop and recreate every shared_access policy cleanly (parents can see/insert/update/delete their own rows; therapists can see rows linked to them by id OR by email; therapists can update pending rows addressed to their email).
-- Remove the strict `UNIQUE(child_id, therapist_email)` constraint that blocks re-inviting the same therapist after a reset, and replace it with a partial unique index that only applies to non-declined rows.
-- Recreate the `accept_therapist_invites()` function as SECURITY DEFINER with the correct search_path and explicit grants, and make it return the count of linked rows.
-- Add a second function `accept_invite_by_token(token text)` so a therapist can accept a specific invite by pasting the code, even if their signup email doesn't match.
-- Run the one-time backfill that links any already-pending rows to the matching therapist profile.
-- Print a small summary at the end showing how many rows were linked, so you can confirm it worked.
+## The plan
 
-The script is fully idempotent — safe to run any number of times.
+**1. Update the database fix script**
 
-**App code tightening**
+I'll update `MIGRATION_THERAPIST_INVITES.sql` so that the one-time repair step also fixes already-accepted rows whose therapist link is missing or pointing at the wrong account. It will:
+- Match every shared_access row to the correct therapist by email (case-insensitive)
+- Set the right therapist_id on those rows
+- Leave correctly-linked rows untouched
+- Print a clear summary of what got fixed
 
-- When the parent taps "Send Invitation", the app will refresh the Shared Access list immediately and show a clear error toast if the insert was rejected (instead of silently showing an empty list).
-- Catch and surface the real Postgres error message (e.g., RLS violation, unique constraint) instead of the generic "Failed to create invitation".
-- On therapist sign-in, run the link RPC and log + toast the exact returned count or error; do NOT swallow errors.
-- If the RPC returns 0 linked rows, the therapist's empty Clients screen will show a small note: "No invites matched your email (you signed in as X). Make sure the parent invited you using exactly that email."
-- Remove the dependency on the parent's `useFocusEffect` to refresh — the invite screen will explicitly invalidate the query before navigating back.
+**2. You run the updated script in Supabase**
+- Open Supabase → SQL Editor → New snippet
+- Paste the entire updated file
+- Click Run
+- You should see a summary showing how many rows were repaired
 
-**No new screens, no new buttons** — just a cleaner flow and clearer error messages, plus the one SQL script.
+**3. Verify on the therapist account**
+- Log out and back in as gauradhika+1@gmail.com
+- The connected child profile from kalegaur+2@gmail.com should now appear in "My Clients"
+- If not, pull-to-refresh on that screen will re-trigger the link
 
-After approval, I'll update the SQL file and the relevant app files. You paste the SQL once, then test the invite flow.
+**4. Add a small safety net in the app**
+- When a therapist opens "My Clients" and sees zero clients, the app will also try a one-time "self-repair" in addition to the existing pending-invite acceptance, so future mismatches heal automatically without needing SQL.
+
+## What you'll see after this
+
+- Therapist (gauradhika+1@gmail.com) opens the app → sees the child from kalegaur+2@gmail.com listed as a client
+- Tapping the child opens their logs, notes, and chat
+- Future invites will link automatically the moment the therapist signs in

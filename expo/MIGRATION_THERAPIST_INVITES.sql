@@ -123,13 +123,17 @@ BEGIN
     RETURN 0;
   END IF;
 
+  -- Link/heal ANY row addressed to this therapist's email whose
+  -- therapist_id is missing or pointing to the wrong profile.
+  -- Also flips pending -> accepted.
   WITH updated AS (
     UPDATE shared_access
        SET therapist_id = v_profile_id,
-           status = 'accepted',
-           accepted_at = NOW()
+           status = CASE WHEN status = 'pending' THEN 'accepted' ELSE status END,
+           accepted_at = COALESCE(accepted_at, NOW())
      WHERE LOWER(therapist_email) = LOWER(v_email)
-       AND status = 'pending'
+       AND status <> 'declined'
+       AND (therapist_id IS DISTINCT FROM v_profile_id OR status = 'pending')
      RETURNING 1
   )
   SELECT COUNT(*)::int INTO v_count FROM updated;
@@ -185,29 +189,52 @@ REVOKE ALL ON FUNCTION public.accept_invite_by_token(text) FROM public;
 GRANT EXECUTE ON FUNCTION public.accept_invite_by_token(text) TO authenticated;
 
 -- ------------------------------------------------------------
--- 6) One-time backfill: link any orphaned pending rows to the
---    matching therapist profile if one already exists.
+-- 6) One-time backfill / repair:
+--    Link every shared_access row to the correct therapist profile
+--    by email (case-insensitive), regardless of current status or
+--    whether therapist_id is null or pointing at the wrong profile.
+--    Also flips pending -> accepted. Leaves declined rows alone.
 -- ------------------------------------------------------------
 WITH backfilled AS (
   UPDATE shared_access sa
      SET therapist_id = p.id,
-         status = 'accepted',
-         accepted_at = NOW()
+         status = CASE WHEN sa.status = 'pending' THEN 'accepted' ELSE sa.status END,
+         accepted_at = COALESCE(sa.accepted_at, NOW())
     FROM profiles p
     JOIN auth.users u ON u.id = p.user_id
-   WHERE sa.status = 'pending'
-     AND sa.therapist_id IS NULL
+   WHERE sa.status <> 'declined'
      AND LOWER(sa.therapist_email) = LOWER(u.email)
      AND p.role = 'therapist'
+     AND sa.therapist_id IS DISTINCT FROM p.id
    RETURNING 1
 )
-SELECT COUNT(*) AS backfilled_rows FROM backfilled;
+SELECT COUNT(*) AS repaired_rows FROM backfilled;
 
 -- ------------------------------------------------------------
 -- 7) Summary so you can confirm the script worked.
 -- ------------------------------------------------------------
 SELECT
-  (SELECT COUNT(*) FROM shared_access)                          AS total_invites,
-  (SELECT COUNT(*) FROM shared_access WHERE status = 'pending') AS pending,
-  (SELECT COUNT(*) FROM shared_access WHERE status = 'accepted') AS accepted,
-  (SELECT COUNT(*) FROM shared_access WHERE status = 'declined') AS declined;
+  (SELECT COUNT(*) FROM shared_access)                                                 AS total_invites,
+  (SELECT COUNT(*) FROM shared_access WHERE status = 'pending')                        AS pending,
+  (SELECT COUNT(*) FROM shared_access WHERE status = 'accepted')                       AS accepted,
+  (SELECT COUNT(*) FROM shared_access WHERE status = 'declined')                       AS declined,
+  (SELECT COUNT(*) FROM shared_access WHERE status = 'accepted' AND therapist_id IS NULL) AS accepted_missing_link;
+
+-- For debugging: show every shared_access row with both emails so you
+-- can verify the therapist email matches the therapist's auth email.
+SELECT
+  sa.id,
+  sa.status,
+  sa.therapist_email                AS invite_email,
+  u.email                           AS therapist_auth_email,
+  sa.therapist_id,
+  p.id                              AS expected_therapist_profile_id,
+  CASE
+    WHEN sa.therapist_id = p.id THEN 'OK'
+    WHEN p.id IS NULL THEN 'NO MATCHING THERAPIST ACCOUNT YET'
+    ELSE 'MISMATCH — RUN THIS SCRIPT AGAIN'
+  END                               AS link_status
+FROM shared_access sa
+LEFT JOIN auth.users u ON LOWER(u.email) = LOWER(sa.therapist_email)
+LEFT JOIN profiles p ON p.user_id = u.id AND p.role = 'therapist'
+ORDER BY sa.created_at DESC NULLS LAST;
