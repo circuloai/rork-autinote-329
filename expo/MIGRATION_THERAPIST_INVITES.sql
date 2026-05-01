@@ -133,7 +133,7 @@ BEGIN
            accepted_at = COALESCE(accepted_at, NOW())
      WHERE LOWER(therapist_email) = LOWER(v_email)
        AND status <> 'declined'
-       AND (therapist_id IS DISTINCT FROM v_profile_id OR status = 'pending')
+       AND therapist_id IS DISTINCT FROM v_profile_id
      RETURNING 1
   )
   SELECT COUNT(*)::int INTO v_count FROM updated;
@@ -194,21 +194,42 @@ GRANT EXECUTE ON FUNCTION public.accept_invite_by_token(text) TO authenticated;
 --    by email (case-insensitive), regardless of current status or
 --    whether therapist_id is null or pointing at the wrong profile.
 --    Also flips pending -> accepted. Leaves declined rows alone.
+--
+--    NOTE: We intentionally do NOT filter by p.role here. If the
+--    therapist signed up before role was set, or the role is stored
+--    differently, we still want to link the invite. We pick the
+--    most recently created profile per user as a tie-breaker.
 -- ------------------------------------------------------------
-WITH backfilled AS (
-  UPDATE shared_access sa
-     SET therapist_id = p.id,
-         status = CASE WHEN sa.status = 'pending' THEN 'accepted' ELSE sa.status END,
-         accepted_at = COALESCE(sa.accepted_at, NOW())
+WITH therapist_profile AS (
+  SELECT DISTINCT ON (LOWER(u.email))
+         LOWER(u.email) AS email,
+         p.id           AS profile_id
     FROM profiles p
     JOIN auth.users u ON u.id = p.user_id
+   ORDER BY LOWER(u.email), p.created_at DESC NULLS LAST
+),
+backfilled AS (
+  UPDATE shared_access sa
+     SET therapist_id = tp.profile_id,
+         status = CASE WHEN sa.status = 'pending' THEN 'accepted' ELSE sa.status END,
+         accepted_at = COALESCE(sa.accepted_at, NOW())
+    FROM therapist_profile tp
    WHERE sa.status <> 'declined'
-     AND LOWER(sa.therapist_email) = LOWER(u.email)
-     AND p.role = 'therapist'
-     AND sa.therapist_id IS DISTINCT FROM p.id
+     AND LOWER(sa.therapist_email) = tp.email
+     AND sa.therapist_id IS DISTINCT FROM tp.profile_id
    RETURNING 1
 )
 SELECT COUNT(*) AS repaired_rows FROM backfilled;
+
+-- Make sure any therapist that has an accepted invite is actually
+-- flagged as a therapist in their profile, so the app routes them
+-- to the therapist UI.
+UPDATE profiles p
+   SET role = 'therapist'
+  FROM shared_access sa
+ WHERE sa.therapist_id = p.id
+   AND sa.status = 'accepted'
+   AND (p.role IS NULL OR p.role <> 'therapist');
 
 -- ------------------------------------------------------------
 -- 7) Summary so you can confirm the script worked.
