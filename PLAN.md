@@ -1,59 +1,41 @@
-# Fix therapist ↔ caregiver connection (round 3: RLS on children/profiles)
+# Clean reset of profiles, fix role-flip script, restore therapist role
 
-## What the diagnostic proved
+## What I'll do
 
-Therapist (`gauradhika+1@gmail.com`) ran the in-app diagnostic on
-2026-05-01. Output:
+### 1. Clean wipe (Supabase data only — auth users kept)
 
-- Profile row exists, role = `therapist`,
-  `profile.id = 536791d5-8776-4b1c-8fb3-08f2191b8f11`.
-- `shared_access` row exists with
-  `therapist_id = 536791d5-…`, `status = 'accepted'`,
-  `child_id = cdef3152-…`.
-- The exact "My Clients" query
-  (`therapist_id = me AND status = 'accepted'`) returns **1 row**.
+- Provide one SQL script that empties: shared access, log entries, therapist notes, sessions, children, and profiles.
+- Auth users (your two emails) are preserved so you can sign back in.
+- Script is safe to re-run and prints a row-count summary at the end.
 
-So the database and `shared_access` RLS are correct. The bug is on the
-read side, one layer deeper.
+### 2. Audit & fix the role-flipping behaviour
 
-## Root cause
+- Review every existing SQL file and any onboarding/sign-in code path that writes to the profile role.
+- Identify the script(s) that force every profile's role to `parent` (the dummy data script does this on conflict, and any onboarding code that upserts on sign-in may also do it).
+- Neutralize them: remove the `SET role = 'parent'` from any upsert, and make onboarding only set the role on first creation, never overwrite an existing role.
 
-`AppContext.therapistClientsQuery` does three queries:
+### 3. Make sure therapist sign-up sticks
 
-1. `shared_access WHERE therapist_id = me AND status = 'accepted'`
-   ✅ returns the row.
-2. `children WHERE id IN (childIds)`
-   ❌ returns `[]` — RLS on `children` only allows the *owning*
-   caregiver to read. Therapist gets nothing back.
-3. `profiles WHERE id IN (parentIds)`
-   ❌ returns `[]` for the same reason.
+- Ensure that when a new account chooses "Therapist" during onboarding, the profile is created with `role='therapist'` and never silently converted to `parent` later.
+- Add a guard so any future migration cannot flip roles unintentionally.
 
-Then it filters: `accessRows.filter(sa => childrenById.has(sa.child_id))`.
-With an empty `childrenById` map, every row is filtered out → UI shows
-"No clients yet". Same shape on the caregiver side once profile reads
-become asymmetric.
+### 4. Fresh test flow
 
-## What I just shipped
+After you run the wipe script:
 
-- [x] `expo/MIGRATION_THERAPIST_READ_ACCESS.sql` — adds two SELECT-only
-      RLS policies:
-      - `children_therapist_select`: a therapist can read a child if
-        an `accepted` `shared_access` row links them to that child.
-      - `profiles_therapist_select`: a therapist can read a caregiver
-        profile if an `accepted` `shared_access` row links them to
-        that parent (so the caregiver name/email render on My Clients).
-      No write access is granted. Script is idempotent.
-- [x] Includes a verification SELECT at the bottom that joins
-      `shared_access` → `children` → both `profiles` rows; for the
-      test pair it should return one row with both emails populated.
+- Sign in as your therapist email → onboard as Therapist.
+- Sign in as your parent email → onboard as Parent, add a child, invite the therapist by email.
+- Therapist accepts → both dashboards show the connection.
 
-## How to apply
+### 5. Verification
 
-1. Open Supabase → SQL editor → paste the contents of
-   `expo/MIGRATION_THERAPIST_READ_ACCESS.sql` → **Run**.
-2. In the app, sign out of the therapist account and back in (or
-   pull-to-refresh on *My Clients*). The connected child should now
-   appear.
-3. If you want to confirm at the data layer first, re-run the in-app
-   diagnostic on the therapist account — section 6 already returned
-   the row; after the migration the My Clients UI will too.
+- Run the existing connection diagnostic on both accounts and confirm:
+  - Parent sees the connected therapist.
+  - Therapist sees the client.
+- Show you the diagnostic output as proof, not just "done".
+
+## What you'll need to do
+
+- Paste and run the wipe SQL in Supabase once.
+- Sign out of both test accounts, then sign back in and re-onboard.
+

@@ -29,15 +29,28 @@ BEGIN
   ----------------------------------------------------------------------------
   -- 2. Parent profile
   ----------------------------------------------------------------------------
+  -- IMPORTANT: do NOT overwrite an existing profile's role here.
+  -- A therapist signing in must stay a therapist; this script only
+  -- seeds demo data on a parent account.
   INSERT INTO profiles (user_id, role, caregiver_name, caregiver_email, caregiver_phone, is_explore_mode)
   VALUES (v_user_id, 'parent', 'Sarah Johnson', v_user_email, '+1 (555) 123-4567', false)
   ON CONFLICT (user_id) DO UPDATE
-    SET role = 'parent',
-        caregiver_name = EXCLUDED.caregiver_name,
+    SET caregiver_name  = EXCLUDED.caregiver_name,
         caregiver_phone = EXCLUDED.caregiver_phone
   RETURNING id INTO v_profile_id;
 
   RAISE NOTICE '>>> Parent profile id: %', v_profile_id;
+
+  -- Bail out if the existing profile is not a parent — don't attach
+  -- demo children/logs to a therapist account.
+  IF EXISTS (
+    SELECT 1 FROM profiles
+     WHERE id = v_profile_id
+       AND role IS DISTINCT FROM 'parent'
+  ) THEN
+    RAISE NOTICE '>>> Skipping demo seed: profile % is not a parent role', v_profile_id;
+    RETURN;
+  END IF;
 
   ----------------------------------------------------------------------------
   -- 3. Child

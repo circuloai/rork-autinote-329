@@ -294,33 +294,39 @@ export default function OnboardingScreen() {
         return;
       }
 
-      console.log('[Onboarding] Profile saved:', profileData.id);
+      console.log('[Onboarding] Profile saved:', profileData.id, 'role:', selectedRole);
 
-      const { data: childData, error: childError } = await supabase
-        .from('children')
-        .insert({
-          profile_id: profileData.id,
-          name: childName,
-          age: parseInt(childAge),
-          diagnosis: diagnosis || null,
-          grade_level: gradeLevel || null,
-          school_name: schoolName || null,
-          height: heightFeet ? `${heightFeet}'${heightInches || '0'}"` : null,
-          weight: weight || null,
-          common_triggers: allTriggers,
-        })
-        .select()
-        .single();
+      // Therapists do NOT have their own child record — they only see
+      // children shared with them via shared_access. Skip child insert.
+      if (selectedRole !== 'therapist' && childName.trim().length > 0) {
+        const { data: childData, error: childError } = await supabase
+          .from('children')
+          .insert({
+            profile_id: profileData.id,
+            name: childName,
+            age: parseInt(childAge),
+            diagnosis: diagnosis || null,
+            grade_level: gradeLevel || null,
+            school_name: schoolName || null,
+            height: heightFeet ? `${heightFeet}'${heightInches || '0'}"` : null,
+            weight: weight || null,
+            common_triggers: allTriggers,
+          })
+          .select()
+          .single();
 
-      if (childError) {
-        console.error('[Onboarding] Child insert error:', childError);
+        if (childError) {
+          console.error('[Onboarding] Child insert error:', childError);
+        } else {
+          console.log('[Onboarding] Child saved:', childData.id);
+
+          await supabase
+            .from('profiles')
+            .update({ active_child_id: childData.id })
+            .eq('id', profileData.id);
+        }
       } else {
-        console.log('[Onboarding] Child saved:', childData.id);
-        
-        await supabase
-          .from('profiles')
-          .update({ active_child_id: childData.id })
-          .eq('id', profileData.id);
+        console.log('[Onboarding] Therapist account — skipping child creation');
       }
 
       const { error: prefsError } = await supabase
@@ -342,8 +348,12 @@ export default function OnboardingScreen() {
         console.log('[Onboarding] Preferences saved');
       }
 
-      console.log('[Onboarding] All data saved, navigating to home...');
-      router.replace('/(tabs)/home' as any);
+      console.log('[Onboarding] All data saved, navigating...');
+      if (selectedRole === 'therapist') {
+        router.replace('/(therapist)/clients' as any);
+      } else {
+        router.replace('/(tabs)/home' as any);
+      }
     } catch (err) {
       console.error('[Onboarding] Unexpected error:', err);
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
