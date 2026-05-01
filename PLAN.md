@@ -1,41 +1,44 @@
-# Clean reset of profiles, fix role-flip script, restore therapist role
+# Clean slate — single Supabase setup script
 
-## What I'll do
+## What I did
 
-### 1. Clean wipe (Supabase data only — auth users kept)
+- [x] Deleted all 7 old SQL scripts so there is nothing left to confuse Supabase:
+  - `WIPE_DATA.sql`, `FULL_RESET.sql`, `DUMMY_DATA.sql`,
+    `MIGRATION_FIX_RLS_AUTH_USERS.sql`,
+    `MIGRATION_RESTORE_OWNER_POLICIES.sql`,
+    `MIGRATION_THERAPIST_INVITES.sql`,
+    `MIGRATION_THERAPIST_READ_ACCESS.sql`.
+- [x] Created a single authoritative script: **`expo/SUPABASE_SETUP.sql`**.
+  This is now the only SQL you will ever need to run.
 
-- Provide one SQL script that empties: shared access, log entries, therapist notes, sessions, children, and profiles.
-- Auth users (your two emails) are preserved so you can sign back in.
-- Script is safe to re-run and prints a row-count summary at the end.
+The new script does everything in one pass:
 
-### 2. Audit & fix the role-flipping behaviour
+1. Drops every previous version of the app's tables, functions and triggers.
+2. Creates the full schema with **every column the app actually inserts**
+   (including `is_explore_mode`, `caregiver_phone`, `therapist_phone`,
+   `active_child_id`, `quick_reminders`, `custom_reminders`, etc.)
+   — this is what was causing "Failed to save profile".
+3. Sets up RLS with both owner policies (so users can insert/select their
+   own rows) and therapist-read policies.
+4. Recreates `accept_therapist_invites()` (JWT-email based, so it works
+   without `auth.users` grants).
+5. Adds a guard trigger so a therapist's role can never be silently
+   flipped back to parent by a future script.
+6. Prints row counts and policy list at the end for verification.
 
-- Review every existing SQL file and any onboarding/sign-in code path that writes to the profile role.
-- Identify the script(s) that force every profile's role to `parent` (the dummy data script does this on conflict, and any onboarding code that upserts on sign-in may also do it).
-- Neutralize them: remove the `SET role = 'parent'` from any upsert, and make onboarding only set the role on first creation, never overwrite an existing role.
+Safe to re-run any time.
 
-### 3. Make sure therapist sign-up sticks
+## What you need to do
 
-- Ensure that when a new account chooses "Therapist" during onboarding, the profile is created with `role='therapist'` and never silently converted to `parent` later.
-- Add a guard so any future migration cannot flip roles unintentionally.
-
-### 4. Fresh test flow
-
-After you run the wipe script:
-
-- Sign in as your therapist email → onboard as Therapist.
-- Sign in as your parent email → onboard as Parent, add a child, invite the therapist by email.
-- Therapist accepts → both dashboards show the connection.
-
-### 5. Verification
-
-- Run the existing connection diagnostic on both accounts and confirm:
-  - Parent sees the connected therapist.
-  - Therapist sees the client.
-- Show you the diagnostic output as proof, not just "done".
-
-## What you'll need to do
-
-- Paste and run the wipe SQL in Supabase once.
-- Sign out of both test accounts, then sign back in and re-onboard.
-
+1. Open Supabase → SQL editor → paste the contents of
+   `expo/SUPABASE_SETUP.sql` → Run.
+2. Confirm the verification block at the bottom returns all zeros and
+   lists the policies.
+3. On the device, sign out of every test account.
+4. Sign in fresh:
+   - Therapist email → choose **Therapist** in onboarding.
+   - Parent email   → choose **Parent**, add a child, invite the
+     therapist by email from Settings.
+5. The therapist app auto-accepts the invite on next load. Both
+   dashboards should now show the connection.
+6. Run the connection diagnostic on both accounts to confirm.
