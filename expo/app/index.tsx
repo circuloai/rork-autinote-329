@@ -14,10 +14,12 @@ export default function WelcomeScreen() {
     if (isLoading || isProfileLoading) return;
     if (!isAuthenticated) return;
 
-    // Authenticated but no profile row exists in Supabase — finish onboarding.
+    // Authenticated but no profile row — stay on Welcome so the user
+    // can decide to continue onboarding, log in as a different user,
+    // or explore. Auto-redirecting straight into the onboarding form
+    // is disorienting (lands on "Child Information" with no context).
     if (!profile) {
-      console.log('[Welcome] Authenticated but no profile, routing to onboarding');
-      router.replace('/onboarding' as any);
+      console.log('[Welcome] Authenticated but no profile — staying on Welcome');
       return;
     }
 
