@@ -1,26 +1,28 @@
-# Therapist Experience
+# Populate Supabase with demo data for your account
 
-A minimal, secure therapist-side experience that mirrors what they need without polluting the caregiver flow.
+## What I'll do
 
-## Routing
-- [x] On app load (and after login), if `profile.role === 'therapist'`, route to `/(therapist)/clients` instead of `/(tabs)/home`.
-- [x] Add a separate `(therapist)` tab group so caregiver tabs are not shown to therapists.
-- [x] Register `(therapist)` group + nested screens in root `app/_layout.tsx`.
+I'll give you a SQL script to paste into a new Supabase SQL snippet that fills your empty tables with realistic demo data, tied to the account you're currently logged into.
 
-## Data
-- [x] Add `therapistClients` query to `AppContext` — for therapists, fetches `shared_access` rows where `therapist_id = profile.id AND status = 'accepted'`, joined with the corresponding `children` and parent `profiles` rows. Relies on existing RLS policies (already permit therapists to read shared children, logs, notes).
-- [x] Reuse existing `logsQuery`, `therapistNotesQuery`, `chatMessagesQuery` for therapist views — they already use `IN (childIds)` and shared_access RLS lets the therapist see only what's been shared.
-- [x] For therapists, `childIds` is derived from `therapistClients` (not `profile.children`).
+## What you'll see after running it
 
-## Screens
-- [x] **Tabs `(therapist)`** — Clients · Messages · Settings (no built-in header, each tab owns its UI).
-- [x] **Clients tab** (`(therapist)/clients.tsx`) — list of accepted shared children with avatar, name, age, parent name, last log date, unread message badge. Tap → client detail.
-- [x] **Messages tab** (`(therapist)/messages.tsx`) — list of conversations across all clients. Tap → existing `/therapist-chat?sharedAccessId=...`.
-- [x] **Settings tab** (`(therapist)/settings.tsx`) — profile, customization, log out (lightweight version).
-- [x] **Client detail** (`/therapist/client/[childId].tsx`) — child profile summary (read-only), recent logs timeline, list of session notes, "Add session note" CTA, "Message caregiver" CTA.
-- [x] **Note composer** (`/therapist/note/[childId].tsx`) — modal form with session date, goals worked on, skills practiced, behaviors observed, strategies used, recommendations, next session goals. Save creates a `therapist_notes` row.
+- **Your parent profile**: Sarah Johnson with phone and email filled in
+- **A child** with a name, age, diagnosis, and a few sample goals
+- **Daily logs** (sleep, meals, mood, behaviors) for the past several days so charts and history look alive
+- **A demo therapist account** ("therapist.demo@example.com") already connected to you as an accepted shared-access connection
+- **A therapist note** with a parent comment reply, so the notes screen has content
+- **A second pending invitation** so you can see how a not-yet-accepted invite looks on the Shared Access screen
 
-## Security
-- [x] All reads/writes go through existing RLS policies — no new policies required.
-- [x] Therapist UI never queries other therapists' or non-shared children.
-- [x] Notes are scoped to a specific `shared_access_id`.
+## How it stays safe
+
+- The script auto-detects your most recently created user — no need to paste any IDs
+- It uses upserts, so running it more than once won't create duplicates
+- It only adds rows; it does not drop or alter any tables
+- If your real invite to `kalegaur+1@gmail.com` already exists, it stays untouched
+
+## After running
+
+Reload the app and you should see:
+- A populated home screen with your child and recent activity
+- The Shared Access screen showing the demo therapist as **Accepted** plus any real pending invites
+- The Therapists screen (when logged in as the demo therapist, if you want) showing Sarah's family as a client
