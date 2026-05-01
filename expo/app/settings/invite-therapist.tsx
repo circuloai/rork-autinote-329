@@ -8,6 +8,7 @@ import { useApp } from '@/contexts/AppContext';
 import * as Clipboard from 'expo-clipboard';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 const THERAPIST_ROLES: import('@/types').TherapistRole[] = [
   'ABA',
@@ -24,6 +25,7 @@ export default function InviteTherapistScreen() {
   const { activeChild, preferences } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const queryClient = useQueryClient();
 
   const [therapistName, setTherapistName] = useState('');
   const [therapistEmail, setTherapistEmail] = useState('');
@@ -100,18 +102,29 @@ export default function InviteTherapistScreen() {
         .insert(accessData);
 
       if (error) {
-        console.error('Error saving invitation:', error);
-        Alert.alert('Error', 'Failed to create invitation. Please try again.');
+        console.error('[Invite] insert error:', error);
+        const code = (error as any)?.code as string | undefined;
+        let friendly = error.message || 'Failed to create invitation.';
+        if (code === '23505') {
+          friendly = `An active invite for ${therapistEmail.trim().toLowerCase()} already exists for ${activeChild.name}. Remove the old one first.`;
+        } else if (code === '42501' || /row-level security/i.test(error.message || '')) {
+          friendly = 'Permission denied by database policy. Please run the latest MIGRATION_THERAPIST_INVITES.sql in Supabase.';
+        }
+        Alert.alert('Could not send invite', friendly);
         return;
       }
+
+      await queryClient.invalidateQueries({ queryKey: ['sharedAccess'] });
+      await queryClient.refetchQueries({ queryKey: ['sharedAccess'] });
 
       const message = `Hi ${therapistName.trim()},\n\nYou've been invited to access ${activeChild.name}'s progress on Autumn AI. This will allow you to view logs, add professional notes, and collaborate on care.\n\nTo accept:\n1. Download Autumn AI from the App Store/Google Play\n2. Sign up with this email: ${therapistEmail.trim().toLowerCase()}\n3. Your invite will be automatically connected\n\nInvite Code: ${inviteToken}\n\nLooking forward to working together!`;
 
       setInviteMessage(message);
       setShowShareModal(true);
     } catch (error) {
-      console.error('Error sending invitation:', error);
-      Alert.alert('Error', 'Failed to send invitation. Please try again.');
+      console.error('[Invite] unexpected error:', error);
+      const msg = error instanceof Error ? error.message : 'Failed to send invitation.';
+      Alert.alert('Error', msg);
     } finally {
       setIsSubmitting(false);
     }

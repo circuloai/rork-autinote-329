@@ -18,27 +18,46 @@ export default function TherapistClientsScreen() {
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  const acceptInvitesAndRefresh = useCallback(async () => {
+  const acceptInvitesAndRefresh = useCallback(async (silent: boolean = false) => {
     setRefreshing(true);
+    let linked = 0;
     try {
       const { data, error } = await supabase.rpc('accept_therapist_invites');
       if (error) {
         console.log('[Therapist] accept_therapist_invites error:', error);
-        Alert.alert(
-          'Could not accept invites',
-          error.message + '\n\nMake sure the database migration has been run (MIGRATION_THERAPIST_INVITES.sql).',
-        );
+        const email = (profile?.caregiverEmail || '').toLowerCase();
+        const { data: fb, error: fbErr } = await supabase
+          .from('shared_access')
+          .update({ therapist_id: profile?.id, status: 'accepted', accepted_at: new Date().toISOString() })
+          .eq('status', 'pending')
+          .ilike('therapist_email', email)
+          .select('id');
+        if (fbErr) {
+          if (!silent) {
+            Alert.alert(
+              'Could not accept invites',
+              `${error.message}\n\nFallback also failed: ${fbErr.message}\n\nPlease run MIGRATION_THERAPIST_INVITES.sql in Supabase.`,
+            );
+          }
+        } else {
+          linked = fb?.length ?? 0;
+          console.log('[Therapist] fallback linked:', linked);
+        }
       } else {
-        console.log('[Therapist] linked invites:', data);
+        linked = (data as number) ?? 0;
+        console.log('[Therapist] linked invites:', linked);
       }
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       await queryClient.invalidateQueries({ queryKey: ['therapistClients'] });
       await queryClient.invalidateQueries({ queryKey: ['sharedAccess'] });
       await queryClient.refetchQueries({ queryKey: ['therapistClients'] });
+      if (!silent && linked > 0) {
+        Alert.alert('Connected', `Linked ${linked} new ${linked === 1 ? 'client' : 'clients'}.`);
+      }
     } finally {
       setRefreshing(false);
     }
-  }, [queryClient]);
+  }, [queryClient, profile?.id, profile?.caregiverEmail]);
 
   const clientCards = useMemo(() => {
     return therapistClients.map((tc) => {
@@ -117,7 +136,8 @@ export default function TherapistClientsScreen() {
               </Text>
             </TouchableOpacity>
             <Text style={styles.emptyHint}>
-              Pull to refresh anytime. Make sure the caregiver invited you using {profile?.caregiverEmail || 'this email'}.
+              Pull to refresh anytime. Make sure the caregiver invited you using exactly:{' '}
+              <Text style={{ fontWeight: '700' }}>{profile?.caregiverEmail || 'your account email'}</Text>.
             </Text>
           </View>
         ) : (
