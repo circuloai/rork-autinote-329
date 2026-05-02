@@ -5,20 +5,28 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { isAuthenticated, isLoading, profile } = useApp();
+  const { isAuthenticated: hasSession, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (authLoading || isLoading) return;
+    if (hasSession && !profile) {
+      console.log('[Welcome] Authenticated but no profile row, routing to onboarding to finish setup');
+      router.replace('/onboarding' as any);
+      return;
+    }
+    if (isAuthenticated && profile) {
       if (profile?.role === 'therapist') {
         router.replace('/(therapist)/clients' as any);
       } else {
         router.replace('/(tabs)/home' as any);
       }
     }
-  }, [isAuthenticated, isLoading, profile?.role, router]);
+  }, [hasSession, authLoading, isAuthenticated, isLoading, profile, router]);
 
   if (isLoading) {
     return (
