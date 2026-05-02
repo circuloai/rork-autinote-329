@@ -1,58 +1,32 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
-import { ChevronDown, Chrome, Apple } from 'lucide-react-native';
-import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Moon, Volume2, Sparkles } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Moon, Volume2, Sparkles, Heart, Stethoscope, GraduationCap } from 'lucide-react-native';
 
-const GRADE_LEVELS = Array.from({ length: 12 }, (_, i) => i + 1);
-const FEET_OPTIONS = Array.from({ length: 5 }, (_, i) => i + 2);
-const INCHES_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 import type { UserRole, QuickReminder, CustomReminder, ReminderCategory, ReminderTone, ReminderRepeat } from '@/types';
 
-const PREDEFINED_TRIGGERS = [
-  'Loud noises',
-  'Bright lights',
-  'Uncomfortable textures',
-  'Strong smells',
-  'Sensory overload',
-  'Temperature sensitivity',
-];
+type Step = 0 | 1 | 2 | 3 | 4 | 5;
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { signUp, signInWithOAuth } = useAuth();
+  const { signUp } = useAuth();
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
-  const [isOAuthUser, setIsOAuthUser] = useState(false);
-  
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  
+
+  const [step, setStep] = useState<Step>(0);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+
   const [caregiverName, setCaregiverName] = useState('');
   const [caregiverEmail, setCaregiverEmail] = useState('');
   const [caregiverPassword, setCaregiverPassword] = useState('');
   const [caregiverPhone, setCaregiverPhone] = useState('');
-  const [therapistPhone, setTherapistPhone] = useState('');
-  
+
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
-  const [gradeLevel, setGradeLevel] = useState('');
-  const [schoolName, setSchoolName] = useState('');
-  const [heightFeet, setHeightFeet] = useState('');
-  const [heightInches, setHeightInches] = useState('');
-  const [showGradeDropdown, setShowGradeDropdown] = useState(false);
-  const [showFeetDropdown, setShowFeetDropdown] = useState(false);
-  const [showInchesDropdown, setShowInchesDropdown] = useState(false);
-  const [weight, setWeight] = useState('');
-  const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
-  const [customTriggers, setCustomTriggers] = useState<string[]>([]);
-  const [customTriggerInput, setCustomTriggerInput] = useState('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole>('parent');
 
   const [quickReminders, setQuickReminders] = useState<QuickReminder[]>([
     { id: '1', type: 'morning', enabled: false, time: '07:00' },
@@ -76,66 +50,30 @@ export default function OnboardingScreen() {
 
 
 
-  const handleOAuthSignUp = async (provider: 'google' | 'apple') => {
-    setOauthLoading(provider);
-    try {
-      const { error } = await signInWithOAuth(provider);
-      if (error) {
-        if (error.message !== 'Authentication was cancelled') {
-          Alert.alert('Sign Up Error', error.message);
-        }
-      } else {
-        setIsOAuthUser(true);
-        setStep(2);
-      }
-    } catch {
-      Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
-      setOauthLoading(null);
-    }
-  };
-
   const getFontSize = (baseSize: number): number => {
     const scale = { small: 0.85, medium: 1, large: 1.15 }[fontSizeScale];
     return baseSize * scale;
   };
 
-  const roles: { value: UserRole; label: string }[] = [
-    { value: 'parent', label: 'Parent/Guardian' },
-    { value: 'teacher', label: 'Teacher' },
-    { value: 'therapist', label: 'Therapist' },
-    { value: 'caregiver', label: 'Caregiver' },
+  const isTherapist = selectedRole === 'therapist';
+
+  const roles: { value: UserRole; label: string; description: string; icon: typeof Heart }[] = [
+    { value: 'parent', label: 'Parent / Guardian', description: 'Track your child’s daily progress and connect with their care team.', icon: Heart },
+    { value: 'therapist', label: 'Therapist', description: 'Collaborate with families and document sessions for the children you support.', icon: Stethoscope },
+    { value: 'teacher', label: 'Teacher', description: 'Stay aligned with families on classroom behaviors and supports.', icon: GraduationCap },
   ];
 
-  const isStep1Valid = caregiverName.trim().length > 0 && 
-                       caregiverEmail.trim().length > 0 && 
-                       caregiverPassword.trim().length > 0;
-
+  const isStep0Valid = selectedRole !== null;
+  const isStep1Valid = caregiverName.trim().length > 0 &&
+                       caregiverEmail.trim().length > 0 &&
+                       caregiverPassword.trim().length >= 6;
   const isStep2Valid = childName.trim().length > 0 && childAge.trim().length > 0;
 
-  const toggleTrigger = (trigger: string) => {
-    setSelectedTriggers(prev => 
-      prev.includes(trigger) 
-        ? prev.filter(t => t !== trigger)
-        : [...prev, trigger]
-    );
-  };
-
-  const addCustomTrigger = () => {
-    const trimmed = customTriggerInput.trim();
-    if (trimmed && !customTriggers.includes(trimmed)) {
-      setCustomTriggers(prev => [...prev, trimmed]);
-      setCustomTriggerInput('');
-    }
-  };
-
-  const removeCustomTrigger = (trigger: string) => {
-    setCustomTriggers(prev => prev.filter(t => t !== trigger));
-  };
-
   const handleContinue = () => {
-    if (step === 1 && isStep1Valid) {
-      setStep(2);
+    if (step === 0 && isStep0Valid) {
+      setStep(1);
+    } else if (step === 1 && isStep1Valid) {
+      setStep(isTherapist ? 3 : 2);
     } else if (step === 2 && isStep2Valid) {
       setStep(3);
     } else if (step === 3) {
@@ -143,6 +81,14 @@ export default function OnboardingScreen() {
     } else if (step === 4) {
       setStep(5);
       startCelebrationAnimation();
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 3 && isTherapist) {
+      setStep(1);
+    } else if (step > 0) {
+      setStep((step - 1) as Step);
     }
   };
 
@@ -192,131 +138,103 @@ export default function OnboardingScreen() {
   };
 
   const handleComplete = async () => {
+    if (!selectedRole) {
+      Alert.alert('Pick a role', 'Please choose your role to continue.');
+      setStep(0);
+      return;
+    }
     setIsCreatingAccount(true);
     try {
-      let userId: string | null = null;
+      console.log('[Onboarding] Starting signup process for role:', selectedRole);
+      const { error, user, session, needsEmailConfirmation } = await signUp(caregiverEmail.trim(), caregiverPassword);
 
-      if (isOAuthUser) {
-        console.log('[Onboarding] OAuth user, retrieving session...');
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        userId = currentSession?.user?.id ?? null;
-
-        if (!userId) {
-          let attempts = 0;
-          const maxAttempts = 20;
-          while (attempts < maxAttempts && !userId) {
-            await new Promise(resolve => setTimeout(resolve, 250));
-            const { data: { session: retrySession } } = await supabase.auth.getSession();
-            userId = retrySession?.user?.id ?? null;
-            attempts++;
-            console.log(`[Onboarding] Checking OAuth session attempt ${attempts}, userId: ${userId}`);
-          }
-        }
-
-        if (!userId) {
-          Alert.alert('Error', 'Failed to retrieve your account. Please try again.');
-          setIsCreatingAccount(false);
-          return;
-        }
-      } else {
-        console.log('[Onboarding] Starting signup process...');
-        const { error, user, session, needsEmailConfirmation } = await signUp(caregiverEmail.trim(), caregiverPassword);
-        
-        if (error) {
-          if (error.message.includes('already registered')) {
-            Alert.alert(
-              'Account Exists',
-              'An account with this email already exists. Please log in instead.',
-              [{ text: 'Go to Login', onPress: () => router.push('/login' as any) }]
-            );
-          } else {
-            Alert.alert('Sign Up Error', error.message);
-          }
-          setIsCreatingAccount(false);
-          return;
-        }
-
-        if (needsEmailConfirmation) {
-          console.log('[Onboarding] Email confirmation required, user created:', user?.id);
+      if (error) {
+        if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already been registered') || error.message.toLowerCase().includes('user already')) {
           Alert.alert(
-            'Check Your Email',
-            'We\'ve sent a confirmation link to your email. Please confirm your email and then log in.',
-            [{ text: 'OK', onPress: () => router.push('/login' as any) }]
+            'Account Exists',
+            'An account with this email already exists. Please log in instead.',
+            [{ text: 'Go to Login', onPress: () => router.push('/login' as any) }]
           );
-          setIsCreatingAccount(false);
-          return;
+        } else {
+          Alert.alert('Sign Up Error', error.message);
         }
-
-        console.log('[Onboarding] Signup successful with immediate session');
-        userId = user?.id ?? session?.user?.id ?? null;
-        
-        if (!userId) {
-          let attempts = 0;
-          const maxAttempts = 20;
-          while (attempts < maxAttempts && !userId) {
-            await new Promise(resolve => setTimeout(resolve, 250));
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            userId = currentSession?.user?.id ?? null;
-            attempts++;
-            console.log(`[Onboarding] Checking session attempt ${attempts}, userId: ${userId}`);
-          }
-        }
-
-        if (!userId) {
-          Alert.alert('Error', 'Failed to establish session. Please try logging in.');
-          setIsCreatingAccount(false);
-          return;
-        }
+        setIsCreatingAccount(false);
+        return;
       }
 
-      console.log('[Onboarding] Session established, saving profile to Supabase...');
+      if (needsEmailConfirmation) {
+        console.log('[Onboarding] Email confirmation required, user created:', user?.id);
+        Alert.alert(
+          'Check Your Email',
+          'We sent a confirmation link to your email. Confirm it, then log in to continue.',
+          [{ text: 'OK', onPress: () => router.push('/login' as any) }]
+        );
+        setIsCreatingAccount(false);
+        return;
+      }
 
-      const allTriggers = [...selectedTriggers, ...customTriggers];
-      
+      let userId: string | null = user?.id ?? session?.user?.id ?? null;
+      if (!userId) {
+        for (let i = 0; i < 20 && !userId; i++) {
+          await new Promise(resolve => setTimeout(resolve, 250));
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          userId = currentSession?.user?.id ?? null;
+        }
+      }
+      if (!userId) {
+        Alert.alert('Error', 'Failed to establish session. Please try logging in.');
+        setIsCreatingAccount(false);
+        return;
+      }
+
+      console.log('[Onboarding] Session established, upserting profile...', { userId, role: selectedRole });
+
+      const profilePayload = {
+        user_id: userId,
+        role: selectedRole,
+        caregiver_name: caregiverName.trim() || null,
+        caregiver_email: caregiverEmail.trim().toLowerCase() || null,
+        caregiver_phone: caregiverPhone.trim() || null,
+        therapist_phone: null,
+        is_explore_mode: false,
+      } as const;
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          user_id: userId,
-          role: selectedRole,
-          caregiver_name: isOAuthUser ? null : caregiverName,
-          caregiver_email: isOAuthUser ? null : caregiverEmail,
-          caregiver_phone: isOAuthUser ? null : (caregiverPhone || null),
-          therapist_phone: therapistPhone || null,
-          is_explore_mode: false,
-        })
+        .upsert(profilePayload, { onConflict: 'user_id' })
         .select()
         .single();
 
-      if (profileError) {
-        console.error('[Onboarding] Profile insert error:', profileError);
-        Alert.alert('Error', 'Failed to save profile. Please try again.');
+      if (profileError || !profileData) {
+        console.error('[Onboarding] Profile upsert error:', profileError);
+        const detail = profileError?.message || profileError?.details || 'Unknown error';
+        Alert.alert('Profile save failed', `${detail}\n\nIf this keeps happening, please try logging out and back in.`);
         setIsCreatingAccount(false);
         return;
       }
 
       console.log('[Onboarding] Profile saved:', profileData.id);
 
-      const { data: childData, error: childError } = await supabase
-        .from('children')
-        .insert({
-          profile_id: profileData.id,
-          name: childName,
-          age: parseInt(childAge),
-          diagnosis: diagnosis || null,
-          grade_level: gradeLevel || null,
-          school_name: schoolName || null,
-          height: heightFeet ? `${heightFeet}'${heightInches || '0'}"` : null,
-          weight: weight || null,
-          common_triggers: allTriggers,
-        })
-        .select()
-        .single();
+      if (!isTherapist) {
+        const { data: childData, error: childError } = await supabase
+          .from('children')
+          .insert({
+            profile_id: profileData.id,
+            name: childName.trim(),
+            age: parseInt(childAge, 10) || 0,
+            diagnosis: diagnosis.trim() || null,
+            common_triggers: [],
+          })
+          .select()
+          .single();
 
-      if (childError) {
-        console.error('[Onboarding] Child insert error:', childError);
-      } else {
+        if (childError) {
+          console.error('[Onboarding] Child insert error:', childError);
+          Alert.alert('Child save failed', childError.message);
+          setIsCreatingAccount(false);
+          return;
+        }
         console.log('[Onboarding] Child saved:', childData.id);
-        
         await supabase
           .from('profiles')
           .update({ active_child_id: childData.id })
@@ -325,7 +243,7 @@ export default function OnboardingScreen() {
 
       const { error: prefsError } = await supabase
         .from('preferences')
-        .insert({
+        .upsert({
           user_id: userId,
           theme: darkMode ? 'dark' : 'light',
           color_theme: 'mint',
@@ -334,7 +252,7 @@ export default function OnboardingScreen() {
           reminders: quickReminders.some(r => r.enabled) || customReminders.length > 0,
           quick_reminders: quickReminders,
           custom_reminders: customReminders,
-        });
+        }, { onConflict: 'user_id' });
 
       if (prefsError) {
         console.error('[Onboarding] Preferences insert error:', prefsError);
@@ -342,8 +260,12 @@ export default function OnboardingScreen() {
         console.log('[Onboarding] Preferences saved');
       }
 
-      console.log('[Onboarding] All data saved, navigating to home...');
-      router.replace('/(tabs)/home' as any);
+      console.log('[Onboarding] All data saved, navigating...');
+      if (isTherapist) {
+        router.replace('/(therapist)/clients' as any);
+      } else {
+        router.replace('/(tabs)/home' as any);
+      }
     } catch (err) {
       console.error('[Onboarding] Unexpected error:', err);
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
@@ -365,7 +287,7 @@ export default function OnboardingScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {step === 1 && (
+          {step === 0 && (
             <TouchableOpacity
               style={styles.backToWelcome}
               onPress={() => router.back()}
@@ -379,15 +301,17 @@ export default function OnboardingScreen() {
 
           <View style={styles.header}>
             <Text style={[styles.title, { fontSize: getFontSize(32) }]}>
-              {step === 1 ? "Let's Get Started" : step === 2 ? "Child Information" : step === 3 ? "Let's Set Up Your Daily Reminders" : step === 4 ? "Theme & Accessibility" : "You're All Set!"}
+              {step === 0 ? "Who's signing up?" : step === 1 ? "Let's Get Started" : step === 2 ? "Child Information" : step === 3 ? "Let's Set Up Your Daily Reminders" : step === 4 ? "Theme & Accessibility" : "You're All Set!"}
             </Text>
             <Text style={[styles.subtitle, { fontSize: getFontSize(16) }]}>
-              {step === 1 
-                ? "Please provide your information as a caregiver" 
+              {step === 0
+                ? "Pick the role that fits you best. We'll tailor the rest of setup."
+                : step === 1
+                ? (isTherapist ? "Tell us a bit about you so caregivers can find and invite you." : "Please provide your contact information.")
                 : step === 2
-                ? "Tell us about your child to personalize the experience"
+                ? "Tell us about your child to personalize the experience."
                 : step === 3
-                ? "A little structure goes a long way. Choose when you'd like gentle reminders to log your day."
+                ? "A little structure goes a long way. Choose when you'd like gentle reminders."
                 : step === 4
                 ? "Visual comfort and inclusivity"
                 : "Welcome to the AutiNote family. Let's make today a little easier, one log at a time."}
@@ -396,10 +320,39 @@ export default function OnboardingScreen() {
 
           {step < 5 && (
             <View style={styles.stepIndicator}>
-              {!isOAuthUser && <View style={[styles.stepDot, step === 1 && styles.stepDotActive]} />}
-              <View style={[styles.stepDot, step === 2 && styles.stepDotActive]} />
+              <View style={[styles.stepDot, step === 0 && styles.stepDotActive]} />
+              <View style={[styles.stepDot, step === 1 && styles.stepDotActive]} />
+              {!isTherapist && <View style={[styles.stepDot, step === 2 && styles.stepDotActive]} />}
               <View style={[styles.stepDot, step === 3 && styles.stepDotActive]} />
               <View style={[styles.stepDot, step === 4 && styles.stepDotActive]} />
+            </View>
+          )}
+
+          {step === 0 && (
+            <View style={styles.form}>
+              <View style={styles.roleListColumn}>
+                {roles.map((role) => {
+                  const Icon = role.icon;
+                  const active = selectedRole === role.value;
+                  return (
+                    <TouchableOpacity
+                      key={role.value}
+                      style={[styles.roleCard, active && styles.roleCardActive]}
+                      onPress={() => setSelectedRole(role.value)}
+                      activeOpacity={0.85}
+                      testID={`role-${role.value}`}
+                    >
+                      <View style={[styles.roleIconWrap, active && styles.roleIconWrapActive]}>
+                        <Icon size={24} color={active ? Colors.background : Colors.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.roleCardTitle, active && styles.roleCardTitleActive]}>{role.label}</Text>
+                        <Text style={styles.roleCardDesc}>{role.description}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
           )}
 
@@ -437,7 +390,7 @@ export default function OnboardingScreen() {
                   style={styles.input}
                   value={caregiverPassword}
                   onChangeText={setCaregiverPassword}
-                  placeholder="Create a password"
+                  placeholder="At least 6 characters"
                   placeholderTextColor={Colors.textLight}
                   secureTextEntry
                   autoCapitalize="none"
@@ -445,7 +398,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone Number *</Text>
+                <Text style={styles.label}>Phone Number</Text>
                 <TextInput
                   style={styles.input}
                   value={caregiverPhone}
@@ -454,60 +407,6 @@ export default function OnboardingScreen() {
                   placeholderTextColor={Colors.textLight}
                   keyboardType="phone-pad"
                 />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Therapist/Pediatrician Number (Optional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={therapistPhone}
-                  onChangeText={setTherapistPhone}
-                  placeholder="(555) 123-4567"
-                  placeholderTextColor={Colors.textLight}
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <View style={styles.socialDividerContainer}>
-                <View style={styles.socialDividerLine} />
-                <Text style={styles.socialDividerText}>or sign up with</Text>
-                <View style={styles.socialDividerLine} />
-              </View>
-
-              <View style={styles.socialButtonsRow}>
-                <TouchableOpacity
-                  style={styles.socialButton}
-                  onPress={() => handleOAuthSignUp('google')}
-                  disabled={oauthLoading !== null}
-                  activeOpacity={0.8}
-                  testID="google-signup"
-                >
-                  {oauthLoading === 'google' ? (
-                    <ActivityIndicator size="small" color={Colors.text} />
-                  ) : (
-                    <>
-                      <Chrome size={20} color={Colors.text} />
-                      <Text style={styles.socialButtonText}>Google</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.socialButton, styles.appleSocialButton]}
-                  onPress={() => handleOAuthSignUp('apple')}
-                  disabled={oauthLoading !== null}
-                  activeOpacity={0.8}
-                  testID="apple-signup"
-                >
-                  {oauthLoading === 'apple' ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Apple size={20} color="#FFFFFF" />
-                      <Text style={styles.appleButtonText}>Apple</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -551,263 +450,6 @@ export default function OnboardingScreen() {
                   placeholder="e.g., Autism Spectrum Disorder"
                   placeholderTextColor={Colors.textLight}
                 />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Grade Level</Text>
-                <TouchableOpacity
-                  style={styles.dropdownTrigger}
-                  onPress={() => {
-                    setShowGradeDropdown(!showGradeDropdown);
-                    setShowFeetDropdown(false);
-                    setShowInchesDropdown(false);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={gradeLevel ? styles.dropdownTriggerText : styles.dropdownPlaceholder}>
-                    {gradeLevel ? `Grade ${gradeLevel}` : 'Select grade'}
-                  </Text>
-                  <ChevronDown size={20} color={Colors.textSecondary} />
-                </TouchableOpacity>
-                {showGradeDropdown && (
-                  <View style={styles.dropdownList}>
-                    <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
-                      {GRADE_LEVELS.map((grade) => (
-                        <TouchableOpacity
-                          key={grade}
-                          style={[
-                            styles.dropdownItem,
-                            gradeLevel === String(grade) && styles.dropdownItemActive,
-                          ]}
-                          onPress={() => {
-                            setGradeLevel(String(grade));
-                            setShowGradeDropdown(false);
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[
-                            styles.dropdownItemText,
-                            gradeLevel === String(grade) && styles.dropdownItemTextActive,
-                          ]}>
-                            Grade {grade}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>School Name</Text>
-                <TextInput
-                  style={styles.input}
-                  value={schoolName}
-                  onChangeText={setSchoolName}
-                  placeholder="Enter school name"
-                  placeholderTextColor={Colors.textLight}
-                  autoCapitalize="words"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Height</Text>
-                <View style={styles.twoColumn}>
-                  <View style={{ flex: 1 }}>
-                    <TouchableOpacity
-                      style={styles.dropdownTrigger}
-                      onPress={() => {
-                        setShowFeetDropdown(!showFeetDropdown);
-                        setShowGradeDropdown(false);
-                        setShowInchesDropdown(false);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={heightFeet ? styles.dropdownTriggerText : styles.dropdownPlaceholder}>
-                        {heightFeet ? `${heightFeet} ft` : 'Feet'}
-                      </Text>
-                      <ChevronDown size={20} color={Colors.textSecondary} />
-                    </TouchableOpacity>
-                    {showFeetDropdown && (
-                      <View style={styles.dropdownList}>
-                        <ScrollView style={styles.dropdownScrollSmall} nestedScrollEnabled>
-                          {FEET_OPTIONS.map((ft) => (
-                            <TouchableOpacity
-                              key={ft}
-                              style={[
-                                styles.dropdownItem,
-                                heightFeet === String(ft) && styles.dropdownItemActive,
-                              ]}
-                              onPress={() => {
-                                setHeightFeet(String(ft));
-                                setShowFeetDropdown(false);
-                              }}
-                              activeOpacity={0.7}
-                            >
-                              <Text style={[
-                                styles.dropdownItemText,
-                                heightFeet === String(ft) && styles.dropdownItemTextActive,
-                              ]}>
-                                {ft} ft
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <TouchableOpacity
-                      style={styles.dropdownTrigger}
-                      onPress={() => {
-                        setShowInchesDropdown(!showInchesDropdown);
-                        setShowGradeDropdown(false);
-                        setShowFeetDropdown(false);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={heightInches !== '' ? styles.dropdownTriggerText : styles.dropdownPlaceholder}>
-                        {heightInches !== '' ? `${heightInches} in` : 'Inches'}
-                      </Text>
-                      <ChevronDown size={20} color={Colors.textSecondary} />
-                    </TouchableOpacity>
-                    {showInchesDropdown && (
-                      <View style={styles.dropdownList}>
-                        <ScrollView style={styles.dropdownScrollSmall} nestedScrollEnabled>
-                          {INCHES_OPTIONS.map((inch) => (
-                            <TouchableOpacity
-                              key={inch}
-                              style={[
-                                styles.dropdownItem,
-                                heightInches === String(inch) && styles.dropdownItemActive,
-                              ]}
-                              onPress={() => {
-                                setHeightInches(String(inch));
-                                setShowInchesDropdown(false);
-                              }}
-                              activeOpacity={0.7}
-                            >
-                              <Text style={[
-                                styles.dropdownItemText,
-                                heightInches === String(inch) && styles.dropdownItemTextActive,
-                              ]}>
-                                {inch} in
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Weight</Text>
-                <TextInput
-                  style={styles.input}
-                  value={weight}
-                  onChangeText={setWeight}
-                  placeholder="e.g., 65 lbs"
-                  placeholderTextColor={Colors.textLight}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Common Triggers</Text>
-                <Text style={styles.sublabel}>Select all that apply</Text>
-                <View style={styles.triggerGrid}>
-                  {PREDEFINED_TRIGGERS.map((trigger) => (
-                    <TouchableOpacity
-                      key={trigger}
-                      style={[
-                        styles.triggerButton,
-                        selectedTriggers.includes(trigger) && styles.triggerButtonActive,
-                      ]}
-                      onPress={() => toggleTrigger(trigger)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.triggerText,
-                          selectedTriggers.includes(trigger) && styles.triggerTextActive,
-                        ]}
-                      >
-                        {trigger}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <TouchableOpacity
-                  style={styles.otherButton}
-                  onPress={() => setShowCustomInput(!showCustomInput)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.otherButtonText}>Other</Text>
-                </TouchableOpacity>
-
-                {showCustomInput && (
-                  <View style={styles.customInputContainer}>
-                    <TextInput
-                      style={[styles.input, { flex: 1 }]}
-                      value={customTriggerInput}
-                      onChangeText={setCustomTriggerInput}
-                      placeholder="Add custom trigger"
-                      placeholderTextColor={Colors.textLight}
-                      onSubmitEditing={addCustomTrigger}
-                    />
-                    <TouchableOpacity
-                      style={styles.addButton}
-                      onPress={addCustomTrigger}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.addButtonText}>Add</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {customTriggers.length > 0 && (
-                  <View style={styles.customTriggersContainer}>
-                    {customTriggers.map((trigger, index) => (
-                      <View key={index} style={styles.customTriggerChip}>
-                        <Text style={styles.customTriggerText}>{trigger}</Text>
-                        <TouchableOpacity
-                          onPress={() => removeCustomTrigger(trigger)}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                          <X size={16} color={Colors.text} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Your Role</Text>
-                <View style={styles.roleGrid}>
-                  {roles.map((role) => (
-                    <TouchableOpacity
-                      key={role.value}
-                      style={[
-                        styles.roleButton,
-                        selectedRole === role.value && styles.roleButtonActive,
-                      ]}
-                      onPress={() => setSelectedRole(role.value)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.roleText,
-                          selectedRole === role.value && styles.roleTextActive,
-                        ]}
-                      >
-                        {role.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
               </View>
             </View>
           )}
@@ -1038,29 +680,30 @@ export default function OnboardingScreen() {
 
           {step < 5 && (
             <View style={styles.buttonContainer}>
-              {step > 1 && !(isOAuthUser && step === 2) && (
+              {step > 0 && (
                 <TouchableOpacity
                   style={styles.backButton}
-                  onPress={() => setStep((step - 1) as 1 | 2 | 3 | 4)}
+                  onPress={handleBack}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.backButtonText}>Back</Text>
                 </TouchableOpacity>
               )}
-              
+
               <TouchableOpacity
                 style={[
                   styles.continueButton,
+                  step === 0 && !isStep0Valid && styles.continueButtonDisabled,
                   step === 1 && !isStep1Valid && styles.continueButtonDisabled,
                   step === 2 && !isStep2Valid && styles.continueButtonDisabled,
-                  step > 1 && styles.continueButtonExpanded,
+                  step > 0 && styles.continueButtonExpanded,
                 ]}
                 onPress={handleContinue}
-                disabled={(step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
+                disabled={(step === 0 && !isStep0Valid) || (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
                 activeOpacity={0.8}
               >
                 <Text style={styles.continueButtonText}>
-                  {step === 1 || step === 2 || step === 3 ? 'Continue' : 'Complete Setup'}
+                  {step === 0 || step === 1 || step === 2 || step === 3 ? 'Continue' : 'Complete Setup'}
                 </Text>
                 {step < 4 && <ArrowRight size={20} color={Colors.background} />}
               </TouchableOpacity>
@@ -1316,6 +959,48 @@ const styles = StyleSheet.create({
   twoColumn: {
     flexDirection: 'row',
     gap: 12,
+  },
+  roleListColumn: {
+    gap: 12,
+  },
+  roleCard: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: Colors.border,
+  },
+  roleCardActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '10',
+  },
+  roleIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primary + '15',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  roleIconWrapActive: {
+    backgroundColor: Colors.primary,
+  },
+  roleCardTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  roleCardTitleActive: {
+    color: Colors.primary,
+  },
+  roleCardDesc: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
   triggerGrid: {
     flexDirection: 'row',

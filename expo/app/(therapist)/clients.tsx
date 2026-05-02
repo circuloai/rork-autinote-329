@@ -173,7 +173,7 @@ export default function TherapistClientsScreen() {
             </Text>
             <TouchableOpacity
               style={styles.refreshButton}
-              onPress={acceptInvitesAndRefresh}
+              onPress={() => { void acceptInvitesAndRefresh(); }}
               disabled={refreshing}
               activeOpacity={0.7}
               testID="check-invites"

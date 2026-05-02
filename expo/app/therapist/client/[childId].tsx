@@ -189,7 +189,7 @@ export default function TherapistClientDetailScreen() {
                 <Text style={styles.chipText}>{child.diagnosis}</Text>
               </View>
             ) : null}
-            {(child.commonTriggers || []).slice(0, 3).map((t, i) => (
+            {(child.commonTriggers || []).slice(0, 3).map((t: string, i: number) => (
               <View
                 key={i}
                 style={[styles.chip, { backgroundColor: Colors.warning + '22' }]}
