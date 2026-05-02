@@ -1,59 +1,43 @@
-# Fix therapist ↔ caregiver connection (round 3: RLS on children/profiles)
-
-## What the diagnostic proved
-
-Therapist (`gauradhika+1@gmail.com`) ran the in-app diagnostic on
-2026-05-01. Output:
-
-- Profile row exists, role = `therapist`,
-  `profile.id = 536791d5-8776-4b1c-8fb3-08f2191b8f11`.
-- `shared_access` row exists with
-  `therapist_id = 536791d5-…`, `status = 'accepted'`,
-  `child_id = cdef3152-…`.
-- The exact "My Clients" query
-  (`therapist_id = me AND status = 'accepted'`) returns **1 row**.
-
-So the database and `shared_access` RLS are correct. The bug is on the
-read side, one layer deeper.
+# Fix "infinite recursion detected in policy for relation profiles" (42P17)
 
 ## Root cause
 
-`AppContext.therapistClientsQuery` does three queries:
+The previous migration `MIGRATION_THERAPIST_READ_ACCESS.sql` created a
+SELECT policy **on `profiles`** whose `USING` clause itself joins
+`profiles` (`JOIN profiles me ON me.id = sa.therapist_id`). Postgres
+re-evaluates the same policy when reading that inner `profiles` row,
+which re-enters the policy → infinite recursion → 42P17.
 
-1. `shared_access WHERE therapist_id = me AND status = 'accepted'`
-   ✅ returns the row.
-2. `children WHERE id IN (childIds)`
-   ❌ returns `[]` — RLS on `children` only allows the *owning*
-   caregiver to read. Therapist gets nothing back.
-3. `profiles WHERE id IN (parentIds)`
-   ❌ returns `[]` for the same reason.
+Symptom: every read of `profiles` after sign-up fails, so the app falls
+back to "Guest" and the onboarding upsert errors with
+`infinite recursion detected in policy for relation "profiles"`.
 
-Then it filters: `accessRows.filter(sa => childrenById.has(sa.child_id))`.
-With an empty `childrenById` map, every row is filtered out → UI shows
-"No clients yet". Same shape on the caregiver side once profile reads
-become asymmetric.
+The `children_therapist_select` policy had the same shape and would
+have failed for any therapist child read.
 
-## What I just shipped
+## Fix shipped
 
-- [x] `expo/MIGRATION_THERAPIST_READ_ACCESS.sql` — adds two SELECT-only
-      RLS policies:
-      - `children_therapist_select`: a therapist can read a child if
-        an `accepted` `shared_access` row links them to that child.
-      - `profiles_therapist_select`: a therapist can read a caregiver
-        profile if an `accepted` `shared_access` row links them to
-        that parent (so the caregiver name/email render on My Clients).
-      No write access is granted. Script is idempotent.
-- [x] Includes a verification SELECT at the bottom that joins
-      `shared_access` → `children` → both `profiles` rows; for the
-      test pair it should return one row with both emails populated.
+- [x] `expo/MIGRATION_FIX_PROFILES_RECURSION.sql`:
+      1. Creates `public.current_profile_id()` — a SECURITY DEFINER SQL
+         function that returns the caller's `profiles.id` while
+         bypassing RLS. Granted only to `authenticated`.
+      2. Drops the recursive `profiles_therapist_select` and
+         `children_therapist_select` policies.
+      3. Recreates them so the `USING` clause references **only
+         `shared_access`**, comparing `sa.therapist_id` against
+         `current_profile_id()`. No self-reference to `profiles`, so no
+         recursion.
+      4. Ends with a `pg_policy` SELECT so you can visually confirm the
+         new `using_expr` after running.
+
+Idempotent — safe to re-run.
 
 ## How to apply
 
-1. Open Supabase → SQL editor → paste the contents of
-   `expo/MIGRATION_THERAPIST_READ_ACCESS.sql` → **Run**.
-2. In the app, sign out of the therapist account and back in (or
-   pull-to-refresh on *My Clients*). The connected child should now
-   appear.
-3. If you want to confirm at the data layer first, re-run the in-app
-   diagnostic on the therapist account — section 6 already returned
-   the row; after the migration the My Clients UI will too.
+1. Supabase → SQL editor → paste
+   `expo/MIGRATION_FIX_PROFILES_RECURSION.sql` → **Run**.
+2. In the app, sign out and back in. Onboarding upsert should succeed
+   and the dashboard should show the real profile (not Guest).
+3. Therapist *My Clients* and caregiver *Connected Therapists* will
+   keep working because the rewritten policies grant the same access,
+   just without the self-join.
