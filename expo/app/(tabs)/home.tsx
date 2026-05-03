@@ -1,18 +1,20 @@
 import { useRouter } from 'expo-router';
-import { TrendingUp, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
+import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon } from 'lucide-react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
 import GlassCard from '@/components/GlassCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo, useCallback } from 'react';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getAvatarById } from '@/constants/avatars';
 import type { QuickReminder, CustomReminder } from '@/types';
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeChild, streak, activeChildLogs, preferences } = useApp();
+  const { activeChild, streak, activeChildLogs, preferences, sharedAccess, profile, isLoading } = useApp();
+  const { isAuthenticated: hasSession } = useAuth();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   
   const styles = useMemo(() => createStyles(Colors), [Colors]);
@@ -141,6 +143,29 @@ export default function HomeScreen() {
   const reminders = useMemo(() => getUpcomingReminders(), [getUpcomingReminders]);
   const hasReminders = (reminders.upcoming.length > 0 || reminders.missed.length > 0) && preferences?.reminders;
 
+  const handleOpenChat = useCallback(() => {
+    const accepted = (sharedAccess || []).filter((sa) => sa.status === 'accepted');
+    if (accepted.length === 0) {
+      router.push('/settings/shared-access' as any);
+      return;
+    }
+    if (accepted.length === 1) {
+      router.push(`/therapist-chat?sharedAccessId=${accepted[0].id}` as any);
+      return;
+    }
+    Alert.alert(
+      'Open conversation',
+      'Choose who to message',
+      [
+        ...accepted.map((sa) => ({
+          text: `${sa.therapistName}${sa.therapistRole ? ` (${sa.therapistRole})` : ''}`,
+          onPress: () => router.push(`/therapist-chat?sharedAccessId=${sa.id}` as any),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    );
+  }, [router, sharedAccess]);
+
   const triggers = activeChild?.commonTriggers ?? [];
   const visibleTriggers = triggers.slice(0, 3);
   const extraTriggerCount = Math.max(0, triggers.length - 3);
@@ -224,6 +249,16 @@ export default function HomeScreen() {
       <Text style={[styles.tapToViewProfile, { color: Colors.textSecondary }]}>Tap to view full profile ›</Text>
     </>
   );
+
+  if (hasSession && !profile && isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={{ color: Colors.text, marginTop: 16, fontSize: 16, fontWeight: '600' as const }}>Setting up your profile…</Text>
+        <Text style={{ color: Colors.textSecondary, marginTop: 6, fontSize: 13 }}>Just a moment.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
@@ -415,12 +450,13 @@ export default function HomeScreen() {
 
                 <TouchableOpacity
                   style={styles.secondaryAction}
-                  onPress={() => router.push('/(tabs)/insights' as any)}
+                  onPress={handleOpenChat}
                   activeOpacity={0.8}
+                  testID="home-chat-button"
                 >
                   <GlassCard style={styles.glassSecondaryAction} glassEffectStyle="clear" fallbackStyle={{ backgroundColor: Colors.surface }}>
-                    <TrendingUp size={20} color={Colors.text} />
-                    <Text style={[styles.secondaryActionText, { color: Colors.text }]}>Insights</Text>
+                    <MessageCircle size={20} color={Colors.text} />
+                    <Text style={[styles.secondaryActionText, { color: Colors.text }]}>Chat</Text>
                   </GlassCard>
                 </TouchableOpacity>
               </>
@@ -437,11 +473,12 @@ export default function HomeScreen() {
 
                 <TouchableOpacity
                   style={[styles.secondaryAction, { backgroundColor: Colors.surface }]}
-                  onPress={() => router.push('/(tabs)/insights' as any)}
+                  onPress={handleOpenChat}
                   activeOpacity={0.8}
+                  testID="home-chat-button"
                 >
-                  <TrendingUp size={20} color={Colors.primary} />
-                  <Text style={[styles.secondaryActionText, { color: Colors.primary }]}>Insights</Text>
+                  <MessageCircle size={20} color={Colors.primary} />
+                  <Text style={[styles.secondaryActionText, { color: Colors.primary }]}>Chat</Text>
                 </TouchableOpacity>
               </>
             )}

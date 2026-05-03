@@ -11,18 +11,7 @@ export default function CustomizationScreen() {
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>(preferences?.theme || 'light');
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(preferences?.fontSize || 'medium');
-
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'auto') => {
-    setTheme(newTheme);
-    if (preferences) {
-      savePreferences({
-        ...preferences,
-        theme: newTheme,
-      });
-    }
-  };
 
   const handleFontSizeChange = (newSize: 'small' | 'medium' | 'large') => {
     setFontSize(newSize);
@@ -38,7 +27,7 @@ export default function CustomizationScreen() {
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'Customization',
+          title: 'Appearance',
           headerStyle: { backgroundColor: Colors.background },
           headerTintColor: Colors.text,
           headerShadowVisible: false,
@@ -46,89 +35,6 @@ export default function CustomizationScreen() {
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>APPEARANCE</Text>
-          <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Theme</Text>
-                <Text style={styles.settingSubtitle}>Choose light or dark mode</Text>
-              </View>
-            </View>
-
-            <View style={styles.optionsContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  theme === 'light' && styles.optionButtonSelected,
-                ]}
-                onPress={() => handleThemeChange('light')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text
-                    style={[
-                      styles.optionText,
-                      theme === 'light' && styles.optionTextSelected,
-                    ]}
-                  >
-                    Light
-                  </Text>
-                  {theme === 'light' && (
-                    <Check size={20} color={Colors.primary} />
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  theme === 'dark' && styles.optionButtonSelected,
-                ]}
-                onPress={() => handleThemeChange('dark')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text
-                    style={[
-                      styles.optionText,
-                      theme === 'dark' && styles.optionTextSelected,
-                    ]}
-                  >
-                    Dark
-                  </Text>
-                  {theme === 'dark' && (
-                    <Check size={20} color={Colors.primary} />
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  theme === 'auto' && styles.optionButtonSelected,
-                ]}
-                onPress={() => handleThemeChange('auto')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text
-                    style={[
-                      styles.optionText,
-                      theme === 'auto' && styles.optionTextSelected,
-                    ]}
-                  >
-                    Auto
-                  </Text>
-                  {theme === 'auto' && (
-                    <Check size={20} color={Colors.primary} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            </View>
-          </GlassCard>
-        </View>
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>TEXT SIZE</Text>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
@@ -140,77 +46,30 @@ export default function CustomizationScreen() {
             </View>
 
             <View style={styles.optionsContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  fontSize === 'small' && styles.optionButtonSelected,
-                ]}
-                onPress={() => handleFontSizeChange('small')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text
-                    style={[
-                      styles.optionText,
-                      { fontSize: 14 },
-                      fontSize === 'small' && styles.optionTextSelected,
-                    ]}
-                  >
-                    Small
-                  </Text>
-                  {fontSize === 'small' && (
-                    <Check size={20} color={Colors.primary} />
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  fontSize === 'medium' && styles.optionButtonSelected,
-                ]}
-                onPress={() => handleFontSizeChange('medium')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text
-                    style={[
-                      styles.optionText,
-                      { fontSize: 16 },
-                      fontSize === 'medium' && styles.optionTextSelected,
-                    ]}
-                  >
-                    Medium
-                  </Text>
-                  {fontSize === 'medium' && (
-                    <Check size={20} color={Colors.primary} />
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  fontSize === 'large' && styles.optionButtonSelected,
-                ]}
-                onPress={() => handleFontSizeChange('large')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text
-                    style={[
-                      styles.optionText,
-                      { fontSize: 18 },
-                      fontSize === 'large' && styles.optionTextSelected,
-                    ]}
-                  >
-                    Large
-                  </Text>
-                  {fontSize === 'large' && (
-                    <Check size={20} color={Colors.primary} />
-                  )}
-                </View>
-              </TouchableOpacity>
+              {(['small', 'medium', 'large'] as const).map((size) => (
+                <TouchableOpacity
+                  key={size}
+                  style={[
+                    styles.optionButton,
+                    fontSize === size && styles.optionButtonSelected,
+                  ]}
+                  onPress={() => handleFontSizeChange(size)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.optionContent}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        { fontSize: size === 'small' ? 14 : size === 'large' ? 18 : 16 },
+                        fontSize === size && styles.optionTextSelected,
+                      ]}
+                    >
+                      {size.charAt(0).toUpperCase() + size.slice(1)}
+                    </Text>
+                    {fontSize === size && <Check size={20} color={Colors.primary} />}
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </GlassCard>
         </View>

@@ -1,43 +1,31 @@
-# Fix "infinite recursion detected in policy for relation profiles" (42P17)
+# Therapist insights, instant chat, home chat button, dark mode default, simpler therapist signup
 
-## Root cause
+## Changes
 
-The previous migration `MIGRATION_THERAPIST_READ_ACCESS.sql` created a
-SELECT policy **on `profiles`** whose `USING` clause itself joins
-`profiles` (`JOIN profiles me ON me.id = sa.therapist_id`). Postgres
-re-evaluates the same policy when reading that inner `profiles` row,
-which re-enters the policy → infinite recursion → 42P17.
+**1. Therapist sees more than just Daily Log**
+- [x] Give therapists access to insights for the connected child (read-only based on shared-access permissions).
+- [x] Add an Insights entry on the therapist client detail (View Insights button → `/therapist/insights/[childId]`).
 
-Symptom: every read of `profiles` after sign-up fails, so the app falls
-back to "Guest" and the onboarding upsert errors with
-`infinite recursion detected in policy for relation "profiles"`.
+**2. Faster messaging**
+- [x] Optimistic send: messages appear instantly via React Query `onMutate`, reconciled on success/error.
+- [x] Realtime subscription on `chat_messages` invalidates the query when new rows arrive.
+- [ ] Subtle "sending…" indicator (deferred — optimistic send already feels instant).
 
-The `children_therapist_select` policy had the same shape and would
-have failed for any therapist child read.
+**3. Chat button on the home screen**
+- [x] Replaced the Insights tile next to Calendar with a Chat tile.
+- [x] No shared access → routes to `/settings/shared-access`.
+- [x] One conversation → opens it directly. Multiple → quick Alert picker.
+- [x] Insights still available via the bottom Insights tab.
 
-## Fix shipped
+**4. Dark mode by default + simplified Appearance settings**
+- [x] Preferences default to `theme: 'dark'` everywhere (fresh, fallback, error paths).
+- [x] Saved preferences are coerced to dark on read.
+- [x] Removed Theme card from Appearance; only Text Size remains.
 
-- [x] `expo/MIGRATION_FIX_PROFILES_RECURSION.sql`:
-      1. Creates `public.current_profile_id()` — a SECURITY DEFINER SQL
-         function that returns the caller's `profiles.id` while
-         bypassing RLS. Granted only to `authenticated`.
-      2. Drops the recursive `profiles_therapist_select` and
-         `children_therapist_select` policies.
-      3. Recreates them so the `USING` clause references **only
-         `shared_access`**, comparing `sa.therapist_id` against
-         `current_profile_id()`. No self-reference to `profiles`, so no
-         recursion.
-      4. Ends with a `pg_policy` SELECT so you can visually confirm the
-         new `using_expr` after running.
+**5. Cleaner therapist signup**
+- [x] Therapist onboarding skips the Log Reminder step (1 → 4).
+- [x] Step indicator and Back navigation updated to match.
+- [x] Parent/teacher flows keep the reminder step.
 
-Idempotent — safe to re-run.
-
-## How to apply
-
-1. Supabase → SQL editor → paste
-   `expo/MIGRATION_FIX_PROFILES_RECURSION.sql` → **Run**.
-2. In the app, sign out and back in. Onboarding upsert should succeed
-   and the dashboard should show the real profile (not Guest).
-3. Therapist *My Clients* and caregiver *Connected Therapists* will
-   keep working because the rewritten policies grant the same access,
-   just without the self-join.
+**6. Profile build lag**
+- [x] Home screen shows a "Setting up your profile…" state when authenticated and the profile row is still loading, instead of flashing Guest.

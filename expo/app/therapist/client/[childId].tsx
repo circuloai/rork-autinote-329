@@ -1,5 +1,5 @@
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { ChevronLeft, MessageCircle, Plus, Calendar as CalendarIcon, FileText, AlertTriangle, Heart, User as UserIcon } from 'lucide-react-native';
+import { ChevronLeft, MessageCircle, Plus, Calendar as CalendarIcon, FileText, AlertTriangle, Heart, User as UserIcon, TrendingUp } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
@@ -227,6 +227,18 @@ export default function TherapistClientDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {(permissions.canViewProgress || permissions.canViewLogs) && (
+          <TouchableOpacity
+            style={styles.insightsAction}
+            activeOpacity={0.85}
+            onPress={() => router.push(`/therapist/insights/${child.id}` as any)}
+            testID="therapist-insights-cta"
+          >
+            <TrendingUp size={18} color={Colors.surface} />
+            <Text style={styles.insightsActionText}>View Insights</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <CalendarIcon size={16} color={Colors.text} />
@@ -418,6 +430,21 @@ const createStyles = (Colors: ReturnType<typeof getColors>) =>
     },
     secondaryActionText: {
       color: Colors.primary,
+      fontSize: 14,
+      fontWeight: '700' as const,
+    },
+    insightsAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: Colors.secondary,
+      paddingVertical: 14,
+      borderRadius: 12,
+      marginTop: 10,
+    },
+    insightsActionText: {
+      color: Colors.surface,
       fontSize: 14,
       fontWeight: '700' as const,
     },

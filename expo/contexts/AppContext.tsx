@@ -329,8 +329,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
       try {
         if (!user || !isSupabaseConfigured) {
           const stored = await AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES);
-          return stored ? JSON.parse(stored) as Preferences : {
-            theme: 'light' as const,
+          if (stored) {
+            const parsed = JSON.parse(stored) as Preferences;
+            return { ...parsed, theme: 'dark' as const };
+          }
+          return {
+            theme: 'dark' as const,
             colorTheme: 'mint' as const,
             fontSize: 'medium' as const,
             textToSpeech: false,
@@ -347,7 +351,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         if (error || !data) {
           console.log('[AppContext] Preferences fetch error or no data:', error);
           return {
-            theme: 'light' as const,
+            theme: 'dark' as const,
             colorTheme: 'mint' as const,
             fontSize: 'medium' as const,
             textToSpeech: false,
@@ -357,7 +361,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
         console.log('[AppContext] Preferences fetched');
         return {
-          theme: data.theme as any,
+          theme: 'dark' as const,
           colorTheme: data.color_theme as any,
           fontSize: data.font_size as any,
           textToSpeech: data.text_to_speech,
@@ -369,7 +373,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       } catch (error) {
         console.error('[AppContext] Preferences query error:', error);
         return {
-          theme: 'light' as const,
+          theme: 'dark' as const,
           colorTheme: 'mint' as const,
           fontSize: 'medium' as const,
           textToSpeech: false,
@@ -519,6 +523,31 @@ export const [AppProvider, useApp] = createContextHook(() => {
       setIsAuthenticated(false);
     }
   }, [authIsAuthenticated, profileQuery.data]);
+
+  useEffect(() => {
+    if (!user || !sharedAccessQuery.data || sharedAccessQuery.data.length === 0) return;
+    const acceptedIds = sharedAccessQuery.data.filter((s) => s.status === 'accepted').map((s) => s.id);
+    if (acceptedIds.length === 0) return;
+    console.log('[AppContext] Subscribing to chat_messages realtime for', acceptedIds.length, 'conversations');
+    const channel = supabase
+      .channel(`chat_messages_${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_messages' },
+        (payload) => {
+          const row = (payload.new || payload.old) as { shared_access_id?: string } | undefined;
+          if (row?.shared_access_id && acceptedIds.includes(row.shared_access_id)) {
+            void queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log('[AppContext] chat realtime status:', status);
+      });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, sharedAccessQuery.data, queryClient]);
 
   const { mutate: saveProfileMutate } = useMutation({
     mutationFn: async (profile: UserProfile) => {
@@ -922,8 +951,37 @@ export const [AppProvider, useApp] = createContextHook(() => {
         createdAt: data.created_at,
       } as ChatMessage;
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['chatMessages', user?.id] });
+    onMutate: async (message) => {
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const optimistic: ChatMessage = {
+        id: tempId,
+        sharedAccessId: message.sharedAccessId,
+        senderId: profileQuery.data?.id || '',
+        senderName: message.senderName,
+        messageText: message.messageText,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      };
+      queryClient.setQueriesData<ChatMessage[]>({ queryKey: ['chatMessages'] }, (old) => {
+        return [...(old || []), optimistic];
+      });
+      return { tempId };
+    },
+    onSuccess: (saved, _vars, ctx) => {
+      const tempId = (ctx as any)?.tempId as string | undefined;
+      queryClient.setQueriesData<ChatMessage[]>({ queryKey: ['chatMessages'] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((m) => (m.id === tempId ? saved : m));
+      });
+      void queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
+    },
+    onError: (_err, _vars, ctx) => {
+      const tempId = (ctx as any)?.tempId as string | undefined;
+      if (!tempId) return;
+      queryClient.setQueriesData<ChatMessage[]>({ queryKey: ['chatMessages'] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((m) => m.id !== tempId);
+      });
     },
   });
 

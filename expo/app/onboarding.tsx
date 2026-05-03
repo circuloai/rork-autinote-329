@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
-import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Moon, Volume2, Sparkles, Heart, Stethoscope, GraduationCap } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Volume2, Sparkles, Heart, Stethoscope, GraduationCap } from 'lucide-react-native';
 
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,7 +43,6 @@ export default function OnboardingScreen() {
   const [newReminderTone, setNewReminderTone] = useState<ReminderTone>('chime');
   const [newReminderMessage, setNewReminderMessage] = useState('Would you like to log today notes?');
 
-  const [darkMode, setDarkMode] = useState(false);
   const [textToSpeech, setTextToSpeech] = useState(false);
   const [fontSizeScale, setFontSizeScale] = useState<'small' | 'medium' | 'large'>('medium');
   const celebrationScale = new Animated.Value(0);
@@ -73,7 +72,7 @@ export default function OnboardingScreen() {
     if (step === 0 && isStep0Valid) {
       setStep(1);
     } else if (step === 1 && isStep1Valid) {
-      setStep(isTherapist ? 3 : 2);
+      setStep(isTherapist ? 4 : 2);
     } else if (step === 2 && isStep2Valid) {
       setStep(3);
     } else if (step === 3) {
@@ -85,7 +84,7 @@ export default function OnboardingScreen() {
   };
 
   const handleBack = () => {
-    if (step === 3 && isTherapist) {
+    if (step === 4 && isTherapist) {
       setStep(1);
     } else if (step > 0) {
       setStep((step - 1) as Step);
@@ -245,7 +244,7 @@ export default function OnboardingScreen() {
         .from('preferences')
         .upsert({
           user_id: userId,
-          theme: darkMode ? 'dark' : 'light',
+          theme: 'dark',
           color_theme: 'mint',
           font_size: fontSizeScale,
           text_to_speech: textToSpeech,
@@ -301,7 +300,7 @@ export default function OnboardingScreen() {
 
           <View style={styles.header}>
             <Text style={[styles.title, { fontSize: getFontSize(32) }]}>
-              {step === 0 ? "Who's signing up?" : step === 1 ? "Let's Get Started" : step === 2 ? "Child Information" : step === 3 ? "Let's Set Up Your Daily Reminders" : step === 4 ? "Theme & Accessibility" : "You're All Set!"}
+              {step === 0 ? "Who's signing up?" : step === 1 ? "Let's Get Started" : step === 2 ? "Child Information" : step === 3 ? "Let's Set Up Your Daily Reminders" : step === 4 ? "Accessibility" : "You're All Set!"}
             </Text>
             <Text style={[styles.subtitle, { fontSize: getFontSize(16) }]}>
               {step === 0
@@ -313,7 +312,7 @@ export default function OnboardingScreen() {
                 : step === 3
                 ? "A little structure goes a long way. Choose when you'd like gentle reminders."
                 : step === 4
-                ? "Visual comfort and inclusivity"
+                ? "A few quick accessibility options."
                 : "Welcome to the AutiNote family. Let's make today a little easier, one log at a time."}
             </Text>
           </View>
@@ -323,7 +322,7 @@ export default function OnboardingScreen() {
               <View style={[styles.stepDot, step === 0 && styles.stepDotActive]} />
               <View style={[styles.stepDot, step === 1 && styles.stepDotActive]} />
               {!isTherapist && <View style={[styles.stepDot, step === 2 && styles.stepDotActive]} />}
-              <View style={[styles.stepDot, step === 3 && styles.stepDotActive]} />
+              {!isTherapist && <View style={[styles.stepDot, step === 3 && styles.stepDotActive]} />}
               <View style={[styles.stepDot, step === 4 && styles.stepDotActive]} />
             </View>
           )}
@@ -457,24 +456,7 @@ export default function OnboardingScreen() {
           {step === 4 && (
             <View style={styles.form}>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Theme & Accessibility</Text>
-                
-                <View style={styles.accessibilityCard}>
-                  <View style={styles.accessibilityRow}>
-                    <Moon size={20} color={Colors.primary} />
-                    <View style={styles.accessibilityInfo}>
-                      <Text style={styles.accessibilityLabel}>Dark Mode</Text>
-                      <Text style={styles.accessibilityDesc}>Reduce eye strain in low light</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={[styles.toggle, darkMode && styles.toggleActive]}
-                      onPress={() => setDarkMode(!darkMode)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.toggleCircle, darkMode && styles.toggleCircleActive]} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                <Text style={styles.sectionTitle}>Accessibility</Text>
 
                 <View style={styles.accessibilityCard}>
                   <View style={styles.accessibilityRow}>
