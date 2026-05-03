@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
 import GlassCard from '@/components/GlassCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo, useCallback } from 'react';
@@ -146,10 +146,24 @@ export default function HomeScreen() {
   const handleOpenChat = useCallback(() => {
     const accepted = (sharedAccess || []).filter((sa) => sa.status === 'accepted');
     if (accepted.length === 0) {
-      router.push('/settings/shared-access' as any);
+      const goToAutumn = () => router.push('/(tabs)/chat' as any);
+      const goToSharedAccess = () => router.push('/settings/shared-access' as any);
+      if (Platform.OS === 'web') {
+        const ok = typeof window !== 'undefined' && window.confirm('No therapist connected yet. Set up shared access to invite a therapist?\n\nOK to invite, Cancel to chat with Autumn.');
+        if (ok) goToSharedAccess(); else goToAutumn();
+        return;
+      }
+      Alert.alert(
+        'No therapist connected',
+        'Set up shared access to invite a therapist, or chat with Autumn for support right now.',
+        [
+          { text: 'Chat with Autumn', onPress: goToAutumn },
+          { text: 'Set up shared access', style: 'default', onPress: goToSharedAccess },
+        ],
+        { cancelable: true }
+      );
       return;
     }
-    // Open chat directly with the primary (earliest accepted) connection.
     const primary = [...accepted].sort((a, b) => {
       const at = a.acceptedAt ? new Date(a.acceptedAt).getTime() : new Date(a.createdAt).getTime();
       const bt = b.acceptedAt ? new Date(b.acceptedAt).getTime() : new Date(b.createdAt).getTime();
@@ -448,7 +462,7 @@ export default function HomeScreen() {
                 >
                   <GlassCard style={styles.glassSecondaryAction} glassEffectStyle="clear" fallbackStyle={{ backgroundColor: Colors.surface }}>
                     <MessageCircle size={20} color={Colors.text} />
-                    <Text style={[styles.secondaryActionText, { color: Colors.text }]}>Chat</Text>
+                    <Text style={[styles.secondaryActionText, { color: Colors.text }]}>Therapist</Text>
                   </GlassCard>
                 </TouchableOpacity>
               </>
@@ -470,7 +484,7 @@ export default function HomeScreen() {
                   testID="home-chat-button"
                 >
                   <MessageCircle size={20} color={Colors.primary} />
-                  <Text style={[styles.secondaryActionText, { color: Colors.primary }]}>Chat</Text>
+                  <Text style={[styles.secondaryActionText, { color: Colors.primary }]}>Therapist</Text>
                 </TouchableOpacity>
               </>
             )}
