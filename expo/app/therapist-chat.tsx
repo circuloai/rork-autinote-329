@@ -157,6 +157,7 @@ export default function TherapistChatScreen() {
                           hour: 'numeric', 
                           minute: '2-digit' 
                         })}
+                        {isMyMessage && message.id.startsWith('temp_') ? ' · Sending…' : ''}
                       </Text>
                     </View>
                   </View>

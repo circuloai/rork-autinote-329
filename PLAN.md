@@ -1,31 +1,39 @@
-# Therapist insights, instant chat, home chat button, dark mode default, simpler therapist signup
+# Therapist insights, instant chat, home chat button, dark-mode default, simpler appearance settings
 
-## Changes
+## What will change
 
-**1. Therapist sees more than just Daily Log**
-- [x] Give therapists access to insights for the connected child (read-only based on shared-access permissions).
-- [x] Add an Insights entry on the therapist client detail (View Insights button → `/therapist/insights/[childId]`).
+### 1. Therapist sees Insights
+- Therapists will get the same Insights tab parents see, scoped to whichever client they currently have selected.
+- Switching active client updates the charts and stats automatically.
 
-**2. Faster messaging**
-- [x] Optimistic send: messages appear instantly via React Query `onMutate`, reconciled on success/error.
-- [x] Realtime subscription on `chat_messages` invalidates the query when new rows arrive.
-- [ ] Subtle "sending…" indicator (deferred — optimistic send already feels instant).
+### 2. Instant messaging
+- Messages send and appear immediately in the conversation, even before the server confirms (optimistic send).
+- New incoming messages arrive in real time without needing to refresh — both sides see them within a second.
+- A subtle "sending…" indicator shows on a message until it's confirmed; failed sends show a retry tap.
 
-**3. Chat button on the home screen**
-- [x] Replaced the Insights tile next to Calendar with a Chat tile.
-- [x] No shared access → routes to `/settings/shared-access`.
-- [x] One conversation → opens it directly. Multiple → quick Alert picker.
-- [x] Insights still available via the bottom Insights tab.
+### 3. Chat button on Home
+- The Insights button next to Calendar on the Home screen will be replaced with a Chat button.
+- Tapping Chat:
+  - If the child has a connected therapist/teacher → opens chat directly with the primary connected therapist.
+  - If no one is connected yet → takes the user to the Shared Access page in Settings, with a friendly prompt to invite a therapist.
 
-**4. Dark mode by default + simplified Appearance settings**
-- [x] Preferences default to `theme: 'dark'` everywhere (fresh, fallback, error paths).
-- [x] Saved preferences are coerced to dark on read.
-- [x] Removed Theme card from Appearance; only Text Size remains.
+### 4. Dark mode by default
+- Every new and existing profile defaults to dark mode.
+- The light/dark toggle is removed from the visible Appearance settings.
+- A hidden developer override remains (long-press on the Appearance title) for testing — not shown to regular users.
 
-**5. Cleaner therapist signup**
-- [x] Therapist onboarding skips the Log Reminder step (1 → 4).
-- [x] Step indicator and Back navigation updated to match.
-- [x] Parent/teacher flows keep the reminder step.
+### 5. Simpler Appearance settings
+- Appearance screen now contains only **Text Size** with four options: Small, Medium, Large, Extra Large.
+- Theme toggle, accent colors, and other visual options are removed from this screen.
 
-**6. Profile build lag**
-- [x] Home screen shows a "Setting up your profile…" state when authenticated and the profile row is still loading, instead of flashing Guest.
+### 6. Therapist signup cleanup
+- The "Daily Log Reminder" screen is skipped entirely when the selected role is Therapist.
+- Therapists go straight from their profile details to completion.
+
+## Screens affected
+- **Home**: Chat button replaces Insights button next to Calendar.
+- **Insights tab**: Now visible for therapists, scoped to active client.
+- **Therapist Chat / Messages**: Real-time updates and optimistic send.
+- **Settings → Appearance**: Simplified to text size only.
+- **Onboarding (Therapist branch)**: Log reminder step removed.
+- **Shared Access (Settings)**: Becomes the fallback destination from Home Chat when no connections exist.

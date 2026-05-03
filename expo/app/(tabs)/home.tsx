@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator } from 'react-native';
 import GlassCard from '@/components/GlassCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo, useCallback } from 'react';
@@ -149,21 +149,13 @@ export default function HomeScreen() {
       router.push('/settings/shared-access' as any);
       return;
     }
-    if (accepted.length === 1) {
-      router.push(`/therapist-chat?sharedAccessId=${accepted[0].id}` as any);
-      return;
-    }
-    Alert.alert(
-      'Open conversation',
-      'Choose who to message',
-      [
-        ...accepted.map((sa) => ({
-          text: `${sa.therapistName}${sa.therapistRole ? ` (${sa.therapistRole})` : ''}`,
-          onPress: () => router.push(`/therapist-chat?sharedAccessId=${sa.id}` as any),
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
-    );
+    // Open chat directly with the primary (earliest accepted) connection.
+    const primary = [...accepted].sort((a, b) => {
+      const at = a.acceptedAt ? new Date(a.acceptedAt).getTime() : new Date(a.createdAt).getTime();
+      const bt = b.acceptedAt ? new Date(b.acceptedAt).getTime() : new Date(b.createdAt).getTime();
+      return at - bt;
+    })[0];
+    router.push(`/therapist-chat?sharedAccessId=${primary.id}` as any);
   }, [router, sharedAccess]);
 
   const triggers = activeChild?.commonTriggers ?? [];

@@ -1,19 +1,37 @@
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Stack } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 
+type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+const FONT_SIZE_LABELS: Record<FontSize, string> = {
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
+  xlarge: 'Extra Large',
+};
+
+const FONT_SIZE_PX: Record<FontSize, number> = {
+  small: 14,
+  medium: 16,
+  large: 18,
+  xlarge: 20,
+};
+
 export default function CustomizationScreen() {
   const { preferences, savePreferences } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
-  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(preferences?.fontSize || 'medium');
+  const [fontSize, setFontSize] = useState<FontSize>((preferences?.fontSize as FontSize) || 'medium');
+  const titlePressCountRef = useRef<number>(0);
+  const titlePressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleFontSizeChange = (newSize: 'small' | 'medium' | 'large') => {
+  const handleFontSizeChange = (newSize: FontSize) => {
     setFontSize(newSize);
     if (preferences) {
       savePreferences({
@@ -21,6 +39,28 @@ export default function CustomizationScreen() {
         fontSize: newSize,
       });
     }
+  };
+
+  // Hidden dev override: long-press the Appearance screen title to toggle light/dark
+  const handleTitleLongPress = () => {
+    if (!preferences) return;
+    const next = preferences.theme === 'light' ? 'dark' : 'light';
+    savePreferences({ ...preferences, theme: next });
+    Alert.alert('Theme override', `Theme set to ${next}. (Hidden dev setting)`);
+  };
+
+  // Tap counter alternative trigger (5 taps within 2s) for platforms without long-press feedback
+  const handleTitleTap = () => {
+    titlePressCountRef.current += 1;
+    if (titlePressTimerRef.current) clearTimeout(titlePressTimerRef.current);
+    if (titlePressCountRef.current >= 5) {
+      titlePressCountRef.current = 0;
+      handleTitleLongPress();
+      return;
+    }
+    titlePressTimerRef.current = setTimeout(() => {
+      titlePressCountRef.current = 0;
+    }, 2000);
   };
 
   return (
@@ -35,8 +75,18 @@ export default function CustomizationScreen() {
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onLongPress={handleTitleLongPress}
+          onPress={handleTitleTap}
+          delayLongPress={800}
+          style={styles.section}
+          testID="appearance-title-area"
+        >
           <Text style={styles.sectionTitle}>TEXT SIZE</Text>
+        </TouchableOpacity>
+
+        <View style={[styles.section, { marginTop: 0 }]}>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.settingItem}>
               <View style={styles.settingContent}>
@@ -46,7 +96,7 @@ export default function CustomizationScreen() {
             </View>
 
             <View style={styles.optionsContainer}>
-              {(['small', 'medium', 'large'] as const).map((size) => (
+              {(['small', 'medium', 'large', 'xlarge'] as const).map((size) => (
                 <TouchableOpacity
                   key={size}
                   style={[
@@ -55,16 +105,17 @@ export default function CustomizationScreen() {
                   ]}
                   onPress={() => handleFontSizeChange(size)}
                   activeOpacity={0.7}
+                  testID={`font-size-${size}`}
                 >
                   <View style={styles.optionContent}>
                     <Text
                       style={[
                         styles.optionText,
-                        { fontSize: size === 'small' ? 14 : size === 'large' ? 18 : 16 },
+                        { fontSize: FONT_SIZE_PX[size] },
                         fontSize === size && styles.optionTextSelected,
                       ]}
                     >
-                      {size.charAt(0).toUpperCase() + size.slice(1)}
+                      {FONT_SIZE_LABELS[size]}
                     </Text>
                     {fontSize === size && <Check size={20} color={Colors.primary} />}
                   </View>
@@ -78,10 +129,10 @@ export default function CustomizationScreen() {
           <Text style={styles.sectionTitle}>PREVIEW</Text>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.previewContent}>
-              <Text style={[styles.previewTitle, { fontSize: fontSize === 'small' ? 18 : fontSize === 'large' ? 22 : 20 }]}>
+              <Text style={[styles.previewTitle, { fontSize: FONT_SIZE_PX[fontSize] + 4 }]}>
                 Sample Text
               </Text>
-              <Text style={[styles.previewBody, { fontSize: fontSize === 'small' ? 14 : fontSize === 'large' ? 18 : 16 }]}>
+              <Text style={[styles.previewBody, { fontSize: FONT_SIZE_PX[fontSize] }]}>
                 This is how your text will appear throughout the app with the selected font size. Daily logs, insights, and all other content will use this size.
               </Text>
             </View>
@@ -103,7 +154,7 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     flex: 1,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 12,
     paddingHorizontal: 20,
     marginTop: 24,
   },
@@ -172,6 +223,7 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   previewSection: {
     marginBottom: 24,
     paddingHorizontal: 20,
+    marginTop: 24,
   },
   previewContent: {
     padding: 20,

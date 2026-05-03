@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Users, MessageCircle, Settings as SettingsIcon } from "lucide-react-native";
+import { Users, MessageCircle, Settings as SettingsIcon, TrendingUp } from "lucide-react-native";
 import React, { useMemo } from "react";
 import { getColors } from "@/constants/colors";
 import { useApp } from "@/contexts/AppContext";
@@ -29,6 +29,13 @@ export default function TherapistTabsLayout() {
         options={{
           title: "Clients",
           tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="insights"
+        options={{
+          title: "Insights",
+          tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={size} />,
         }}
       />
       <Tabs.Screen

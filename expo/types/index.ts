@@ -113,7 +113,7 @@ export interface QuickReminder {
 export interface Preferences {
   theme: 'light' | 'dark' | 'auto';
   colorTheme: 'mint' | 'lavender' | 'peach';
-  fontSize: 'small' | 'medium' | 'large';
+  fontSize: 'small' | 'medium' | 'large' | 'xlarge';
   textToSpeech: boolean;
   reminders: boolean;
   reminderTime?: string;

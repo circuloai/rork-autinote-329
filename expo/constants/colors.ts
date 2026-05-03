@@ -44,7 +44,8 @@ const themeColors = {
 
 export function getColors(preferences?: Preferences | null) {
   const colorTheme: ColorTheme = preferences?.colorTheme || 'mint';
-  const theme: Theme = preferences?.theme === 'dark' ? 'dark' : 'light';
+  // Default to dark mode for all profiles. Users can override via hidden dev toggle (preferences.theme === 'light').
+  const theme: Theme = preferences?.theme === 'light' ? 'light' : 'dark';
   
   const themeColor = themeColors[colorTheme][theme];
   
