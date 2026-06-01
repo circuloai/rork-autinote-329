@@ -1,5 +1,5 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Check, Sparkles } from 'lucide-react-native';
@@ -13,14 +13,16 @@ import { generateText } from '@rork-ai/toolkit-sdk';
 export default function DailyLogScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ date?: string }>();
+  const params = useLocalSearchParams<{ date?: string; editLogId?: string }>();
   const { activeChild, saveLog, activeChildLogs } = useApp();
-  
-  const selectedDate = params.date ? new Date(params.date) : new Date();
-  
+
+  const dateStr = params.date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+  const editLogId = params.editLogId || null;
+  const existingLogForEdit = editLogId ? activeChildLogs.find(l => l.id === editLogId) : null;
+
   const existingLogsForDate = activeChildLogs.filter(log => {
-    const logDate = new Date(log.date);
-    return logDate.toDateString() === selectedDate.toDateString();
+    const logDate = typeof log.date === 'string' && log.date.length === 10 ? log.date : new Date(log.date).toISOString().split('T')[0];
+    return logDate === dateStr;
   });
 
   const [overallRating, setOverallRating] = useState<DailyMoodRating | null>(null);
@@ -28,6 +30,19 @@ export default function DailyLogScreen() {
   const [whatWasChallenging, setWhatWasChallenging] = useState('');
   const [selectedTags, setSelectedTags] = useState<MoodTag[]>([]);
   const [sleepHours, setSleepHours] = useState<number>(8);
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (existingLogForEdit) {
+      const log = existingLogForEdit as any;
+      setOverallRating(log.overallRating || log.moodRating || null);
+      setWhatWentWell(log.whatWentWell || log.positiveNotes || '');
+      setWhatWasChallenging(log.whatWasChallenging || log.challengeNotes || '');
+      setSelectedTags(log.moodTags || []);
+      setSleepHours(log.sleepHours ?? 8);
+      setIsEditing(true);
+    }
+  }, [editLogId]);
   
   const [wellSuggestions, setWellSuggestions] = useState<string[]>([]);
   const [challengeSuggestions, setChallengeSuggestions] = useState<string[]>([]);
@@ -225,20 +240,20 @@ ${predefinedChallengeSuggestions.join('\n')}`;
     }
 
     const logEntry: DailyLogEntry = {
-      id: Crypto.randomUUID(),
+      id: isEditing && editLogId ? editLogId : Crypto.randomUUID(),
       childId: activeChild.id,
-      date: selectedDate.toISOString(),
+      date: dateStr,
       type: 'daily',
       overallRating,
       whatWentWell,
       whatWasChallenging,
       moodTags: selectedTags,
       sleepHours,
-      createdAt: new Date().toISOString(),
+      createdAt: isEditing && existingLogForEdit ? (existingLogForEdit as any).createdAt : new Date().toISOString(),
     };
 
     saveLog(logEntry);
-    Alert.alert('Success', '📝 Daily log saved!', [
+    Alert.alert('Success', isEditing ? '📝 Log updated!' : '📝 Daily log saved!', [
       {
         text: 'OK',
         onPress: () => router.back(),
@@ -272,7 +287,14 @@ ${predefinedChallengeSuggestions.join('\n')}`;
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 120 }}
         >
-        {existingLogsForDate.length > 0 && (
+        {isEditing && (
+          <View style={styles.existingLogsNotice}>
+            <Text style={styles.existingLogsText}>
+              ✏️ Editing log for {dateStr}
+            </Text>
+          </View>
+        )}
+        {!isEditing && existingLogsForDate.length > 0 && (
           <View style={styles.existingLogsNotice}>
             <Text style={styles.existingLogsText}>
               ℹ️ {existingLogsForDate.length} {existingLogsForDate.length === 1 ? 'entry' : 'entries'} already logged for this date

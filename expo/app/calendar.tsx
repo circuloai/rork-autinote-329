@@ -34,8 +34,15 @@ export default function CalendarScreen() {
   const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
   const firstDay = getFirstDayOfMonth(selectedYear, selectedMonth);
 
+  const normalizeDate = (dateVal: string): string => {
+    if (typeof dateVal === 'string' && dateVal.length === 10 && dateVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return new Date(dateVal + 'T00:00:00').toDateString();
+    }
+    return new Date(dateVal).toDateString();
+  };
+
   const logsByDate = activeChildLogs.reduce((acc, log) => {
-    const dateKey = new Date(log.date).toDateString();
+    const dateKey = normalizeDate(log.date);
     if (!acc[dateKey]) {
       acc[dateKey] = [];
     }
@@ -105,41 +112,77 @@ export default function CalendarScreen() {
           key={`day-${day}`} 
           style={styles.dayCell}
           onPress={() => {
-            const selectedDate = new Date(selectedYear, selectedMonth, day);
-            router.push({
-              pathname: '/log/daily' as any,
-              params: { date: selectedDate.toISOString() }
-            });
+            const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            if (logsForDay.length > 0) {
+              Alert.alert(
+                date.toDateString(),
+                `${logsForDay.length} ${logsForDay.length === 1 ? 'log' : 'logs'} already saved for this date.`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Edit Log',
+                    onPress: () => {
+                      router.push({
+                        pathname: '/log/daily' as any,
+                        params: { date: dateStr, editLogId: logsForDay[0].id },
+                      });
+                    },
+                  },
+                  {
+                    text: 'New Log',
+                    onPress: () => {
+                      router.push({
+                        pathname: '/log/daily' as any,
+                        params: { date: dateStr },
+                      });
+                    },
+                  },
+                ]
+              );
+            } else {
+              router.push({
+                pathname: '/log/daily' as any,
+                params: { date: dateStr },
+              });
+            }
           }}
           onLongPress={() => {
             if (logsForDay.length === 0) return;
-            const logOptions = logsForDay.map((log: any, i: number) => {
+            const buttons: any[] = [{ text: 'Cancel', style: 'cancel' }];
+            logsForDay.forEach((log: any, i: number) => {
               const rating = log.overallRating || log.moodRating || 'unknown';
               const createdAt = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              return `Log ${i + 1} - ${rating} (${createdAt})`;
+              const label = logsForDay.length === 1 ? `Edit` : `Edit Log ${i + 1} (${rating})`;
+              buttons.push({
+                text: label,
+                onPress: () => {
+                  const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  router.push({
+                    pathname: '/log/daily' as any,
+                    params: { date: dateStr, editLogId: log.id },
+                  });
+                },
+              });
+              const delLabel = logsForDay.length === 1 ? `Delete` : `Delete Log ${i + 1} (${rating})`;
+              buttons.push({
+                text: delLabel,
+                style: 'destructive' as const,
+                onPress: () => {
+                  Alert.alert(
+                    'Confirm Delete',
+                    `Delete this log entry? This cannot be undone.`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Delete', style: 'destructive', onPress: () => deleteLog(log.id) },
+                    ]
+                  );
+                },
+              });
             });
             Alert.alert(
               `Logs for ${date.toDateString()}`,
-              logsForDay.length === 1
-                ? 'Delete this log entry?'
-                : `Delete which log entry?`,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                ...logsForDay.map((log: any, i: number) => ({
-                  text: `Delete Log ${i + 1}`,
-                  style: 'destructive' as const,
-                  onPress: () => {
-                    Alert.alert(
-                      'Confirm Delete',
-                      `Delete this log entry? This cannot be undone.`,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Delete', style: 'destructive', onPress: () => deleteLog(log.id) },
-                      ]
-                    );
-                  },
-                })),
-              ]
+              null,
+              buttons
             );
           }}
           activeOpacity={0.7}
