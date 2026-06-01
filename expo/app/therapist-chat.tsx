@@ -1,8 +1,8 @@
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { MessageCircle, Send, ChevronLeft, User } from 'lucide-react-native';
+import { MessageCircle, Send, ChevronLeft, User, Check, CheckCheck } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 
@@ -10,7 +10,7 @@ export default function TherapistChatScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { sharedAccessId } = useLocalSearchParams<{ sharedAccessId: string }>();
-  const { sharedAccess, chatMessages, profile, preferences, saveChatMessage, activeChild } = useApp();
+  const { sharedAccess, chatMessages, profile, preferences, saveChatMessage, activeChild, markConversationAsRead } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   
@@ -45,6 +45,16 @@ export default function TherapistChatScreen() {
       }, 100);
     }
   }, [conversationMessages.length]);
+
+  useEffect(() => {
+    if (!sharedAccessId || !profile?.id) return;
+    const unreadFromOther = conversationMessages.some(
+      (m) => m.senderId !== profile.id && !m.isRead
+    );
+    if (unreadFromOther) {
+      markConversationAsRead(sharedAccessId);
+    }
+  }, [sharedAccessId, profile?.id, conversationMessages.length > 0]);
 
   const handleSendMessage = () => {
     if (!messageText.trim() || !sharedAccessId || !profile) return;
@@ -131,6 +141,19 @@ export default function TherapistChatScreen() {
                 new Date(conversationMessages[index - 1].createdAt).toDateString() !== 
                 new Date(message.createdAt).toDateString();
 
+              const getStatusLabel = (): { label: string; icon: React.ReactNode } | null => {
+                if (!isMyMessage) return null;
+                if (message.id.startsWith('temp_')) {
+                  return { label: 'Sending…', icon: null };
+                }
+                if (message.isRead) {
+                  return { label: 'Seen', icon: <CheckCheck size={12} color={Colors.surface + 'CC'} /> };
+                }
+                return { label: 'Delivered', icon: <Check size={12} color={Colors.surface + 'CC'} /> };
+              };
+
+              const status = getStatusLabel();
+
               return (
                 <View key={message.id}>
                   {showDate && (
@@ -152,13 +175,22 @@ export default function TherapistChatScreen() {
                       <Text style={[styles.messageText, isMyMessage && styles.myMessageText]}>
                         {message.messageText}
                       </Text>
-                      <Text style={[styles.messageTime, isMyMessage && styles.myMessageTime]}>
-                        {new Date(message.createdAt).toLocaleTimeString('en-US', { 
-                          hour: 'numeric', 
-                          minute: '2-digit' 
-                        })}
-                        {isMyMessage && message.id.startsWith('temp_') ? ' · Sending…' : ''}
-                      </Text>
+                      <View style={[styles.messageFooter, isMyMessage && styles.myMessageFooter]}>
+                        {isMyMessage && status?.icon && (
+                          <>{status.icon}</>
+                        )}
+                        <Text style={[styles.messageTime, isMyMessage && styles.myMessageTime]}>
+                          {new Date(message.createdAt).toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit' 
+                          })}
+                        </Text>
+                        {isMyMessage && status?.label && (
+                          <Text style={[styles.statusLabel, isMyMessage && styles.myStatusLabel]}>
+                            {status.label}
+                          </Text>
+                        )}
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -329,10 +361,26 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   messageTime: {
     fontSize: 11,
     color: Colors.textSecondary,
-    marginTop: 4,
   },
   myMessageTime: {
     color: Colors.surface + 'CC',
+  },
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  myMessageFooter: {
+    justifyContent: 'flex-end',
+  },
+  statusLabel: {
+    fontSize: 10,
+    color: Colors.textSecondary,
+    fontWeight: '500' as const,
+  },
+  myStatusLabel: {
+    color: Colors.surface + '99',
   },
   inputContainer: {
     paddingHorizontal: 20,

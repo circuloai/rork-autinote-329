@@ -1,17 +1,17 @@
-# Fix date offset & add log editing
+# Chat messaging with delivered/seen status and unread badges
 
-## Two fixes
+## Features
 
-### 1. Fix date offset bug - [x]
+- [x] **Auto-mark messages as Seen** — When the therapist or caregiver opens a chat, all messages from the other person are instantly marked as read, showing "Seen" on their side
+- [x] **Delivered status** — Sent messages display "Delivered" once they reach the server, then change to "Seen" when the other person opens the chat
+- [x] **Apple Messages-style labels** — Each sent message bubble shows a small status label beneath the time: "Sending…" for unsent, "Delivered" once saved, or "Seen" once read
+- [x] **Unread badge on Home** — The Therapist button on the Home page shows a red number badge with the count of unread messages from the therapist (resets to zero when the caregiver opens the chat)
+- [x] **Unread badges for therapist** — The Messages tab and Clients list already show unread counts from caregivers — these refresh in real-time
+- [x] **Instant real-time messaging** — Messages, delivery confirmations, and seen receipts update instantly across both devices via Supabase realtime
 
-**The problem**: When clicking a calendar date, the date is converted to an ISO timestamp (e.g. `"2026-05-12T16:00:00.000Z"`) that shifts depending on the device's timezone. This makes the log appear on the wrong day.
+## Design
 
-**The fix**: Store and compare dates using simple YYYY-MM-DD format (e.g. `"2026-05-13"`) — no timezone component, no ambiguity. The calendar passes the date as YYYY-MM-DD, the log screen stores it as YYYY-MM-DD, and the calendar matches it directly.
-
-### 2. Edit saved logs - [x]
-
-**The problem**: Once a log is saved for a date, there's no way to edit it — tapping the date always opens a blank form for a new log.
-
-**The fix**: When you tap a date that already has logs, the app shows a quick menu with "Edit Log" and "New Log" options. Choosing "Edit" opens the log form pre-filled with the existing data — you can change anything and save to update. Tapping a date with no logs still opens the blank form directly as before. The long-press menu on calendar dates now also has an "Edit" option alongside "Delete".
-
-**Files changed**: Calendar screen and daily log screen.
+- Status labels are subtle non-intrusive text below message time in a lighter, slightly smaller font — matching Apple's iMessage style
+- Unread badge on the Home Therapist button is a small red circle with white number, positioned at the top-right corner of the button
+- All existing chat visual design (bubble colors, layout, spacing) stays unchanged
+- Messages screen unread badges keep their current blue pill design

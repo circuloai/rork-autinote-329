@@ -1001,6 +1001,26 @@ export const [AppProvider, useApp] = createContextHook(() => {
     },
   });
 
+  const { mutate: markConversationAsReadMutate } = useMutation({
+    mutationFn: async (sharedAccessId: string) => {
+      if (!user || !profileQuery.data?.id) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .update({ is_read: true })
+        .eq('shared_access_id', sharedAccessId)
+        .neq('sender_id', profileQuery.data.id)
+        .eq('is_read', false)
+        .select('id');
+
+      if (error) throw error;
+      return { markedCount: (data || []).length };
+    },
+    onSuccess: (_result, sharedAccessId) => {
+      void queryClient.invalidateQueries({ queryKey: ['chatMessages', user?.id] });
+    },
+  });
+
   const { mutate: logoutMutate } = useMutation({
     mutationFn: async () => {
       if (user) {
@@ -1092,6 +1112,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
   const saveTherapistNote = useCallback((note: TherapistNote) => saveTherapistNoteMutate(note), [saveTherapistNoteMutate]);
   const saveChatMessage = useCallback((message: Omit<ChatMessage, 'id' | 'createdAt'>) => saveChatMessageMutate(message), [saveChatMessageMutate]);
   const markMessageAsRead = useCallback((messageId: string) => markMessageAsReadMutate(messageId), [markMessageAsReadMutate]);
+  const markConversationAsRead = useCallback((sharedAccessId: string) => markConversationAsReadMutate(sharedAccessId), [markConversationAsReadMutate]);
   
   const addSharedAccess = useCallback((data: Omit<SharedAccess, 'id' | 'createdAt' | 'acceptedAt' | 'parentId'>) => {
     if (!profileQuery.data?.id) {
@@ -1135,7 +1156,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
     saveTherapistNote,
     saveChatMessage,
     markMessageAsRead,
-  }), [isAuthenticated, profileQuery.data, profileQuery.isLoading, logsQuery.data, logsQuery.isLoading, preferencesQuery.data, preferencesQuery.isLoading, chatHistoryQuery.data, chatHistoryQuery.isLoading, sharedAccessQuery.data, sharedAccessQuery.isLoading, therapistNotesQuery.data, therapistNotesQuery.isLoading, chatMessagesQuery.data, chatMessagesQuery.isLoading, therapistClientsQuery.data, activeChild, activeChildLogs, streak, saveProfile, saveLog, deleteLog, savePreferences, saveChatHistory, clearChatHistory, logout, setActiveChild, saveSharedAccess, addSharedAccess, deleteSharedAccess, saveTherapistNote, saveChatMessage, markMessageAsRead]);
+    markConversationAsRead,
+  }), [isAuthenticated, profileQuery.data, profileQuery.isLoading, logsQuery.data, logsQuery.isLoading, preferencesQuery.data, preferencesQuery.isLoading, chatHistoryQuery.data, chatHistoryQuery.isLoading, sharedAccessQuery.data, sharedAccessQuery.isLoading, therapistNotesQuery.data, therapistNotesQuery.isLoading, chatMessagesQuery.data, chatMessagesQuery.isLoading, therapistClientsQuery.data, activeChild, activeChildLogs, streak, saveProfile, saveLog, deleteLog, savePreferences, saveChatHistory, clearChatHistory, logout, setActiveChild, saveSharedAccess, addSharedAccess, deleteSharedAccess, saveTherapistNote, saveChatMessage, markMessageAsRead, markConversationAsRead]);
 });
 
 export function useActiveChildLogs(startDate?: Date, endDate?: Date) {

@@ -13,7 +13,7 @@ import type { QuickReminder, CustomReminder } from '@/types';
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeChild, streak, activeChildLogs, preferences, sharedAccess, profile, isLoading } = useApp();
+  const { activeChild, streak, activeChildLogs, preferences, sharedAccess, profile, isLoading, chatMessages } = useApp();
   const { isAuthenticated: hasSession } = useAuth();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   
@@ -142,6 +142,12 @@ export default function HomeScreen() {
 
   const reminders = useMemo(() => getUpcomingReminders(), [getUpcomingReminders]);
   const hasReminders = (reminders.upcoming.length > 0 || reminders.missed.length > 0) && preferences?.reminders;
+
+  const therapistUnreadCount = useMemo(() => {
+    return chatMessages.filter(
+      (m) => !m.isRead && m.senderId !== profile?.id
+    ).length;
+  }, [chatMessages, profile?.id]);
 
   const handleOpenChat = useCallback(() => {
     const accepted = (sharedAccess || []).filter((sa) => sa.status === 'accepted');
@@ -463,6 +469,13 @@ export default function HomeScreen() {
                   <GlassCard style={styles.glassSecondaryAction} glassEffectStyle="clear" fallbackStyle={{ backgroundColor: Colors.surface }}>
                     <MessageCircle size={20} color={Colors.text} />
                     <Text style={[styles.secondaryActionText, { color: Colors.text }]}>Therapist</Text>
+                    {therapistUnreadCount > 0 && (
+                      <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadBadgeText}>
+                          {therapistUnreadCount > 99 ? '99+' : therapistUnreadCount}
+                        </Text>
+                      </View>
+                    )}
                   </GlassCard>
                 </TouchableOpacity>
               </>
@@ -483,7 +496,16 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                   testID="home-chat-button"
                 >
-                  <MessageCircle size={20} color={Colors.primary} />
+                  <View>
+                    <MessageCircle size={20} color={Colors.primary} />
+                    {therapistUnreadCount > 0 && (
+                      <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadBadgeText}>
+                          {therapistUnreadCount > 99 ? '99+' : therapistUnreadCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={[styles.secondaryActionText, { color: Colors.primary }]}>Therapist</Text>
                 </TouchableOpacity>
               </>
@@ -862,5 +884,24 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     textAlign: 'center',
     paddingVertical: 12,
     fontStyle: 'italic' as const,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -8,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.surface,
+  },
+  unreadBadgeText: {
+    fontSize: 10,
+    fontWeight: '800' as const,
+    color: '#FFFFFF',
   },
 });
