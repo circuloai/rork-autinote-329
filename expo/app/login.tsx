@@ -1,18 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
-import { ArrowLeft, Chrome, Apple } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn, signInWithOAuth } = useAuth();
+  const { signIn } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
 
   const isValid = email.trim().length > 0 && password.trim().length > 0;
 
@@ -49,27 +48,6 @@ export default function LoginScreen() {
     router.back();
   };
 
-  const handleOAuthLogin = async (provider: 'google' | 'apple') => {
-    setOauthLoading(provider);
-    try {
-      const { error } = await signInWithOAuth(provider);
-      if (error) {
-        if (error.message !== 'Authentication was cancelled') {
-          Alert.alert('Login Error', error.message);
-        }
-      } else {
-        router.replace('/' as any);
-      }
-    } catch (err) {
-      console.error('[Login] OAuth unexpected error:', err);
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-      Alert.alert('Error', message.includes('fetch') || message.includes('network') || message.includes('Network')
-        ? 'Unable to connect to the server. Please check your internet connection and try again.'
-        : message);
-    } finally {
-      setOauthLoading(null);
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -139,47 +117,7 @@ export default function LoginScreen() {
               <Text style={styles.forgotButtonText}>Forgot Password?</Text>
             </TouchableOpacity>
 
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or continue with</Text>
-              <View style={styles.dividerLine} />
-            </View>
 
-            <View style={styles.socialButtonsRow}>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => handleOAuthLogin('google')}
-                disabled={oauthLoading !== null || isLoading}
-                activeOpacity={0.8}
-                testID="google-login"
-              >
-                {oauthLoading === 'google' ? (
-                  <ActivityIndicator size="small" color={Colors.text} />
-                ) : (
-                  <>
-                    <Chrome size={20} color={Colors.text} />
-                    <Text style={styles.socialButtonText}>Google</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.socialButton, styles.appleSocialButton]}
-                onPress={() => handleOAuthLogin('apple')}
-                disabled={oauthLoading !== null || isLoading}
-                activeOpacity={0.8}
-                testID="apple-login"
-              >
-                {oauthLoading === 'apple' ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Apple size={20} color="#FFFFFF" />
-                    <Text style={styles.appleButtonText}>Apple</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
           </View>
 
           <View style={styles.footer}>
@@ -275,52 +213,7 @@ const styles = StyleSheet.create({
     fontWeight: '500' as const,
     color: Colors.primary,
   },
-  dividerContainer: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 12,
-    marginTop: 8,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '500' as const,
-  },
-  socialButtonsRow: {
-    flexDirection: 'row' as const,
-    gap: 12,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  appleSocialButton: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
-  },
-  socialButtonText: {
-    fontSize: 15,
-    fontWeight: '600' as const,
-    color: Colors.text,
-  },
-  appleButtonText: {
-    fontSize: 15,
-    fontWeight: '600' as const,
-    color: '#FFFFFF',
-  },
+
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
