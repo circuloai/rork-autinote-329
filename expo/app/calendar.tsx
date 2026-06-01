@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Colors from '@/constants/colors';
@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 export default function CalendarScreen() {
   const router = useRouter();
-  const { activeChildLogs } = useApp();
+  const { activeChildLogs, deleteLog } = useApp();
   
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -68,6 +68,7 @@ export default function CalendarScreen() {
 
   const getMoodColor = (rating: string) => {
     switch (rating) {
+      case 'great':
       case 'good': return Colors.success;
       case 'mixed': return Colors.warning;
       case 'challenging': return Colors.error;
@@ -109,6 +110,37 @@ export default function CalendarScreen() {
               pathname: '/log/daily' as any,
               params: { date: selectedDate.toISOString() }
             });
+          }}
+          onLongPress={() => {
+            if (logsForDay.length === 0) return;
+            const logOptions = logsForDay.map((log: any, i: number) => {
+              const rating = log.overallRating || log.moodRating || 'unknown';
+              const createdAt = new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              return `Log ${i + 1} - ${rating} (${createdAt})`;
+            });
+            Alert.alert(
+              `Logs for ${date.toDateString()}`,
+              logsForDay.length === 1
+                ? 'Delete this log entry?'
+                : `Delete which log entry?`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                ...logsForDay.map((log: any, i: number) => ({
+                  text: `Delete Log ${i + 1}`,
+                  style: 'destructive' as const,
+                  onPress: () => {
+                    Alert.alert(
+                      'Confirm Delete',
+                      `Delete this log entry? This cannot be undone.`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Delete', style: 'destructive', onPress: () => deleteLog(log.id) },
+                      ]
+                    );
+                  },
+                })),
+              ]
+            );
           }}
           activeOpacity={0.7}
         >
@@ -174,7 +206,7 @@ export default function CalendarScreen() {
           <View style={styles.legendItems}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.success }]} />
-              <Text style={styles.legendText}>Good</Text>
+              <Text style={styles.legendText}>Great</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.warning }]} />
