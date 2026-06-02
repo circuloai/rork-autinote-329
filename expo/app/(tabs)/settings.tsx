@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ChevronRight, User, Bell, Palette, BookOpen, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw } from 'lucide-react-native';
+import { ChevronRight, User, Bell, Palette, BookOpen, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw, KeyRound } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors } from '@/constants/colors';
@@ -65,6 +65,14 @@ export default function SettingsScreen() {
       items: [
         {
           icon: <User size={24} color={Colors.text} />,
+          title: 'My Profile',
+          subtitle: 'Edit your personal information',
+          onPress: () => {
+            router.push('/settings/profile' as any);
+          },
+        },
+        {
+          icon: <User size={24} color={Colors.text} />,
           title: 'Child Profile',
           subtitle: 'View and edit child information',
           onPress: () => {
@@ -77,6 +85,14 @@ export default function SettingsScreen() {
           subtitle: 'Manage therapist collaboration',
           onPress: () => {
             router.push('/settings/shared-access' as any);
+          },
+        },
+        {
+          icon: <KeyRound size={24} color={Colors.text} />,
+          title: 'Forgot Password',
+          subtitle: 'Reset your password via verification code',
+          onPress: () => {
+            router.push('/settings/forgot-password' as any);
           },
         },
       ],

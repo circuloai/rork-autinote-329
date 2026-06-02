@@ -1,17 +1,34 @@
-# Chat messaging with delivered/seen status and unread badges
+# Profile editing & Forgot password flow
 
 ## Features
 
-- [x] **Auto-mark messages as Seen** — When the therapist or caregiver opens a chat, all messages from the other person are instantly marked as read, showing "Seen" on their side
-- [x] **Delivered status** — Sent messages display "Delivered" once they reach the server, then change to "Seen" when the other person opens the chat
-- [x] **Apple Messages-style labels** — Each sent message bubble shows a small status label beneath the time: "Sending…" for unsent, "Delivered" once saved, or "Seen" once read
-- [x] **Unread badge on Home** — The Therapist button on the Home page shows a red number badge with the count of unread messages from the therapist (resets to zero when the caregiver opens the chat)
-- [x] **Unread badges for therapist** — The Messages tab and Clients list already show unread counts from caregivers — these refresh in real-time
-- [x] **Instant real-time messaging** — Messages, delivery confirmations, and seen receipts update instantly across both devices via Supabase realtime
+### Profile Editing in Settings
+
+- A new "My Profile" option in the Account section of Settings
+- Edit screen with fields for Name, Email, Phone Number, and Change Password
+- Name and Phone update instantly in the database
+- Email change sends a confirmation to the new address (via Supabase)
+- Password change requires current password + new password confirmation
+
+### Forgot Password Flow
+
+- Accessible from both the Login page ("Forgot Password?" button) and Settings
+- **Step 1**: Enter your email address
+- **Step 2**: Choose delivery method — Email or Phone
+- **Step 3**: A 4-digit confirmation code is sent. A code entry popup appears with 4 input boxes
+- **Step 4**: A 60-second countdown timer shows at the bottom with a "Resend" button next to it
+- **Step 5**: After entering the correct code, user sets a new password
+- Tapping "Resend" re-sends the code to the previously chosen method and restarts the countdown
 
 ## Design
 
-- Status labels are subtle non-intrusive text below message time in a lighter, slightly smaller font — matching Apple's iMessage style
-- Unread badge on the Home Therapist button is a small red circle with white number, positioned at the top-right corner of the button
-- All existing chat visual design (bubble colors, layout, spacing) stays unchanged
-- Messages screen unread badges keep their current blue pill design
+- Profile screen follows the existing Settings pattern with grouped cards and clean form fields
+- Forgot password uses a modal/popup design with the code entry boxes prominently centered
+- Countdown timer displayed as "Resend in 0:XX" with the Resend button disabled until it hits 0
+- Consistent dark theme with mint accents matching the rest of the app
+
+## Pages / Screens
+
+- **Settings → My Profile** — Edit name, email, phone, and change password
+- **Forgot Password screen** — Email entry → method choice → code verification → new password
+

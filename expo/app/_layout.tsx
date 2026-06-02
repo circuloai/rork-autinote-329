@@ -72,6 +72,8 @@ function RootLayoutNav() {
       <Stack.Screen name="settings/diagnose-connection" options={{ headerShown: false, title: 'Diagnose Connection' }} />
       <Stack.Screen name="settings/reminders" options={{ headerShown: false, title: 'Reminders' }} />
       <Stack.Screen name="settings/customization" options={{ headerShown: true, title: 'Customization' }} />
+      <Stack.Screen name="settings/profile" options={{ headerShown: false, title: 'My Profile' }} />
+      <Stack.Screen name="settings/forgot-password" options={{ headerShown: false, title: 'Reset Password' }} />
     </Stack>
   );
 }
