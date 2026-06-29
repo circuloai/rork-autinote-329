@@ -6,9 +6,9 @@
     "eas-build-post-install": "node scripts/eas-log-expo-config.cjs",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "start": "bunx rork start -p i3iytomcfmnnh5v3rdwxs --tunnel",
-    "start-web": "bunx rork start -p i3iytomcfmnnh5v3rdwxs --web --tunnel",
-    "start-web-dev": "DEBUG=expo* bunx rork start -p i3iytomcfmnnh5v3rdwxs --web --tunnel",
+    "start": "bunx rork start -p i3iytomcfmnnh5v3rdwxs",
+    "start-web": "bunx rork start -p i3iytomcfmnnh5v3rdwxs --web",
+    "start-web-dev": "DEBUG=expo* bunx rork start -p i3iytomcfmnnh5v3rdwxs --web",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -64,7 +64,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@expo/ngrok": "^4.1.0",
     "@types/react": "~19.1.10",
     "eslint": "9.31.0",
     "eslint-config-expo": "~10.0.0",
