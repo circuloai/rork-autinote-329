@@ -16,7 +16,7 @@ export const requestCode = publicProcedure
     const supabase = getSupabaseClient();
     const code = generateCode();
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("password_reset_codes")
       .insert({
         email: input.email.toLowerCase().trim(),
@@ -46,7 +46,7 @@ export const verifyCode = publicProcedure
   .mutation(async ({ input }) => {
     const supabase = getSupabaseClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("password_reset_codes")
       .select("id")
       .eq("email", input.email.toLowerCase().trim())
@@ -74,7 +74,7 @@ export const resetPassword = publicProcedure
   .mutation(async ({ input }) => {
     const supabase = getSupabaseClient();
 
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await (supabase as any).rpc(
       "verify_reset_code_and_update_password",
       {
         p_email: input.email.toLowerCase().trim(),

@@ -44,7 +44,7 @@ export default function CustomizationScreen() {
   // Hidden dev override: long-press the Appearance screen title to toggle light/dark
   const handleTitleLongPress = () => {
     if (!preferences) return;
-    const next = preferences.theme === 'light' ? 'dark' : 'light';
+    const next = (preferences.theme as string) === 'light' ? 'dark' : 'light';
     savePreferences({ ...preferences, theme: next });
     Alert.alert('Theme override', `Theme set to ${next}. (Hidden dev setting)`);
   };

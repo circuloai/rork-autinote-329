@@ -181,7 +181,7 @@ export default function CalendarScreen() {
             });
             Alert.alert(
               `Logs for ${date.toDateString()}`,
-              null,
+              '',
               buttons
             );
           }}
