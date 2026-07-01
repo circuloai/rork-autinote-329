@@ -1,12 +1,13 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check, Image } from 'lucide-react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image as RNImage } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { AVATAR_OPTIONS, getAvatarById } from '@/constants/avatars';
 
 export default function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -19,6 +20,8 @@ export default function ProfileSettingsScreen() {
   const [name, setName] = useState(profile?.caregiverName || '');
   const [email, setEmail] = useState(profile?.caregiverEmail || user?.email || '');
   const [phone, setPhone] = useState(profile?.caregiverPhone || '');
+  const [avatar, setAvatar] = useState((profile as any)?.avatar || '');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -31,7 +34,7 @@ export default function ProfileSettingsScreen() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
 
-  const profileChanged = name !== (profile?.caregiverName || '') || phone !== (profile?.caregiverPhone || '') || email !== (profile?.caregiverEmail || user?.email || '');
+  const profileChanged = name !== (profile?.caregiverName || '') || phone !== (profile?.caregiverPhone || '') || email !== (profile?.caregiverEmail || user?.email || '') || avatar !== ((profile as any)?.avatar || '');
   const passwordValid = newPassword.length >= 8 && newPassword === confirmPassword && currentPassword.length > 0;
 
   const handleSaveProfile = useCallback(async () => {
@@ -43,6 +46,7 @@ export default function ProfileSettingsScreen() {
         caregiverName: name.trim() || undefined,
         caregiverPhone: phone.trim() || undefined,
         caregiverEmail: email.trim() || undefined,
+        ...({ avatar: avatar || undefined } as any),
       };
       saveProfile(updatedProfile);
 
@@ -107,6 +111,55 @@ export default function ProfileSettingsScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.section}>
+            <View style={styles.avatarSection}>
+              <TouchableOpacity
+                onPress={() => setShowAvatarPicker(!showAvatarPicker)}
+                activeOpacity={0.7}
+              >
+                {avatar ? (
+                  <RNImage
+                    source={{ uri: getAvatarById(avatar)?.url || '' }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <User size={40} color={Colors.textLight} />
+                  </View>
+                )}
+                <View style={styles.avatarEditBadge}>
+                  <Image size={12} color={Colors.surface} />
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.avatarLabel}>Profile Picture</Text>
+            </View>
+
+            {showAvatarPicker && (
+              <View style={[styles.card, { marginBottom: 16 }]}>
+                <Text style={styles.avatarPickerTitle}>Choose an avatar</Text>
+                <View style={styles.avatarGrid}>
+                  {AVATAR_OPTIONS.map((option) => (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={[
+                        styles.avatarOption,
+                        avatar === option.id && styles.avatarOptionSelected,
+                      ]}
+                      onPress={() => {
+                        setAvatar(option.id);
+                        setShowAvatarPicker(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <RNImage
+                        source={{ uri: getAvatarById(option.id)?.url || '' }}
+                        style={styles.avatarOptionImage}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
             <Text style={styles.sectionTitle}>PERSONAL INFORMATION</Text>
             <View style={styles.card}>
               <View style={styles.field}>
@@ -500,5 +553,76 @@ const createStyles = (Colors: ReturnType<typeof getColors>) =>
     updatePasswordText: {
       fontSize: 15,
       fontWeight: '600' as const,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    avatarImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: Colors.surface,
+    },
+    avatarPlaceholder: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: Colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: Colors.border,
+      borderStyle: 'dashed' as const,
+    },
+    avatarEditBadge: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: Colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: Colors.background,
+    },
+    avatarLabel: {
+      fontSize: 14,
+      color: Colors.textSecondary,
+      marginTop: 10,
+    },
+    avatarPickerTitle: {
+      fontSize: 13,
+      fontWeight: '600' as const,
+      color: Colors.textSecondary,
+      padding: 16,
+      paddingBottom: 8,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.5,
+    },
+    avatarGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      padding: 16,
+      paddingTop: 8,
+    },
+    avatarOption: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      overflow: 'hidden',
+      borderWidth: 3,
+      borderColor: 'transparent',
+    },
+    avatarOptionSelected: {
+      borderColor: Colors.primary,
+    },
+    avatarOptionImage: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
     },
   });

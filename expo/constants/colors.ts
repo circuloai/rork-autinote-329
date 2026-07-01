@@ -3,6 +3,20 @@ import type { Preferences } from '@/types';
 type ColorTheme = 'mint' | 'lavender' | 'peach';
 type Theme = 'light' | 'dark';
 
+type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+const FONT_SIZE_MULTIPLIERS: Record<FontSize, number> = {
+  small: 0.85,
+  medium: 1.0,
+  large: 1.15,
+  xlarge: 1.30,
+};
+
+export function getFontScale(preferences?: Preferences | null): number {
+  const size: FontSize = (preferences?.fontSize as FontSize) || 'medium';
+  return FONT_SIZE_MULTIPLIERS[size];
+}
+
 const themeColors = {
   mint: {
     light: {

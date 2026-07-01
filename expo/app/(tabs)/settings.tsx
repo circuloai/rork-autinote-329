@@ -121,7 +121,7 @@ export default function SettingsScreen() {
           title: 'Journal Preferences',
           subtitle: 'Customize logging categories',
           onPress: () => {
-            Alert.alert('Coming Soon', 'Journal preferences will be available soon');
+            router.push('/settings/journal-preferences' as any);
           },
         },
         {
@@ -129,7 +129,7 @@ export default function SettingsScreen() {
           title: 'Progress Settings',
           subtitle: 'Configure insights',
           onPress: () => {
-            Alert.alert('Coming Soon', 'Progress settings will be available soon');
+            router.push('/settings/progress-settings' as any);
           },
         },
         {
@@ -137,11 +137,7 @@ export default function SettingsScreen() {
           title: 'AI Assistant',
           subtitle: 'Customize Autumn behavior',
           onPress: () => {
-            Alert.alert(
-              'AI Assistant Settings',
-              '🤖 Autumn - Your AI Companion\n\nCurrent Settings:\n• Response Style: Supportive & Informative\n• Context Awareness: Uses your logs for personalized insights\n• Topics: Autism support, behavior patterns, parenting strategies\n\nCustomization Options:\n\n💬 Chat Style:\n• Warm & Conversational (Current)\n• Professional & Clinical\n• Brief & Direct\n\n🎯 Focus Areas:\n• General autism support\n• Behavior intervention strategies\n• Emotional regulation techniques\n• Sleep and routine guidance\n• Sensory processing tips\n\n🔒 Privacy:\n• All conversations are private\n• Data stays on your device\n• AI processes logs locally for insights\n\nNote: Full customization options coming soon in future updates.',
-              [{ text: 'OK' }]
-            );
+            router.push('/settings/autumn-settings' as any);
           },
         },
       ],
@@ -154,7 +150,7 @@ export default function SettingsScreen() {
           title: 'Data & Privacy',
           subtitle: 'Export, backup, security',
           onPress: () => {
-            Alert.alert('Coming Soon', 'Data management will be available soon');
+            router.push('/settings/data-privacy' as any);
           },
         },
       ],

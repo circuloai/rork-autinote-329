@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
-import { getColors } from '@/constants/colors';
+import { getColors, getFontScale } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import { generateText } from '@rork-ai/toolkit-sdk';
@@ -44,7 +44,8 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { activeChild, activeChildLogs = [], chatHistory = [], saveChatHistory, clearChatHistory, preferences } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
-  const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const fontScale = useMemo(() => getFontScale(preferences), [preferences]);
+  const styles = useMemo(() => createStyles(Colors, fontScale), [Colors, fontScale]);
   const [input, setInput] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
@@ -139,6 +140,30 @@ IMPORTANT RESPONSE STYLE:
 
 You have context about their child and logs - reference it naturally when relevant, but don't list or repeat data they already know.`;
 
+      const autumnStyle = (preferences as any)?.autumnStyle || 'warm';
+      const autumnFocus = (preferences as any)?.autumnFocus || ['autism', 'behavior', 'emotional', 'sleep', 'sensory'];
+      const autumnVerbosity = (preferences as any)?.autumnVerbosity || 'balanced';
+
+      let styleGuidance = '';
+      if (autumnStyle === 'professional') {
+        styleGuidance = '\nADDITIONAL STYLE: Use a professional, evidence-based tone. Reference research and clinical terminology where appropriate. Be thorough and structured.';
+      } else if (autumnStyle === 'brief') {
+        styleGuidance = '\nADDITIONAL STYLE: Keep responses extremely brief — 1-2 sentences max. Be direct and skip pleasantries. Give just the core insight or actionable tip.';
+      } else {
+        styleGuidance = '\nADDITIONAL STYLE: Be warm and conversational. Use empathy, metaphors, and a supportive tone. Make the caregiver feel heard.';
+      }
+
+      if (autumnVerbosity === 'detailed') {
+        styleGuidance += ' Provide in-depth analysis with examples and strategies.';
+      } else if (autumnVerbosity === 'short') {
+        styleGuidance += ' Keep responses to absolute minimum length.';
+      }
+
+      const focusList = Array.isArray(autumnFocus) ? autumnFocus.join(', ') : 'autism, behavior, emotional, sleep, sensory';
+      styleGuidance += `\nFOCUS AREAS: Prioritize topics related to: ${focusList}. De-emphasize topics outside these areas.`;
+
+      const fullInstructions = systemInstructions + styleGuidance;
+
       const contextBlock = `Context (use when relevant):\n${JSON.stringify({ child: childContext, recentLogs: compactLogSummary }, null, 2)}`;
 
       console.log('[Chat] Sending request...');
@@ -148,7 +173,7 @@ You have context about their child and logs - reference it naturally when releva
 
       const assistantText = await generateText({
         messages: [
-          { role: 'user', content: systemInstructions },
+          { role: 'user', content: fullInstructions },
           { role: 'assistant', content: 'Got it - I\'ll be warm, conversational, and concise. No formatting, just human connection.' },
           ...history,
           { role: 'user', content: `${contextBlock}\n\nUser: ${text}` },
@@ -381,7 +406,7 @@ You have context about their child and logs - reference it naturally when releva
   );
 }
 
-const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create({
+const createStyles = (Colors: ReturnType<typeof getColors>, fs: number = 1) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -408,12 +433,12 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     borderRadius: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: Math.round(24 * fs),
     fontWeight: '700' as const,
     color: Colors.text,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: Math.round(14 * fs),
     color: Colors.textSecondary,
   },
   chatContainer: {

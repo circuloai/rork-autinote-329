@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, PanResponder, StyleSheet, Platform } from 'react-native';
+import React, { useRef, useCallback, useState } from 'react';
+import { View, PanResponder, StyleSheet, Platform, LayoutChangeEvent } from 'react-native';
 
 interface CustomSliderProps {
   value: number;
@@ -25,98 +25,139 @@ export default function CustomSlider({
   style,
 }: CustomSliderProps) {
   const [sliderWidth, setSliderWidth] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const sliderRef = useRef<View>(null);
+  const sliderPageXRef = useRef(0);
 
-  const calculateValue = (locationX: number) => {
-    const percentage = Math.max(0, Math.min(1, locationX / sliderWidth));
-    const rawValue = minimumValue + percentage * (maximumValue - minimumValue);
-    const steppedValue = Math.round(rawValue / step) * step;
-    return Math.max(minimumValue, Math.min(maximumValue, steppedValue));
-  };
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width } = e.nativeEvent.layout;
+    setSliderWidth(width);
+    // Measure slider's absolute position on screen
+    if (sliderRef.current) {
+      sliderRef.current.measureInWindow((x) => {
+        sliderPageXRef.current = x;
+      });
+    }
+  }, []);
 
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (evt) => {
-      setIsDragging(true);
-      const locationX = evt.nativeEvent.locationX;
-      const newValue = calculateValue(locationX);
-      onValueChange(newValue);
+  const calculateValue = useCallback(
+    (locationInSlider: number) => {
+      if (sliderWidth <= 0) return value;
+      const ratio = Math.max(0, Math.min(1, locationInSlider / sliderWidth));
+      const rawValue = minimumValue + ratio * (maximumValue - minimumValue);
+      const steppedValue = Math.round(rawValue / step) * step;
+      return Math.max(minimumValue, Math.min(maximumValue, steppedValue));
     },
-    onPanResponderMove: (evt) => {
-      const locationX = evt.nativeEvent.locationX;
-      const newValue = calculateValue(locationX);
-      onValueChange(newValue);
-    },
-    onPanResponderRelease: () => {
-      setIsDragging(false);
-    },
-  });
+    [sliderWidth, minimumValue, maximumValue, step, value]
+  );
 
-  const percentage = (value - minimumValue) / (maximumValue - minimumValue);
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        // pageX is the absolute position on screen, subtract slider's pageX to get position within slider
+        const locationInSlider = evt.nativeEvent.pageX - sliderPageXRef.current;
+        const newValue = calculateValue(locationInSlider);
+        onValueChange(newValue);
+      },
+      onPanResponderMove: (evt) => {
+        const locationInSlider = evt.nativeEvent.pageX - sliderPageXRef.current;
+        const newValue = calculateValue(locationInSlider);
+        onValueChange(newValue);
+      },
+      onPanResponderRelease: () => {
+        // No state change needed — parent already has the value
+      },
+    })
+  ).current;
+
+  const percentage = sliderWidth > 0
+    ? ((value - minimumValue) / (maximumValue - minimumValue)) * 100
+    : 0;
 
   return (
     <View
+      ref={sliderRef}
       style={[styles.container, style]}
-      onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+      onLayout={onLayout}
       {...panResponder.panHandlers}
     >
+      {/* Background track */}
       <View style={[styles.track, { backgroundColor: maximumTrackTintColor }]} />
+      {/* Filled track */}
       <View
         style={[
           styles.filledTrack,
-          { width: `${percentage * 100}%`, backgroundColor: minimumTrackTintColor },
+          {
+            width: `${percentage}%`,
+            backgroundColor: minimumTrackTintColor,
+          },
         ]}
       />
+      {/* Thumb */}
       <View
         style={[
-          styles.thumb,
-          { left: `${percentage * 100}%`, backgroundColor: thumbTintColor },
-          isDragging && styles.thumbActive,
-          { shadowColor: minimumTrackTintColor },
+          styles.thumbWrapper,
+          { left: `${percentage}%` },
         ]}
-      />
+        pointerEvents="none"
+      >
+        <View
+          style={[
+            styles.thumb,
+            {
+              backgroundColor: thumbTintColor,
+              shadowColor: minimumTrackTintColor,
+            },
+          ]}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 40,
+    height: 44,
     justifyContent: 'center',
     position: 'relative',
   },
   track: {
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     width: '100%',
   },
   filledTrack: {
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     position: 'absolute',
+    top: 19, // (44 - 6) / 2
+  },
+  thumbWrapper: {
+    position: 'absolute',
+    top: 0,
+    marginLeft: -14,
+    width: 28,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   thumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    position: 'absolute',
-    marginLeft: -12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     ...Platform.select({
       ios: {
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 2,
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
       },
       android: {
         elevation: 4,
       },
       web: {
-        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
       },
     }),
-  },
-  thumbActive: {
-    transform: [{ scale: 1.2 }],
   },
 });

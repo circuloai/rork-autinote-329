@@ -502,15 +502,26 @@ export const [AppProvider, useApp] = createContextHook(() => {
         return [];
       }
 
-      return (data || []).map((msg: any) => ({
-        id: msg.id,
-        sharedAccessId: msg.shared_access_id,
-        senderId: msg.sender_id,
-        senderName: msg.sender?.caregiver_name || 'Unknown',
-        messageText: msg.message_text,
-        isRead: msg.is_read,
-        createdAt: msg.created_at,
-      }));
+      return (data || []).map((msg: any) => {
+        let senderName = msg.sender?.caregiver_name || 'Unknown';
+        if (senderName === 'Unknown') {
+          const relatedAccess = sharedAccessQuery.data?.find(
+            (sa: any) => sa.id === msg.shared_access_id
+          );
+          if (relatedAccess?.therapistName) {
+            senderName = relatedAccess.therapistName;
+          }
+        }
+        return {
+          id: msg.id,
+          sharedAccessId: msg.shared_access_id,
+          senderId: msg.sender_id,
+          senderName,
+          messageText: msg.message_text,
+          isRead: msg.is_read,
+          createdAt: msg.created_at,
+        };
+      });
     },
     enabled: !!user && !!sharedAccessQuery.data && sharedAccessQuery.data.length > 0 && isSupabaseConfigured,
     retry: isSupabaseConfigured ? 2 : false,
@@ -1029,7 +1040,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
       await AsyncStorage.removeItem(STORAGE_KEYS.LOG_ENTRIES);
       await AsyncStorage.removeItem(STORAGE_KEYS.PREFERENCES);
-      await AsyncStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
+      // CHAT_HISTORY intentionally preserved so AI conversations survive logout
     },
     onSuccess: () => {
       queryClient.clear();
