@@ -3,6 +3,7 @@ import { ChevronLeft, Shield, Eye, FileText, MessageSquare, Lock, Download, Cale
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState, useEffect } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { SharedAccess } from '@/types';
@@ -105,11 +106,11 @@ export default function ManagePermissionsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ChevronLeft size={24} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Permissions</Text>
+          <ScaledText style={styles.headerTitle}>Permissions</ScaledText>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>This invitation no longer exists.</Text>
+          <ScaledText style={styles.emptyText}>This invitation no longer exists.</ScaledText>
         </View>
       </View>
     );
@@ -138,17 +139,17 @@ export default function ManagePermissionsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Permissions</Text>
+        <ScaledText style={styles.headerTitle}>Permissions</ScaledText>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.therapistCard}>
-          <Text style={styles.cardLabel}>Managing permissions for</Text>
-          <Text style={styles.therapistName}>{access.therapistName}</Text>
-          <Text style={styles.therapistMeta}>
+          <ScaledText style={styles.cardLabel}>Managing permissions for</ScaledText>
+          <ScaledText style={styles.therapistName}>{access.therapistName}</ScaledText>
+          <ScaledText style={styles.therapistMeta}>
             {access.therapistRole} · {access.therapistEmail}
-          </Text>
+          </ScaledText>
           <View
             style={[
               styles.statusPill,
@@ -162,7 +163,7 @@ export default function ManagePermissionsScreen() {
               },
             ]}
           >
-            <Text
+            <ScaledText
               style={[
                 styles.statusText,
                 {
@@ -176,11 +177,11 @@ export default function ManagePermissionsScreen() {
               ]}
             >
               {access.status}
-            </Text>
+            </ScaledText>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Access controls</Text>
+        <ScaledText style={styles.sectionTitle}>Access controls</ScaledText>
         <View style={styles.list}>
           {rows.map((row, idx) => (
             <View
@@ -190,8 +191,8 @@ export default function ManagePermissionsScreen() {
             >
               <View style={styles.rowIcon}>{row.icon}</View>
               <View style={styles.rowText}>
-                <Text style={styles.rowLabel}>{row.label}</Text>
-                <Text style={styles.rowDescription}>{row.description}</Text>
+                <ScaledText style={styles.rowLabel}>{row.label}</ScaledText>
+                <ScaledText style={styles.rowDescription}>{row.description}</ScaledText>
               </View>
               <Switch
                 value={Boolean(draft[row.key])}
@@ -203,10 +204,10 @@ export default function ManagePermissionsScreen() {
           ))}
         </View>
 
-        <Text style={styles.footnote}>
+        <ScaledText style={styles.footnote}>
           Changes apply immediately after saving. The therapist will only see
           what these toggles allow.
-        </Text>
+        </ScaledText>
 
         <TouchableOpacity
           style={[styles.saveButton, (!dirty || saving) && styles.saveButtonDisabled]}
@@ -215,9 +216,9 @@ export default function ManagePermissionsScreen() {
           activeOpacity={0.7}
           testID="save-permissions"
         >
-          <Text style={styles.saveButtonText}>
+          <ScaledText style={styles.saveButtonText}>
             {saving ? 'Saving…' : dirty ? 'Save changes' : 'No changes'}
-          </Text>
+          </ScaledText>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />

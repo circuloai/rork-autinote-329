@@ -4,6 +4,7 @@ import { ArrowLeft, Mail, Smartphone, ShieldCheck, Lock } from 'lucide-react-nat
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors } from '@/constants/colors';
+import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { getTRPCClient } from '@/lib/trpc';
 
@@ -186,13 +187,13 @@ export default function ForgotPasswordScreen() {
       <View style={styles.iconContainer}>
         <Lock size={40} color={Colors.primary} />
       </View>
-      <Text style={styles.stepTitle}>Forgot Password?</Text>
-      <Text style={styles.stepDescription}>
+      <ScaledText style={styles.stepTitle}>Forgot Password?</ScaledText>
+      <ScaledText style={styles.stepDescription}>
         Enter your email address and we'll send you a verification code to reset your password.
-      </Text>
+      </ScaledText>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Email Address</Text>
+        <ScaledText style={styles.label}>Email Address</ScaledText>
         <TextInput
           style={styles.textInput}
           value={email}
@@ -206,7 +207,7 @@ export default function ForgotPasswordScreen() {
       </View>
 
       {errorMessage ? (
-        <Text style={styles.errorMessage}>{errorMessage}</Text>
+        <ScaledText style={styles.errorMessage}>{errorMessage}</ScaledText>
       ) : null}
 
       <TouchableOpacity
@@ -218,7 +219,7 @@ export default function ForgotPasswordScreen() {
         {isLoading ? (
           <ActivityIndicator color={Colors.background} />
         ) : (
-          <Text style={[styles.primaryButtonText, { color: Colors.background }]}>Continue</Text>
+          <ScaledText style={[styles.primaryButtonText, { color: Colors.background }]}>Continue</ScaledText>
         )}
       </TouchableOpacity>
     </View>
@@ -229,10 +230,10 @@ export default function ForgotPasswordScreen() {
       <View style={styles.iconContainer}>
         <ShieldCheck size={40} color={Colors.primary} />
       </View>
-      <Text style={styles.stepTitle}>Choose Method</Text>
-      <Text style={styles.stepDescription}>
+      <ScaledText style={styles.stepTitle}>Choose Method</ScaledText>
+      <ScaledText style={styles.stepDescription}>
         How would you like to receive your verification code?
-      </Text>
+      </ScaledText>
 
       <TouchableOpacity
         style={styles.methodCard}
@@ -244,8 +245,8 @@ export default function ForgotPasswordScreen() {
           <Mail size={28} color={Colors.primary} />
         </View>
         <View style={styles.methodContent}>
-          <Text style={styles.methodTitle}>Email</Text>
-          <Text style={styles.methodSubtitle}>Send code to {email.trim()}</Text>
+          <ScaledText style={styles.methodTitle}>Email</ScaledText>
+          <ScaledText style={styles.methodSubtitle}>Send code to {email.trim()}</ScaledText>
         </View>
         {isLoading ? (
           <ActivityIndicator size="small" color={Colors.primary} />
@@ -262,8 +263,8 @@ export default function ForgotPasswordScreen() {
           <Smartphone size={28} color={Colors.primary} />
         </View>
         <View style={styles.methodContent}>
-          <Text style={styles.methodTitle}>Phone</Text>
-          <Text style={styles.methodSubtitle}>Send code via SMS</Text>
+          <ScaledText style={styles.methodTitle}>Phone</ScaledText>
+          <ScaledText style={styles.methodSubtitle}>Send code via SMS</ScaledText>
         </View>
         {isLoading ? (
           <ActivityIndicator size="small" color={Colors.primary} />
@@ -271,7 +272,7 @@ export default function ForgotPasswordScreen() {
       </TouchableOpacity>
 
       {errorMessage ? (
-        <Text style={styles.errorMessage}>{errorMessage}</Text>
+        <ScaledText style={styles.errorMessage}>{errorMessage}</ScaledText>
       ) : null}
     </View>
   );
@@ -281,10 +282,10 @@ export default function ForgotPasswordScreen() {
       <View style={styles.iconContainer}>
         <ShieldCheck size={40} color={Colors.primary} />
       </View>
-      <Text style={styles.stepTitle}>Enter Code</Text>
-      <Text style={styles.stepDescription}>
+      <ScaledText style={styles.stepTitle}>Enter Code</ScaledText>
+      <ScaledText style={styles.stepDescription}>
         We sent a 4-digit code to {email.trim()}
-      </Text>
+      </ScaledText>
 
       <View style={styles.codeRow}>
         {code.map((digit, index) => (
@@ -306,7 +307,7 @@ export default function ForgotPasswordScreen() {
       </View>
 
       {errorMessage ? (
-        <Text style={styles.errorMessage}>{errorMessage}</Text>
+        <ScaledText style={styles.errorMessage}>{errorMessage}</ScaledText>
       ) : null}
 
       <TouchableOpacity
@@ -318,16 +319,16 @@ export default function ForgotPasswordScreen() {
         {isLoading ? (
           <ActivityIndicator color={Colors.background} />
         ) : (
-          <Text style={[styles.primaryButtonText, { color: codeComplete ? Colors.background : Colors.textLight }]}>
+          <ScaledText style={[styles.primaryButtonText, { color: codeComplete ? Colors.background : Colors.textLight }]}>
             Verify Code
-          </Text>
+          </ScaledText>
         )}
       </TouchableOpacity>
 
       <View style={styles.resendRow}>
-        <Text style={styles.resendLabel}>
+        <ScaledText style={styles.resendLabel}>
           {countdown > 0 ? `Resend in ${formatCountdown(countdown)}` : "Didn't receive the code?"}
-        </Text>
+        </ScaledText>
         <TouchableOpacity
           onPress={handleResendCode}
           disabled={countdown > 0 || isResending}
@@ -336,14 +337,14 @@ export default function ForgotPasswordScreen() {
           {isResending ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <Text
+            <ScaledText
               style={[
                 styles.resendButton,
                 { color: countdown > 0 ? Colors.textLight : Colors.primary },
               ]}
             >
               Resend
-            </Text>
+            </ScaledText>
           )}
         </TouchableOpacity>
       </View>
@@ -355,13 +356,13 @@ export default function ForgotPasswordScreen() {
       <View style={styles.iconContainer}>
         <Lock size={40} color={Colors.primary} />
       </View>
-      <Text style={styles.stepTitle}>New Password</Text>
-      <Text style={styles.stepDescription}>
+      <ScaledText style={styles.stepTitle}>New Password</ScaledText>
+      <ScaledText style={styles.stepDescription}>
         Create a new password for your account.
-      </Text>
+      </ScaledText>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>New Password</Text>
+        <ScaledText style={styles.label}>New Password</ScaledText>
         <TextInput
           style={styles.textInput}
           value={newPassword}
@@ -374,7 +375,7 @@ export default function ForgotPasswordScreen() {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Confirm Password</Text>
+        <ScaledText style={styles.label}>Confirm Password</ScaledText>
         <TextInput
           style={styles.textInput}
           value={confirmPassword}
@@ -385,7 +386,7 @@ export default function ForgotPasswordScreen() {
           autoCapitalize="none"
         />
         {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-          <Text style={styles.errorMessage}>Passwords do not match</Text>
+          <ScaledText style={styles.errorMessage}>Passwords do not match</ScaledText>
         )}
       </View>
 
@@ -394,13 +395,13 @@ export default function ForgotPasswordScreen() {
         onPress={() => setShowPassword(!showPassword)}
         activeOpacity={0.7}
       >
-        <Text style={[styles.showPasswordText, { color: Colors.primary }]}>
+        <ScaledText style={[styles.showPasswordText, { color: Colors.primary }]}>
           {showPassword ? 'Hide' : 'Show'} Password
-        </Text>
+        </ScaledText>
       </TouchableOpacity>
 
       {errorMessage ? (
-        <Text style={styles.errorMessage}>{errorMessage}</Text>
+        <ScaledText style={styles.errorMessage}>{errorMessage}</ScaledText>
       ) : null}
 
       <TouchableOpacity
@@ -412,9 +413,9 @@ export default function ForgotPasswordScreen() {
         {isLoading ? (
           <ActivityIndicator color={Colors.background} />
         ) : (
-          <Text style={[styles.primaryButtonText, { color: passwordValid ? Colors.background : Colors.textLight }]}>
+          <ScaledText style={[styles.primaryButtonText, { color: passwordValid ? Colors.background : Colors.textLight }]}>
             Reset Password
-          </Text>
+          </ScaledText>
         )}
       </TouchableOpacity>
     </View>
@@ -440,7 +441,7 @@ export default function ForgotPasswordScreen() {
         >
           <ArrowLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Reset Password</Text>
+        <ScaledText style={styles.headerTitle}>Reset Password</ScaledText>
       </View>
 
       <KeyboardAvoidingView

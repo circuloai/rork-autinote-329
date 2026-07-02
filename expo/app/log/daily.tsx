@@ -9,6 +9,7 @@ import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { DailyMoodRating, MoodTag, DailyLogEntry } from '@/types';
 import { generateText } from '@rork-ai/toolkit-sdk';
+import ScaledText from '@/components/ScaledText';
 
 export default function DailyLogScreen() {
   const router = useRouter();
@@ -268,7 +269,7 @@ ${predefinedChallengeSuggestions.join('\n')}`;
           <X size={24} color={Colors.text} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Daily Log</Text>
+          <ScaledText style={styles.title}>Daily Log</ScaledText>
         </View>
         <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
           <Check size={24} color={Colors.text} />
@@ -289,20 +290,20 @@ ${predefinedChallengeSuggestions.join('\n')}`;
         >
         {isEditing && (
           <View style={styles.existingLogsNotice}>
-            <Text style={styles.existingLogsText}>
+            <ScaledText style={styles.existingLogsText}>
               ✏️ Editing log for {dateStr}
-            </Text>
+            </ScaledText>
           </View>
         )}
         {!isEditing && existingLogsForDate.length > 0 && (
           <View style={styles.existingLogsNotice}>
-            <Text style={styles.existingLogsText}>
+            <ScaledText style={styles.existingLogsText}>
               ℹ️ {existingLogsForDate.length} {existingLogsForDate.length === 1 ? 'entry' : 'entries'} already logged for this date
-            </Text>
+            </ScaledText>
           </View>
         )}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overall Rating <Text style={styles.required}>*</Text></Text>
+          <ScaledText style={styles.sectionTitle}>Overall Rating <ScaledText style={styles.required}>*</ScaledText></ScaledText>
           <View style={styles.moodOptionsHorizontal}>
             {moodOptions.map((option) => (
               <TouchableOpacity
@@ -317,22 +318,22 @@ ${predefinedChallengeSuggestions.join('\n')}`;
                 onPress={() => setOverallRating(option.value)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.moodEmojiCompact}>{option.emoji}</Text>
-                <Text
+                <ScaledText style={styles.moodEmojiCompact}>{option.emoji}</ScaledText>
+                <ScaledText
                   style={[
                     styles.moodLabelCompact,
                     overallRating === option.value && { color: option.color, fontWeight: '600' as const },
                   ]}
                 >
                   {option.label.replace(' Day', '')}
-                </Text>
+                </ScaledText>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mood Tags</Text>
+          <ScaledText style={styles.sectionTitle}>Mood Tags</ScaledText>
           <View style={styles.tags}>
             {sortedMoodTagOptions.map((option) => (
               <TouchableOpacity
@@ -345,24 +346,24 @@ ${predefinedChallengeSuggestions.join('\n')}`;
                 onPress={() => toggleTag(option.value)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.tagEmoji}>{option.emoji}</Text>
-                <Text
+                <ScaledText style={styles.tagEmoji}>{option.emoji}</ScaledText>
+                <ScaledText
                   style={[
                     styles.tagText,
                     selectedTags.includes(option.value) && styles.tagTextSelected,
                   ]}
                 >
                   {option.label}
-                </Text>
+                </ScaledText>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sleep</Text>
+          <ScaledText style={styles.sectionTitle}>Sleep</ScaledText>
           <View style={styles.sliderContainer}>
-            <Text style={styles.sliderLabel}>{sleepHours} hours</Text>
+            <ScaledText style={styles.sliderLabel}>{sleepHours} hours</ScaledText>
             <CustomSlider
               style={styles.slider}
               minimumValue={1}
@@ -375,8 +376,8 @@ ${predefinedChallengeSuggestions.join('\n')}`;
               thumbTintColor={Colors.primary}
             />
             <View style={styles.sliderRange}>
-              <Text style={styles.sliderRangeText}>1h</Text>
-              <Text style={styles.sliderRangeText}>12h</Text>
+              <ScaledText style={styles.sliderRangeText}>1h</ScaledText>
+              <ScaledText style={styles.sliderRangeText}>12h</ScaledText>
             </View>
           </View>
         </View>
@@ -384,8 +385,8 @@ ${predefinedChallengeSuggestions.join('\n')}`;
         <View style={styles.section} ref={wellTextInputRef}>
           <View style={styles.sectionHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.sectionTitle}>What went well today?</Text>
-              <Text style={styles.sectionSubtitle}>Positive moments, achievements, happy experiences</Text>
+              <ScaledText style={styles.sectionTitle}>What went well today?</ScaledText>
+              <ScaledText style={styles.sectionSubtitle}>Positive moments, achievements, happy experiences</ScaledText>
             </View>
             {isGeneratingWell && (
               <View style={styles.loadingIndicator}>
@@ -413,7 +414,7 @@ ${predefinedChallengeSuggestions.join('\n')}`;
                     activeOpacity={0.7}
                   >
                     <Sparkles size={12} color={Colors.primary} />
-                    <Text style={styles.suggestionChipText}>{suggestion}</Text>
+                    <ScaledText style={styles.suggestionChipText}>{suggestion}</ScaledText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -448,8 +449,8 @@ ${predefinedChallengeSuggestions.join('\n')}`;
         <View style={styles.section} ref={challengeTextInputRef}>
           <View style={styles.sectionHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.sectionTitle}>What was challenging?</Text>
-              <Text style={styles.sectionSubtitle}>Difficulties, triggers, areas needing attention</Text>
+              <ScaledText style={styles.sectionTitle}>What was challenging?</ScaledText>
+              <ScaledText style={styles.sectionSubtitle}>Difficulties, triggers, areas needing attention</ScaledText>
             </View>
             {isGeneratingChallenge && (
               <View style={styles.loadingIndicator}>
@@ -477,7 +478,7 @@ ${predefinedChallengeSuggestions.join('\n')}`;
                     activeOpacity={0.7}
                   >
                     <Sparkles size={12} color={Colors.primary} />
-                    <Text style={styles.suggestionChipText}>{suggestion}</Text>
+                    <ScaledText style={styles.suggestionChipText}>{suggestion}</ScaledText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>

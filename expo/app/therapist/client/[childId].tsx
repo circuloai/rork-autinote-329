@@ -3,6 +3,7 @@ import { ChevronLeft, MessageCircle, Plus, Calendar as CalendarIcon, FileText, A
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { getAvatarById } from '@/constants/avatars';
@@ -44,11 +45,11 @@ export default function TherapistClientDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ChevronLeft size={24} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Client</Text>
+          <ScaledText style={styles.headerTitle}>Client</ScaledText>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Client not found or not shared with you.</Text>
+          <ScaledText style={styles.emptyText}>Client not found or not shared with you.</ScaledText>
         </View>
       </View>
     );
@@ -74,21 +75,21 @@ export default function TherapistClientDetailScreen() {
         d.overallRating === 'great' ? '😊' : d.overallRating === 'mixed' ? '😐' : '😔';
       return (
         <View key={d.id} style={styles.logItem}>
-          <Text style={styles.logEmoji}>{moodIcon}</Text>
+          <ScaledText style={styles.logEmoji}>{moodIcon}</ScaledText>
           <View style={{ flex: 1 }}>
             <View style={styles.logTopRow}>
-              <Text style={styles.logTitle}>Daily check-in</Text>
-              <Text style={styles.logDate}>{formatDate(d.date)}</Text>
+              <ScaledText style={styles.logTitle}>Daily check-in</ScaledText>
+              <ScaledText style={styles.logDate}>{formatDate(d.date)}</ScaledText>
             </View>
             {d.whatWentWell ? (
-              <Text style={styles.logBody} numberOfLines={2}>
+              <ScaledText style={styles.logBody} numberOfLines={2}>
                 + {d.whatWentWell}
-              </Text>
+              </ScaledText>
             ) : null}
             {d.whatWasChallenging ? (
-              <Text style={styles.logBody} numberOfLines={2}>
+              <ScaledText style={styles.logBody} numberOfLines={2}>
                 – {d.whatWasChallenging}
-              </Text>
+              </ScaledText>
             ) : null}
           </View>
         </View>
@@ -98,22 +99,22 @@ export default function TherapistClientDetailScreen() {
       const m = log as MeltdownLogEntry;
       return (
         <View key={m.id} style={styles.logItem}>
-          <Text style={styles.logEmoji}>🌊</Text>
+          <ScaledText style={styles.logEmoji}>🌊</ScaledText>
           <View style={{ flex: 1 }}>
             <View style={styles.logTopRow}>
-              <Text style={styles.logTitle}>Meltdown · {m.severity}</Text>
-              <Text style={styles.logDate}>{formatDate(m.date)}</Text>
+              <ScaledText style={styles.logTitle}>Meltdown · {m.severity}</ScaledText>
+              <ScaledText style={styles.logDate}>{formatDate(m.date)}</ScaledText>
             </View>
-            <Text style={styles.logBody} numberOfLines={2}>
+            <ScaledText style={styles.logBody} numberOfLines={2}>
               {m.durationMinutes ? `${m.durationMinutes} min` : ''}
               {m.triggers && m.triggers.length > 0
                 ? ` · ${m.triggers.join(', ')}`
                 : ''}
-            </Text>
+            </ScaledText>
             {m.additionalNotes ? (
-              <Text style={styles.logBody} numberOfLines={2}>
+              <ScaledText style={styles.logBody} numberOfLines={2}>
                 {m.additionalNotes}
-              </Text>
+              </ScaledText>
             ) : null}
           </View>
         </View>
@@ -121,11 +122,11 @@ export default function TherapistClientDetailScreen() {
     }
     return (
       <View key={log.id} style={styles.logItem}>
-        <Text style={styles.logEmoji}>📝</Text>
+        <ScaledText style={styles.logEmoji}>📝</ScaledText>
         <View style={{ flex: 1 }}>
           <View style={styles.logTopRow}>
-            <Text style={styles.logTitle}>Log</Text>
-            <Text style={styles.logDate}>{formatDate(log.date)}</Text>
+            <ScaledText style={styles.logTitle}>Log</ScaledText>
+            <ScaledText style={styles.logDate}>{formatDate(log.date)}</ScaledText>
           </View>
         </View>
       </View>
@@ -139,9 +140,9 @@ export default function TherapistClientDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <ScaledText style={styles.headerTitle} numberOfLines={1}>
           {child.name}
-        </Text>
+        </ScaledText>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() =>
@@ -167,26 +168,26 @@ export default function TherapistClientDetailScreen() {
             {avatar ? (
               <Image source={{ uri: avatar.url }} style={styles.heroAvatarImage} />
             ) : (
-              <Text style={[styles.heroAvatarLetter, { color: Colors.primary }]}>
+              <ScaledText style={[styles.heroAvatarLetter, { color: Colors.primary }]}>
                 {child.name.charAt(0).toUpperCase()}
-              </Text>
+              </ScaledText>
             )}
           </View>
-          <Text style={styles.heroName}>{child.name}</Text>
-          <Text style={styles.heroMeta}>
+          <ScaledText style={styles.heroName}>{child.name}</ScaledText>
+          <ScaledText style={styles.heroMeta}>
             Age {child.age}
             {child.gradeLevel ? ` · Grade ${child.gradeLevel}` : ''}
-          </Text>
+          </ScaledText>
           <View style={styles.caregiverChip}>
             <UserIcon size={12} color={Colors.primary} />
-            <Text style={styles.caregiverText}>Caregiver: {parentName}</Text>
+            <ScaledText style={styles.caregiverText}>Caregiver: {parentName}</ScaledText>
           </View>
 
           <View style={styles.heroChips}>
             {child.diagnosis ? (
               <View style={[styles.chip, { backgroundColor: Colors.primary + '18' }]}>
                 <Heart size={12} color={Colors.primary} />
-                <Text style={styles.chipText}>{child.diagnosis}</Text>
+                <ScaledText style={styles.chipText}>{child.diagnosis}</ScaledText>
               </View>
             ) : null}
             {(child.commonTriggers || []).slice(0, 3).map((t: string, i: number) => (
@@ -195,7 +196,7 @@ export default function TherapistClientDetailScreen() {
                 style={[styles.chip, { backgroundColor: Colors.warning + '22' }]}
               >
                 <AlertTriangle size={12} color={Colors.warning} />
-                <Text style={styles.chipText}>{t}</Text>
+                <ScaledText style={styles.chipText}>{t}</ScaledText>
               </View>
             ))}
           </View>
@@ -212,7 +213,7 @@ export default function TherapistClientDetailScreen() {
               testID="add-note-cta"
             >
               <Plus size={18} color={Colors.surface} />
-              <Text style={styles.primaryActionText}>Add session note</Text>
+              <ScaledText style={styles.primaryActionText}>Add session note</ScaledText>
             </TouchableOpacity>
           ) : null}
           <TouchableOpacity
@@ -223,7 +224,7 @@ export default function TherapistClientDetailScreen() {
             }
           >
             <MessageCircle size={18} color={Colors.primary} />
-            <Text style={styles.secondaryActionText}>Message caregiver</Text>
+            <ScaledText style={styles.secondaryActionText}>Message caregiver</ScaledText>
           </TouchableOpacity>
         </View>
 
@@ -235,23 +236,23 @@ export default function TherapistClientDetailScreen() {
             testID="therapist-insights-cta"
           >
             <TrendingUp size={18} color={Colors.surface} />
-            <Text style={styles.insightsActionText}>View Insights</Text>
+            <ScaledText style={styles.insightsActionText}>View Insights</ScaledText>
           </TouchableOpacity>
         )}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <CalendarIcon size={16} color={Colors.text} />
-            <Text style={styles.sectionTitle}>Recent logs</Text>
-            <Text style={styles.sectionCount}>{childLogs.length}</Text>
+            <ScaledText style={styles.sectionTitle}>Recent logs</ScaledText>
+            <ScaledText style={styles.sectionCount}>{childLogs.length}</ScaledText>
           </View>
           <View style={styles.card}>
             {!permissions.canViewLogs ? (
-              <Text style={styles.placeholder}>
+              <ScaledText style={styles.placeholder}>
                 Caregiver hasn&apos;t shared logs with you.
-              </Text>
+              </ScaledText>
             ) : childLogs.length === 0 ? (
-              <Text style={styles.placeholder}>No logs yet.</Text>
+              <ScaledText style={styles.placeholder}>No logs yet.</ScaledText>
             ) : (
               childLogs.slice(0, 8).map(renderLog)
             )}
@@ -261,36 +262,36 @@ export default function TherapistClientDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <FileText size={16} color={Colors.text} />
-            <Text style={styles.sectionTitle}>Session notes</Text>
-            <Text style={styles.sectionCount}>{childNotes.length}</Text>
+            <ScaledText style={styles.sectionTitle}>Session notes</ScaledText>
+            <ScaledText style={styles.sectionCount}>{childNotes.length}</ScaledText>
           </View>
           <View style={styles.card}>
             {childNotes.length === 0 ? (
-              <Text style={styles.placeholder}>
+              <ScaledText style={styles.placeholder}>
                 No notes yet. Tap &quot;Add session note&quot; to write your first one.
-              </Text>
+              </ScaledText>
             ) : (
               childNotes.map((n) => (
                 <View key={n.id} style={styles.noteItem}>
                   <View style={styles.logTopRow}>
-                    <Text style={styles.noteDate}>{formatDate(n.sessionDate)}</Text>
+                    <ScaledText style={styles.noteDate}>{formatDate(n.sessionDate)}</ScaledText>
                   </View>
                   {n.goalsWorkedOn ? (
                     <View style={styles.noteField}>
-                      <Text style={styles.noteFieldLabel}>Goals</Text>
-                      <Text style={styles.noteFieldText}>{n.goalsWorkedOn}</Text>
+                      <ScaledText style={styles.noteFieldLabel}>Goals</ScaledText>
+                      <ScaledText style={styles.noteFieldText}>{n.goalsWorkedOn}</ScaledText>
                     </View>
                   ) : null}
                   {n.behaviorsObserved ? (
                     <View style={styles.noteField}>
-                      <Text style={styles.noteFieldLabel}>Behaviors</Text>
-                      <Text style={styles.noteFieldText}>{n.behaviorsObserved}</Text>
+                      <ScaledText style={styles.noteFieldLabel}>Behaviors</ScaledText>
+                      <ScaledText style={styles.noteFieldText}>{n.behaviorsObserved}</ScaledText>
                     </View>
                   ) : null}
                   {n.recommendations ? (
                     <View style={styles.noteField}>
-                      <Text style={styles.noteFieldLabel}>Recommendations</Text>
-                      <Text style={styles.noteFieldText}>{n.recommendations}</Text>
+                      <ScaledText style={styles.noteFieldLabel}>Recommendations</ScaledText>
+                      <ScaledText style={styles.noteFieldText}>{n.recommendations}</ScaledText>
                     </View>
                   ) : null}
                 </View>

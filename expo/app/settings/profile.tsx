@@ -4,6 +4,7 @@ import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check, Image } from 'l
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image as RNImage } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors } from '@/constants/colors';
+import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -97,8 +98,8 @@ export default function ProfileSettingsScreen() {
         >
           <ArrowLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>My Profile</Text>
-        <Text style={styles.subtitle}>Edit your personal information</Text>
+        <ScaledText style={styles.title}>My Profile</ScaledText>
+        <ScaledText style={styles.subtitle}>Edit your personal information</ScaledText>
       </View>
 
       <KeyboardAvoidingView
@@ -130,12 +131,12 @@ export default function ProfileSettingsScreen() {
                   <Image size={12} color={Colors.surface} />
                 </View>
               </TouchableOpacity>
-              <Text style={styles.avatarLabel}>Profile Picture</Text>
+              <ScaledText style={styles.avatarLabel}>Profile Picture</ScaledText>
             </View>
 
             {showAvatarPicker && (
               <View style={[styles.card, { marginBottom: 16 }]}>
-                <Text style={styles.avatarPickerTitle}>Choose an avatar</Text>
+                <ScaledText style={styles.avatarPickerTitle}>Choose an avatar</ScaledText>
                 <View style={styles.avatarGrid}>
                   {AVATAR_OPTIONS.map((option) => (
                     <TouchableOpacity
@@ -160,14 +161,14 @@ export default function ProfileSettingsScreen() {
               </View>
             )}
 
-            <Text style={styles.sectionTitle}>PERSONAL INFORMATION</Text>
+            <ScaledText style={styles.sectionTitle}>PERSONAL INFORMATION</ScaledText>
             <View style={styles.card}>
               <View style={styles.field}>
                 <View style={styles.fieldIcon}>
                   <User size={20} color={Colors.primary} />
                 </View>
                 <View style={styles.fieldContent}>
-                  <Text style={styles.label}>Name</Text>
+                  <ScaledText style={styles.label}>Name</ScaledText>
                   <TextInput
                     style={styles.input}
                     value={name}
@@ -186,7 +187,7 @@ export default function ProfileSettingsScreen() {
                   <Mail size={20} color={Colors.primary} />
                 </View>
                 <View style={styles.fieldContent}>
-                  <Text style={styles.label}>Email</Text>
+                  <ScaledText style={styles.label}>Email</ScaledText>
                   <TextInput
                     style={styles.input}
                     value={email}
@@ -206,7 +207,7 @@ export default function ProfileSettingsScreen() {
                   <Phone size={20} color={Colors.primary} />
                 </View>
                 <View style={styles.fieldContent}>
-                  <Text style={styles.label}>Phone Number</Text>
+                  <ScaledText style={styles.label}>Phone Number</ScaledText>
                   <TextInput
                     style={styles.input}
                     value={phone}
@@ -232,14 +233,14 @@ export default function ProfileSettingsScreen() {
               ) : (
                 <>
                   <Check size={20} color={Colors.background} />
-                  <Text style={[styles.saveButtonText, { color: Colors.background }]}>Save Changes</Text>
+                  <ScaledText style={[styles.saveButtonText, { color: Colors.background }]}>Save Changes</ScaledText>
                 </>
               )}
             </TouchableOpacity>
           )}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>SECURITY</Text>
+            <ScaledText style={styles.sectionTitle}>SECURITY</ScaledText>
             {!showPasswordSection ? (
               <TouchableOpacity
                 style={styles.card}
@@ -251,8 +252,8 @@ export default function ProfileSettingsScreen() {
                     <Lock size={20} color={Colors.primary} />
                   </View>
                   <View style={styles.fieldContent}>
-                    <Text style={styles.changePasswordLabel}>Change Password</Text>
-                    <Text style={styles.changePasswordHint}>Tap to update your password</Text>
+                    <ScaledText style={styles.changePasswordLabel}>Change Password</ScaledText>
+                    <ScaledText style={styles.changePasswordHint}>Tap to update your password</ScaledText>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -263,7 +264,7 @@ export default function ProfileSettingsScreen() {
                     <Lock size={20} color={Colors.primary} />
                   </View>
                   <View style={styles.fieldContent}>
-                    <Text style={styles.label}>Current Password</Text>
+                    <ScaledText style={styles.label}>Current Password</ScaledText>
                     <View style={styles.passwordRow}>
                       <TextInput
                         style={styles.passwordInput}
@@ -295,7 +296,7 @@ export default function ProfileSettingsScreen() {
                     <Lock size={20} color={Colors.primary} />
                   </View>
                   <View style={styles.fieldContent}>
-                    <Text style={styles.label}>New Password</Text>
+                    <ScaledText style={styles.label}>New Password</ScaledText>
                     <View style={styles.passwordRow}>
                       <TextInput
                         style={styles.passwordInput}
@@ -327,7 +328,7 @@ export default function ProfileSettingsScreen() {
                     <Lock size={20} color={Colors.primary} />
                   </View>
                   <View style={styles.fieldContent}>
-                    <Text style={styles.label}>Confirm New Password</Text>
+                    <ScaledText style={styles.label}>Confirm New Password</ScaledText>
                     <View style={styles.passwordRow}>
                       <TextInput
                         style={styles.passwordInput}
@@ -350,7 +351,7 @@ export default function ProfileSettingsScreen() {
                       </TouchableOpacity>
                     </View>
                     {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-                      <Text style={styles.errorText}>Passwords do not match</Text>
+                      <ScaledText style={styles.errorText}>Passwords do not match</ScaledText>
                     )}
                   </View>
                 </View>
@@ -366,7 +367,7 @@ export default function ProfileSettingsScreen() {
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.cancelPasswordText, { color: Colors.textSecondary }]}>Cancel</Text>
+                    <ScaledText style={[styles.cancelPasswordText, { color: Colors.textSecondary }]}>Cancel</ScaledText>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
@@ -380,14 +381,14 @@ export default function ProfileSettingsScreen() {
                     {isChangingPassword ? (
                       <ActivityIndicator color={Colors.background} />
                     ) : (
-                      <Text
+                      <ScaledText
                         style={[
                           styles.updatePasswordText,
                           { color: passwordValid ? Colors.background : Colors.textLight },
                         ]}
                       >
                         Update Password
-                      </Text>
+                      </ScaledText>
                     )}
                   </TouchableOpacity>
                 </View>

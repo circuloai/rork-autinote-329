@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
+import ScaledText from '@/components/ScaledText';
 
 type SettingsItem = {
   icon: React.ReactNode;
@@ -190,19 +191,19 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: Colors.background }]}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Settings</Text>
+          <ScaledText style={styles.title}>Settings</ScaledText>
           <View style={styles.betaBadge}>
             <TestTube size={14} color={Colors.primary} />
-            <Text style={styles.betaText}>BETA</Text>
+            <ScaledText style={styles.betaText}>BETA</ScaledText>
           </View>
         </View>
-        <Text style={styles.subtitle}>Under active development</Text>
+        <ScaledText style={styles.subtitle}>Under active development</ScaledText>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {settingsSections.map((section, sectionIndex) => (
           <View key={sectionIndex} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <ScaledText style={styles.sectionTitle}>{section.title}</ScaledText>
             <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
               {section.items.map((item, itemIndex) => (
                 <TouchableOpacity
@@ -216,8 +217,8 @@ export default function SettingsScreen() {
                 >
                   <View style={styles.settingIcon}>{item.icon}</View>
                   <View style={styles.settingContent}>
-                    <Text style={styles.settingTitle}>{item.title}</Text>
-                    <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
+                    <ScaledText style={styles.settingTitle}>{item.title}</ScaledText>
+                    <ScaledText style={styles.settingSubtitle}>{item.subtitle}</ScaledText>
                   </View>
                   <ChevronRight size={20} color={Colors.textLight} />
                 </TouchableOpacity>
@@ -232,13 +233,13 @@ export default function SettingsScreen() {
           activeOpacity={0.7}
         >
           <LogOut size={20} color={Colors.error} />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <ScaledText style={styles.logoutText}>Log Out</ScaledText>
         </TouchableOpacity>
 
         <View style={styles.creatorBadge}>
-          <Text style={styles.creatorText}>✨ Crafted with love by </Text>
-          <Text style={styles.creatorName}>Anika Kale</Text>
-          <Text style={styles.creatorText}> ✨</Text>
+          <ScaledText style={styles.creatorText}>✨ Crafted with love by </ScaledText>
+          <ScaledText style={styles.creatorName}>Anika Kale</ScaledText>
+          <ScaledText style={styles.creatorText}> ✨</ScaledText>
         </View>
 
         <View style={{ height: 40 }} />

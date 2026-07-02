@@ -3,6 +3,7 @@ import { Users, Plus, ChevronLeft, Mail, Shield, CheckCircle, Clock, XCircle, Me
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useCallback, useMemo, useState } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { useQueryClient } from '@tanstack/react-query';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -90,11 +91,11 @@ export default function SharedAccessScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ChevronLeft size={24} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Shared Access</Text>
+          <ScaledText style={styles.headerTitle}>Shared Access</ScaledText>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No child profile selected</Text>
+          <ScaledText style={styles.emptyText}>No child profile selected</ScaledText>
         </View>
       </View>
     );
@@ -106,7 +107,7 @@ export default function SharedAccessScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shared Access</Text>
+        <ScaledText style={styles.headerTitle}>Shared Access</ScaledText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -122,37 +123,37 @@ export default function SharedAccessScreen() {
         }
       >
         <View style={styles.childCard}>
-          <Text style={styles.childCardTitle}>Managing access for</Text>
-          <Text style={styles.childCardName}>{activeChild.name}</Text>
+          <ScaledText style={styles.childCardTitle}>Managing access for</ScaledText>
+          <ScaledText style={styles.childCardName}>{activeChild.name}</ScaledText>
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Connected Therapists</Text>
+            <ScaledText style={styles.sectionTitle}>Connected Therapists</ScaledText>
             <TouchableOpacity
               style={styles.inviteButton}
               onPress={() => router.push('/settings/invite-therapist' as any)}
               activeOpacity={0.7}
             >
               <Plus size={18} color={Colors.surface} />
-              <Text style={styles.inviteButtonText}>Invite</Text>
+              <ScaledText style={styles.inviteButtonText}>Invite</ScaledText>
             </TouchableOpacity>
           </View>
 
           {activeChildAccess.length === 0 ? (
             <GlassCard style={styles.emptyCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
               <Users size={48} color={Colors.textLight} />
-              <Text style={styles.emptyCardTitle}>No therapists connected</Text>
-              <Text style={styles.emptyCardDescription}>
+              <ScaledText style={styles.emptyCardTitle}>No therapists connected</ScaledText>
+              <ScaledText style={styles.emptyCardDescription}>
                 Invite therapists to share access to {activeChild.name}&apos;s progress, logs, and insights
-              </Text>
+              </ScaledText>
               <TouchableOpacity
                 style={styles.emptyCardButton}
                 onPress={() => router.push('/settings/invite-therapist' as any)}
                 activeOpacity={0.7}
               >
                 <Plus size={20} color={Colors.primary} />
-                <Text style={styles.emptyCardButtonText}>Invite Therapist</Text>
+                <ScaledText style={styles.emptyCardButtonText}>Invite Therapist</ScaledText>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/settings/diagnose-connection' as any)}
@@ -160,9 +161,9 @@ export default function SharedAccessScreen() {
                 style={{ marginTop: 14 }}
                 testID="diagnose-link-parent"
               >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.primary, textDecorationLine: 'underline' }}>
+                <ScaledText style={{ fontSize: 13, fontWeight: '600', color: Colors.primary, textDecorationLine: 'underline' }}>
                   Already invited? Run diagnostic →
-                </Text>
+                </ScaledText>
               </TouchableOpacity>
             </GlassCard>
           ) : (
@@ -174,19 +175,19 @@ export default function SharedAccessScreen() {
                   </View>
                   <View style={styles.therapistInfo}>
                     <View style={styles.therapistHeader}>
-                      <Text style={styles.therapistName}>{access.therapistName}</Text>
+                      <ScaledText style={styles.therapistName}>{access.therapistName}</ScaledText>
                       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(access.status) + '20' }]}>
                         {getStatusIcon(access.status)}
-                        <Text style={[styles.statusText, { color: getStatusColor(access.status) }]}>
+                        <ScaledText style={[styles.statusText, { color: getStatusColor(access.status) }]}>
                           {access.status}
-                        </Text>
+                        </ScaledText>
                       </View>
                     </View>
                     <View style={styles.therapistDetails}>
                       <Mail size={14} color={Colors.textSecondary} />
-                      <Text style={styles.therapistEmail}>{access.therapistEmail}</Text>
+                      <ScaledText style={styles.therapistEmail}>{access.therapistEmail}</ScaledText>
                     </View>
-                    <Text style={styles.therapistRole}>{access.therapistRole}</Text>
+                    <ScaledText style={styles.therapistRole}>{access.therapistRole}</ScaledText>
                     
                     <View style={styles.therapistActions}>
                       {access.status === 'accepted' && (
@@ -196,7 +197,7 @@ export default function SharedAccessScreen() {
                           activeOpacity={0.7}
                         >
                           <MessageCircle size={16} color={Colors.primary} />
-                          <Text style={styles.chatButtonText}>Chat</Text>
+                          <ScaledText style={styles.chatButtonText}>Chat</ScaledText>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity
@@ -205,14 +206,14 @@ export default function SharedAccessScreen() {
                         activeOpacity={0.7}
                       >
                         <Shield size={16} color={Colors.primary} />
-                        <Text style={styles.actionButtonText}>Manage Permissions</Text>
+                        <ScaledText style={styles.actionButtonText}>Manage Permissions</ScaledText>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.removeButton}
                         onPress={() => handleRemoveAccess(access)}
                         activeOpacity={0.7}
                       >
-                        <Text style={styles.removeButtonText}>Remove Access</Text>
+                        <ScaledText style={styles.removeButtonText}>Remove Access</ScaledText>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -223,25 +224,25 @@ export default function SharedAccessScreen() {
         </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>About Shared Access</Text>
-          <Text style={styles.infoText}>
+          <ScaledText style={styles.infoTitle}>About Shared Access</ScaledText>
+          <ScaledText style={styles.infoText}>
             When you invite therapists, they can:
-          </Text>
+          </ScaledText>
           <View style={styles.infoBullet}>
-            <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.infoText}>View your child&apos;s progress and logs (based on permissions)</Text>
+            <ScaledText style={styles.bulletPoint}>•</ScaledText>
+            <ScaledText style={styles.infoText}>View your child&apos;s progress and logs (based on permissions)</ScaledText>
           </View>
           <View style={styles.infoBullet}>
-            <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.infoText}>Add professional session notes</Text>
+            <ScaledText style={styles.bulletPoint}>•</ScaledText>
+            <ScaledText style={styles.infoText}>Add professional session notes</ScaledText>
           </View>
           <View style={styles.infoBullet}>
-            <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.infoText}>Comment on your logs for better collaboration</Text>
+            <ScaledText style={styles.bulletPoint}>•</ScaledText>
+            <ScaledText style={styles.infoText}>Comment on your logs for better collaboration</ScaledText>
           </View>
-          <Text style={[styles.infoText, { marginTop: 12 }]}>
+          <ScaledText style={[styles.infoText, { marginTop: 12 }]}>
             You have full control over their permissions and can remove access at any time.
-          </Text>
+          </ScaledText>
         </View>
 
         <View style={{ height: 40 }} />

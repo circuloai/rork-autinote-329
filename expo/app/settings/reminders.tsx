@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Modal,
 import { Stack, useRouter } from 'expo-router';
 import { Bell, Clock, X, ArrowRight, CheckCircle2 } from 'lucide-react-native';
 import { getColors } from '@/constants/colors';
+import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import type { QuickReminder, CustomReminder, ReminderCategory, ReminderTone, ReminderRepeat } from '@/types';
 
@@ -145,10 +146,10 @@ export default function RemindersSettingsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Option Buttons</Text>
-          <Text style={styles.sectionDesc}>
+          <ScaledText style={styles.sectionTitle}>Quick Option Buttons</ScaledText>
+          <ScaledText style={styles.sectionDesc}>
             Enable reminders for common logging times throughout your day
-          </Text>
+          </ScaledText>
           
           {quickReminders.map((reminder) => {
             const config = {
@@ -164,10 +165,10 @@ export default function RemindersSettingsScreen() {
                   <View style={styles.reminderInfo}>
                     <View style={styles.reminderTitleRow}>
                       <Bell size={18} color={Colors.primary} />
-                      <Text style={styles.reminderTitle}>{config.title}</Text>
+                      <ScaledText style={styles.reminderTitle}>{config.title}</ScaledText>
                     </View>
-                    <Text style={styles.reminderDesc}>{config.desc}</Text>
-                    <Text style={styles.reminderTime}>{config.time}</Text>
+                    <ScaledText style={styles.reminderDesc}>{config.desc}</ScaledText>
+                    <ScaledText style={styles.reminderTime}>{config.time}</ScaledText>
                   </View>
                   <TouchableOpacity
                     style={[styles.toggle, reminder.enabled && styles.toggleActive]}
@@ -196,17 +197,17 @@ export default function RemindersSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Custom Reminders</Text>
-          <Text style={styles.sectionDesc}>
+          <ScaledText style={styles.sectionTitle}>Custom Reminders</ScaledText>
+          <ScaledText style={styles.sectionDesc}>
             Create personalized reminders for specific activities or times
-          </Text>
+          </ScaledText>
           
           <TouchableOpacity
             style={styles.createReminderButton}
             onPress={() => setShowReminderModal(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.createReminderText}>Create Custom Reminder</Text>
+            <ScaledText style={styles.createReminderText}>Create Custom Reminder</ScaledText>
             <ArrowRight size={18} color={Colors.primary} />
           </TouchableOpacity>
 
@@ -216,10 +217,10 @@ export default function RemindersSettingsScreen() {
                 <View key={reminder.id} style={styles.customReminderCard}>
                   <View style={styles.customReminderHeader}>
                     <View style={styles.customReminderInfo}>
-                      <Text style={styles.customReminderLabel}>{reminder.label}</Text>
-                      <Text style={styles.customReminderTime}>
+                      <ScaledText style={styles.customReminderLabel}>{reminder.label}</ScaledText>
+                      <ScaledText style={styles.customReminderTime}>
                         {formatTo12h(reminder.time)} • {reminder.repeat} • {reminder.category}
-                      </Text>
+                      </ScaledText>
                     </View>
                     <TouchableOpacity
                       style={[styles.toggle, reminder.enabled && styles.toggleActive]}
@@ -234,7 +235,7 @@ export default function RemindersSettingsScreen() {
                     onPress={() => removeCustomReminder(reminder.id)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
+                    <ScaledText style={styles.deleteButtonText}>Delete</ScaledText>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -246,11 +247,11 @@ export default function RemindersSettingsScreen() {
           <View style={styles.infoSection}>
             <CheckCircle2 size={20} color={Colors.primary} />
             <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>Active Reminders</Text>
-              <Text style={styles.infoText}>
+              <ScaledText style={styles.infoTitle}>Active Reminders</ScaledText>
+              <ScaledText style={styles.infoText}>
                 You have {quickReminders.filter(r => r.enabled).length + customReminders.filter(r => r.enabled).length} reminder(s) enabled.
                 Make sure notifications are enabled in your device settings.
-              </Text>
+              </ScaledText>
             </View>
           </View>
         )}
@@ -264,7 +265,7 @@ export default function RemindersSettingsScreen() {
           onPress={handleSave}
           activeOpacity={0.8}
         >
-          <Text style={styles.saveButtonText}>Save Changes</Text>
+          <ScaledText style={styles.saveButtonText}>Save Changes</ScaledText>
         </TouchableOpacity>
       </View>
 
@@ -282,13 +283,13 @@ export default function RemindersSettingsScreen() {
             >
               <X size={24} color={Colors.text} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Create Custom Reminder</Text>
+            <ScaledText style={styles.modalTitle}>Create Custom Reminder</ScaledText>
             <View style={{ width: 24 }} />
           </View>
 
           <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Reminder Name *</Text>
+              <ScaledText style={styles.label}>Reminder Name *</ScaledText>
               <TextInput
                 style={styles.input}
                 value={newReminderLabel}
@@ -300,7 +301,7 @@ export default function RemindersSettingsScreen() {
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Category</Text>
+              <ScaledText style={styles.label}>Category</ScaledText>
               <View style={styles.categoryGrid}>
                 {(['mood', 'behavior', 'sleep', 'food', 'therapy', 'other'] as ReminderCategory[]).map((cat) => (
                   <TouchableOpacity
@@ -312,21 +313,21 @@ export default function RemindersSettingsScreen() {
                     onPress={() => setNewReminderCategory(cat)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <ScaledText
                       style={[
                         styles.categoryText,
                         newReminderCategory === cat && styles.categoryTextActive,
                       ]}
                     >
                       {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Time *</Text>
+              <ScaledText style={styles.label}>Time *</ScaledText>
               <TextInput
                 style={styles.input}
                 value={newReminderTime}
@@ -338,7 +339,7 @@ export default function RemindersSettingsScreen() {
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Repeat</Text>
+              <ScaledText style={styles.label}>Repeat</ScaledText>
               <View style={styles.repeatGrid}>
                 {(['daily', 'weekdays', 'custom'] as ReminderRepeat[]).map((rep) => (
                   <TouchableOpacity
@@ -350,21 +351,21 @@ export default function RemindersSettingsScreen() {
                     onPress={() => setNewReminderRepeat(rep)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <ScaledText
                       style={[
                         styles.repeatText,
                         newReminderRepeat === rep && styles.repeatTextActive,
                       ]}
                     >
                       {rep.charAt(0).toUpperCase() + rep.slice(1)}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Tone</Text>
+              <ScaledText style={styles.label}>Tone</ScaledText>
               <View style={styles.toneGrid}>
                 {[
                   { value: 'chime' as const, label: 'Gentle chime 🎵' },
@@ -380,21 +381,21 @@ export default function RemindersSettingsScreen() {
                     onPress={() => setNewReminderTone(tone.value)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <ScaledText
                       style={[
                         styles.toneText,
                         newReminderTone === tone.value && styles.toneTextActive,
                       ]}
                     >
                       {tone.label}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Notification Message</Text>
+              <ScaledText style={styles.label}>Notification Message</ScaledText>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={newReminderMessage}
@@ -413,7 +414,7 @@ export default function RemindersSettingsScreen() {
               onPress={() => setShowReminderModal(false)}
               activeOpacity={0.7}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <ScaledText style={styles.modalCancelText}>Cancel</ScaledText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -424,7 +425,7 @@ export default function RemindersSettingsScreen() {
               disabled={!newReminderLabel.trim()}
               activeOpacity={0.7}
             >
-              <Text style={styles.modalSaveText}>Add Reminder</Text>
+              <ScaledText style={styles.modalSaveText}>Add Reminder</ScaledText>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

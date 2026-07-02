@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronDown, Users } from 'lucide-react-native';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
@@ -122,16 +123,16 @@ export default function TherapistInsightsTab() {
     return (
       <View style={[styles.container, { backgroundColor: Colors.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <Text style={styles.title}>Insights</Text>
+          <ScaledText style={styles.title}>Insights</ScaledText>
         </View>
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
             <Users size={36} color={Colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>No clients yet</Text>
-          <Text style={styles.emptyText}>
+          <ScaledText style={styles.emptyTitle}>No clients yet</ScaledText>
+          <ScaledText style={styles.emptyText}>
             Once a caregiver shares a child with you, their insights will appear here.
-          </Text>
+          </ScaledText>
         </View>
       </View>
     );
@@ -143,8 +144,8 @@ export default function TherapistInsightsTab() {
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.title}>Insights</Text>
-        <Text style={styles.subtitle}>Last 30 Days</Text>
+        <ScaledText style={styles.title}>Insights</ScaledText>
+        <ScaledText style={styles.subtitle}>Last 30 Days</ScaledText>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -155,11 +156,11 @@ export default function TherapistInsightsTab() {
           testID="therapist-insights-client-picker"
         >
           <View style={{ flex: 1 }}>
-            <Text style={styles.pickerLabel}>Active client</Text>
-            <Text style={styles.pickerValue} numberOfLines={1}>
+            <ScaledText style={styles.pickerLabel}>Active client</ScaledText>
+            <ScaledText style={styles.pickerValue} numberOfLines={1}>
               {activeClient?.child.name ?? 'Select a client'}
               {activeClient ? ` · Age ${activeClient.child.age}` : ''}
-            </Text>
+            </ScaledText>
           </View>
           <ChevronDown
             size={20}
@@ -180,10 +181,10 @@ export default function TherapistInsightsTab() {
                 onPress={() => handleSelectClient(c.child.id)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.pickerItemText}>
+                <ScaledText style={styles.pickerItemText}>
                   {c.child.name} · Age {c.child.age}
-                </Text>
-                <Text style={styles.pickerItemSub}>{c.parentName}</Text>
+                </ScaledText>
+                <ScaledText style={styles.pickerItemSub}>{c.parentName}</ScaledText>
               </TouchableOpacity>
             ))}
           </View>
@@ -191,14 +192,14 @@ export default function TherapistInsightsTab() {
 
         {!canView ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>
+            <ScaledText style={styles.emptyText}>
               Caregiver hasn&apos;t shared progress data with you for this client.
-            </Text>
+            </ScaledText>
           </View>
         ) : (
           <>
             <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-              <Text style={styles.cardTitle}>😊 Mood Distribution</Text>
+              <ScaledText style={styles.cardTitle}>😊 Mood Distribution</ScaledText>
               {totalLogs > 0 ? (
                 <>
                   <View style={styles.progressBar}>
@@ -212,29 +213,29 @@ export default function TherapistInsightsTab() {
                       <View style={[styles.progressSegment, { backgroundColor: Colors.challengingDay, flex: moodCounts.challenging }]} />
                     )}
                   </View>
-                  <Text style={styles.inlineStatText}>
+                  <ScaledText style={styles.inlineStatText}>
                     Good {Math.round((moodCounts.good / totalLogs) * 100)}% · Mixed{' '}
                     {Math.round((moodCounts.mixed / totalLogs) * 100)}% · Tough{' '}
                     {Math.round((moodCounts.challenging / totalLogs) * 100)}%
-                  </Text>
+                  </ScaledText>
                 </>
               ) : (
-                <Text style={styles.emptyText}>No daily logs yet.</Text>
+                <ScaledText style={styles.emptyText}>No daily logs yet.</ScaledText>
               )}
             </GlassCard>
 
             {moodTags.length > 0 && (
               <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-                <Text style={styles.cardTitle}>🏆 Most Common Moods</Text>
+                <ScaledText style={styles.cardTitle}>🏆 Most Common Moods</ScaledText>
                 {moodTags.map(([tag, count], index) => (
                   <View key={tag} style={styles.tagItem}>
                     <View style={styles.tagInfo}>
-                      <Text style={styles.tagRank}>#{index + 1}</Text>
-                      <Text style={styles.tagName}>
+                      <ScaledText style={styles.tagRank}>#{index + 1}</ScaledText>
+                      <ScaledText style={styles.tagName}>
                         {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                      </Text>
+                      </ScaledText>
                     </View>
-                    <Text style={styles.tagCount}>{count} times</Text>
+                    <ScaledText style={styles.tagCount}>{count} times</ScaledText>
                   </View>
                 ))}
               </GlassCard>
@@ -242,28 +243,28 @@ export default function TherapistInsightsTab() {
 
             {meltdownStats.total > 0 && (
               <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-                <Text style={styles.cardTitle}>⚠️ Meltdown Analysis</Text>
+                <ScaledText style={styles.cardTitle}>⚠️ Meltdown Analysis</ScaledText>
                 <View style={styles.meltdownGrid}>
                   <View style={styles.meltdownStat}>
-                    <Text style={styles.meltdownValue}>{meltdownStats.total}</Text>
-                    <Text style={styles.meltdownLabel}>Total Events</Text>
+                    <ScaledText style={styles.meltdownValue}>{meltdownStats.total}</ScaledText>
+                    <ScaledText style={styles.meltdownLabel}>Total Events</ScaledText>
                   </View>
                   <View style={styles.meltdownStat}>
-                    <Text style={styles.meltdownValue}>{meltdownStats.avgDuration}m</Text>
-                    <Text style={styles.meltdownLabel}>Avg Duration</Text>
+                    <ScaledText style={styles.meltdownValue}>{meltdownStats.avgDuration}m</ScaledText>
+                    <ScaledText style={styles.meltdownLabel}>Avg Duration</ScaledText>
                   </View>
                 </View>
 
                 {meltdownStats.topTriggers.length > 0 && (
                   <>
-                    <Text style={styles.subSectionTitle}>Top Triggers</Text>
+                    <ScaledText style={styles.subSectionTitle}>Top Triggers</ScaledText>
                     {meltdownStats.topTriggers.map(({ trigger, count }, idx) => (
                       <View key={trigger} style={styles.triggerItem}>
                         <View style={styles.triggerInfo}>
-                          <Text style={styles.triggerRank}>#{idx + 1}</Text>
-                          <Text style={styles.triggerName}>{getTriggerLabel(trigger)}</Text>
+                          <ScaledText style={styles.triggerRank}>#{idx + 1}</ScaledText>
+                          <ScaledText style={styles.triggerName}>{getTriggerLabel(trigger)}</ScaledText>
                         </View>
-                        <Text style={styles.triggerCount}>{count}x</Text>
+                        <ScaledText style={styles.triggerCount}>{count}x</ScaledText>
                       </View>
                     ))}
                   </>
@@ -273,8 +274,8 @@ export default function TherapistInsightsTab() {
 
             {activeClient?.child.commonTriggers && activeClient.child.commonTriggers.length > 0 && (
               <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-                <Text style={styles.cardTitle}>🎯 Trigger Mentions</Text>
-                <Text style={styles.helperText}>How often known triggers appear in logs</Text>
+                <ScaledText style={styles.cardTitle}>🎯 Trigger Mentions</ScaledText>
+                <ScaledText style={styles.helperText}>How often known triggers appear in logs</ScaledText>
                 {activeClient.child.commonTriggers.slice(0, 5).map((trigger: string, idx: number) => {
                   const mentionCount = childLogs.filter((log) => {
                     const positiveNotes =
@@ -292,10 +293,10 @@ export default function TherapistInsightsTab() {
                   }).length;
                   return (
                     <View key={idx} style={styles.tagItem}>
-                      <Text style={styles.tagName}>{trigger}</Text>
-                      <Text style={styles.tagCount}>
+                      <ScaledText style={styles.tagName}>{trigger}</ScaledText>
+                      <ScaledText style={styles.tagCount}>
                         {mentionCount} {mentionCount === 1 ? 'time' : 'times'}
-                      </Text>
+                      </ScaledText>
                     </View>
                   );
                 })}
@@ -303,18 +304,18 @@ export default function TherapistInsightsTab() {
             )}
 
             <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-              <Text style={styles.cardTitle}>📈 Summary</Text>
+              <ScaledText style={styles.cardTitle}>📈 Summary</ScaledText>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Total Entries</Text>
-                <Text style={styles.summaryValue}>{childLogs.length}</Text>
+                <ScaledText style={styles.summaryLabel}>Total Entries</ScaledText>
+                <ScaledText style={styles.summaryValue}>{childLogs.length}</ScaledText>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Meltdowns</Text>
-                <Text style={styles.summaryValue}>{meltdownLogs.length}</Text>
+                <ScaledText style={styles.summaryLabel}>Meltdowns</ScaledText>
+                <ScaledText style={styles.summaryValue}>{meltdownLogs.length}</ScaledText>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>This Month</Text>
-                <Text style={styles.summaryValue}>
+                <ScaledText style={styles.summaryLabel}>This Month</ScaledText>
+                <ScaledText style={styles.summaryValue}>
                   {childLogs.filter((log) => {
                     const d = new Date(log.date);
                     const now = new Date();
@@ -322,7 +323,7 @@ export default function TherapistInsightsTab() {
                       d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
                     );
                   }).length}
-                </Text>
+                </ScaledText>
               </View>
             </GlassCard>
           </>

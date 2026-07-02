@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Sparkles, BookOpen } from 'lucide-react-native';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
@@ -75,15 +76,15 @@ export default function JournalPreferencesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Journal Preferences</Text>
+        <ScaledText style={styles.headerTitle}>Journal Preferences</ScaledText>
         <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <Text style={styles.saveBtnText}>Save</Text>
+          <ScaledText style={styles.saveBtnText}>Save</ScaledText>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>LOG CATEGORIES</Text>
+          <ScaledText style={styles.sectionTitle}>LOG CATEGORIES</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             {Object.entries(CATEGORY_LABELS).map(([key, { label, emoji }], idx, arr) => (
               <View
@@ -91,8 +92,8 @@ export default function JournalPreferencesScreen() {
                 style={[styles.row, idx !== arr.length - 1 && styles.rowBorder]}
               >
                 <View style={styles.rowLeft}>
-                  <Text style={styles.emoji}>{emoji}</Text>
-                  <Text style={styles.rowLabel}>{label}</Text>
+                  <ScaledText style={styles.emoji}>{emoji}</ScaledText>
+                  <ScaledText style={styles.rowLabel}>{label}</ScaledText>
                 </View>
                 <Switch
                   value={enabledCategories.includes(key as LogCategory)}
@@ -106,8 +107,8 @@ export default function JournalPreferencesScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>DEFAULT MOOD TAGS</Text>
-          <Text style={styles.sectionSubtitle}>These tags will appear at the top when you log a daily entry</Text>
+          <ScaledText style={styles.sectionTitle}>DEFAULT MOOD TAGS</ScaledText>
+          <ScaledText style={styles.sectionSubtitle}>These tags will appear at the top when you log a daily entry</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.tagsWrap}>
               {DEFAULT_TAG_OPTIONS.map((tag) => (
@@ -120,15 +121,15 @@ export default function JournalPreferencesScreen() {
                   onPress={() => toggleDefaultTag(tag.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.tagEmoji}>{tag.emoji}</Text>
-                  <Text
+                  <ScaledText style={styles.tagEmoji}>{tag.emoji}</ScaledText>
+                  <ScaledText
                     style={[
                       styles.tagLabel,
                       defaultTags.includes(tag.value) && styles.tagLabelSelected,
                     ]}
                   >
                     {tag.label}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -136,14 +137,14 @@ export default function JournalPreferencesScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AI SUGGESTIONS</Text>
+          <ScaledText style={styles.sectionTitle}>AI SUGGESTIONS</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.row}>
               <View style={styles.rowLeft}>
                 <Sparkles size={20} color={Colors.primary} />
                 <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={styles.rowLabel}>AI-powered logging suggestions</Text>
-                  <Text style={styles.rowDesc}>Autumn suggests completions while you type in daily logs</Text>
+                  <ScaledText style={styles.rowLabel}>AI-powered logging suggestions</ScaledText>
+                  <ScaledText style={styles.rowDesc}>Autumn suggests completions while you type in daily logs</ScaledText>
                 </View>
               </View>
               <Switch

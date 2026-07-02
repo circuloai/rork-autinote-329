@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import Colors from '@/constants/colors';
+import ScaledText from '@/components/ScaledText';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginScreen() {
@@ -65,13 +66,13 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Log in to continue to AutiNote</Text>
+            <ScaledText style={styles.title}>Welcome Back</ScaledText>
+            <ScaledText style={styles.subtitle}>Log in to continue to AutiNote</ScaledText>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
+              <ScaledText style={styles.label}>Email Address</ScaledText>
               <TextInput
                 style={styles.input}
                 value={email}
@@ -85,7 +86,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
+              <ScaledText style={styles.label}>Password</ScaledText>
               <TextInput
                 style={styles.input}
                 value={password}
@@ -106,7 +107,7 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color={Colors.background} />
               ) : (
-                <Text style={styles.loginButtonText}>Log In</Text>
+                <ScaledText style={styles.loginButtonText}>Log In</ScaledText>
               )}
             </TouchableOpacity>
 
@@ -115,16 +116,16 @@ export default function LoginScreen() {
               onPress={() => router.push('/settings/forgot-password' as any)}
               activeOpacity={0.7}
             >
-              <Text style={styles.forgotButtonText}>Forgot Password?</Text>
+              <ScaledText style={styles.forgotButtonText}>Forgot Password?</ScaledText>
             </TouchableOpacity>
 
 
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+            <ScaledText style={styles.footerText}>Don&apos;t have an account? </ScaledText>
             <TouchableOpacity onPress={() => router.push('/onboarding' as any)}>
-              <Text style={styles.footerLink}>Sign Up</Text>
+              <ScaledText style={styles.footerLink}>Sign Up</ScaledText>
             </TouchableOpacity>
           </View>
         </View>

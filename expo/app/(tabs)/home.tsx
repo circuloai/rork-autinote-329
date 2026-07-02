@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon } from 'lucide-react-native';
+import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon, Sparkles } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
 import GlassCard from '@/components/GlassCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,12 +8,13 @@ import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAvatarById } from '@/constants/avatars';
+import ScaledText from '@/components/ScaledText';
 import type { QuickReminder, CustomReminder } from '@/types';
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeChild, streak, activeChildLogs, preferences, sharedAccess, profile, isLoading, chatMessages } = useApp();
+  const { activeChild, streak, activeChildLogs, preferences, sharedAccess, profile, isLoading, chatMessages, chatHistory } = useApp();
   const { isAuthenticated: hasSession } = useAuth();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   
@@ -149,6 +150,45 @@ export default function HomeScreen() {
     ).length;
   }, [chatMessages, profile?.id]);
 
+  const recentChatSummaries = useMemo(() => {
+    if (!chatHistory || chatHistory.length === 0) return [];
+    const summaries: { question: string; answer: string }[] = [];
+    for (let i = chatHistory.length - 1; i >= 0 && summaries.length < 3; i--) {
+      const msg = chatHistory[i];
+      if (msg.role === 'assistant') {
+        const answerText = (msg.parts || [])
+          .filter((p: any) => p.type === 'text')
+          .map((p: any) => p.text)
+          .join(' ')
+          .trim();
+        // Find the preceding user message
+        let questionText = '';
+        for (let j = i - 1; j >= 0; j--) {
+          if (chatHistory[j].role === 'user') {
+            questionText = (chatHistory[j].parts || [])
+              .filter((p: any) => p.type === 'text')
+              .map((p: any) => p.text)
+              .join(' ')
+              .trim();
+            // Strip context block if present
+            const contextIdx = questionText.indexOf('User:');
+            if (contextIdx >= 0) {
+              questionText = questionText.substring(contextIdx + 5).trim();
+            }
+            break;
+          }
+        }
+        if (questionText && answerText) {
+          summaries.unshift({
+            question: questionText.length > 80 ? questionText.substring(0, 80) + '…' : questionText,
+            answer: answerText.length > 120 ? answerText.substring(0, 120) + '…' : answerText,
+          });
+        }
+      }
+    }
+    return summaries;
+  }, [chatHistory]);
+
   const handleOpenChat = useCallback(() => {
     const accepted = (sharedAccess || []).filter((sa) => sa.status === 'accepted');
     if (accepted.length === 0) {
@@ -190,13 +230,13 @@ export default function HomeScreen() {
             {avatarOption ? (
               <Image source={{ uri: avatarOption.url }} style={styles.avatarImage} />
             ) : (
-              <Text style={[styles.avatarText, { color: Colors.primary }]}>
+              <ScaledText style={[styles.avatarText, { color: Colors.primary }]}>
                 {activeChild?.name?.charAt(0).toUpperCase() || 'G'}
-              </Text>
+              </ScaledText>
             )}
           </View>
           <View style={styles.profileNameBlock}>
-            <Text
+            <ScaledText
               style={[styles.profileName, { color: Colors.text }]}
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -204,61 +244,61 @@ export default function HomeScreen() {
               minimumFontScale={0.8}
             >
               {activeChild?.name || 'Guest'}
-            </Text>
-            <Text style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</Text>
+            </ScaledText>
+            <ScaledText style={[styles.profileAge, { color: Colors.textSecondary }]}>Age {activeChild?.age || '-'}</ScaledText>
           </View>
         </View>
         <View style={[styles.streakBadge, { backgroundColor: Colors.accent + '20' }]}>
           <Flame size={14} color={Colors.accent} />
-          <Text style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</Text>
+          <ScaledText style={[styles.streakBadgeText, { color: Colors.text }]}>{streak}d</ScaledText>
         </View>
       </View>
 
       <View style={styles.profileMeta}>
         {recentLog && (
           <View style={[styles.chip, styles.moodChip, { backgroundColor: Colors.accent + '22' }]}>
-            <Text style={styles.moodChipEmoji}>{getMoodEmoji(recentLog)}</Text>
-            <Text
+            <ScaledText style={styles.moodChipEmoji}>{getMoodEmoji(recentLog)}</ScaledText>
+            <ScaledText
               style={[styles.chipText, { color: Colors.text }]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {getMoodLabel(recentLog)}
-            </Text>
+            </ScaledText>
           </View>
         )}
         {activeChild?.diagnosis && (
           <View style={[styles.chip, { backgroundColor: Colors.primary + '18' }]}>
-            <Text
+            <ScaledText
               style={[styles.chipText, { color: Colors.text }]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {activeChild.diagnosis}
-            </Text>
+            </ScaledText>
           </View>
         )}
         {visibleTriggers.map((trigger: string, idx: number) => (
           <View key={idx} style={[styles.chip, { backgroundColor: Colors.warning + '22' }]}>
-            <Text
+            <ScaledText
               style={[styles.chipText, { color: Colors.text }]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {trigger}
-            </Text>
+            </ScaledText>
           </View>
         ))}
         {extraTriggerCount > 0 && (
           <View style={[styles.chip, styles.moreChip, { backgroundColor: Colors.warning + '14' }]}>
-            <Text style={[styles.chipText, { color: Colors.textSecondary }]}>
+            <ScaledText style={[styles.chipText, { color: Colors.textSecondary }]}>
               +{extraTriggerCount} more
-            </Text>
+            </ScaledText>
           </View>
         )}
       </View>
 
-      <Text style={[styles.tapToViewProfile, { color: Colors.textSecondary }]}>Tap to view full profile ›</Text>
+      <ScaledText style={[styles.tapToViewProfile, { color: Colors.textSecondary }]}>Tap to view full profile ›</ScaledText>
     </>
   );
 
@@ -266,8 +306,8 @@ export default function HomeScreen() {
     return (
       <View style={[styles.container, { backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={{ color: Colors.text, marginTop: 16, fontSize: 16, fontWeight: '600' as const }}>Setting up your profile…</Text>
-        <Text style={{ color: Colors.textSecondary, marginTop: 6, fontSize: 13 }}>Just a moment.</Text>
+        <ScaledText style={{ color: Colors.text, marginTop: 16, fontSize: 16, fontWeight: '600' as const }}>Setting up your profile…</ScaledText>
+        <ScaledText style={{ color: Colors.textSecondary, marginTop: 6, fontSize: 13 }}>Just a moment.</ScaledText>
       </View>
     );
   }
@@ -299,7 +339,7 @@ export default function HomeScreen() {
             <View style={styles.reminderHeader}>
               <View style={styles.reminderTitleRow}>
                 <Bell size={20} color={Colors.text} />
-                <Text style={styles.cardTitle}>Reminders</Text>
+                <ScaledText style={styles.cardTitle}>Reminders</ScaledText>
               </View>
               <TouchableOpacity 
                 onPress={() => router.push('/(tabs)/settings' as any)}
@@ -313,14 +353,14 @@ export default function HomeScreen() {
               <View style={styles.missedSection}>
                 <View style={styles.missedHeader}>
                   <AlertCircle size={16} color="#FF9800" />
-                  <Text style={styles.missedTitle}>Missed</Text>
+                  <ScaledText style={styles.missedTitle}>Missed</ScaledText>
                 </View>
                 {reminders.missed.map((reminder) => (
                   <View key={reminder.id} style={[styles.reminderItem, styles.missedReminderItem]}>
                     <Clock size={16} color="#FF9800" />
                     <View style={styles.reminderContent}>
-                      <Text style={[styles.reminderLabel, styles.missedLabel]}>{reminder.label}</Text>
-                      <Text style={[styles.reminderTime, styles.missedTime]}>{reminder.time}</Text>
+                      <ScaledText style={[styles.reminderLabel, styles.missedLabel]}>{reminder.label}</ScaledText>
+                      <ScaledText style={[styles.reminderTime, styles.missedTime]}>{reminder.time}</ScaledText>
                     </View>
                   </View>
                 ))}
@@ -332,14 +372,14 @@ export default function HomeScreen() {
                 {reminders.missed.length > 0 && <View style={styles.reminderDivider} />}
                 <View style={styles.upcomingHeader}>
                   <Clock size={16} color={Colors.text} />
-                  <Text style={styles.upcomingTitle}>Upcoming</Text>
+                  <ScaledText style={styles.upcomingTitle}>Upcoming</ScaledText>
                 </View>
                 {reminders.upcoming.map((reminder) => (
                   <View key={reminder.id} style={styles.reminderItem}>
                     <View style={[styles.reminderDot, { backgroundColor: Colors.text }]} />
                     <View style={styles.reminderContent}>
-                      <Text style={styles.reminderLabel}>{reminder.label}</Text>
-                      <Text style={styles.reminderTime}>{reminder.time}</Text>
+                      <ScaledText style={styles.reminderLabel}>{reminder.label}</ScaledText>
+                      <ScaledText style={styles.reminderTime}>{reminder.time}</ScaledText>
                     </View>
                   </View>
                 ))}
@@ -347,7 +387,7 @@ export default function HomeScreen() {
             )}
 
             {reminders.upcoming.length === 0 && reminders.missed.length === 0 && (
-              <Text style={styles.noReminders}>No reminders set for today</Text>
+              <ScaledText style={styles.noReminders}>No reminders set for today</ScaledText>
             )}
             </GlassCard>
           ) : (
@@ -355,7 +395,7 @@ export default function HomeScreen() {
               <View style={styles.reminderHeader}>
                 <View style={styles.reminderTitleRow}>
                   <Bell size={20} color={Colors.text} />
-                  <Text style={styles.cardTitle}>Reminders</Text>
+                  <ScaledText style={styles.cardTitle}>Reminders</ScaledText>
                 </View>
                 <TouchableOpacity 
                   onPress={() => router.push('/(tabs)/settings' as any)}
@@ -369,14 +409,14 @@ export default function HomeScreen() {
                 <View style={styles.missedSection}>
                   <View style={styles.missedHeader}>
                     <AlertCircle size={16} color="#FF9800" />
-                    <Text style={styles.missedTitle}>Missed</Text>
+                    <ScaledText style={styles.missedTitle}>Missed</ScaledText>
                   </View>
                   {reminders.missed.map((reminder) => (
                     <View key={reminder.id} style={[styles.reminderItem, styles.missedReminderItem]}>
                       <Clock size={16} color="#FF9800" />
                       <View style={styles.reminderContent}>
-                        <Text style={[styles.reminderLabel, styles.missedLabel]}>{reminder.label}</Text>
-                        <Text style={[styles.reminderTime, styles.missedTime]}>{reminder.time}</Text>
+                        <ScaledText style={[styles.reminderLabel, styles.missedLabel]}>{reminder.label}</ScaledText>
+                        <ScaledText style={[styles.reminderTime, styles.missedTime]}>{reminder.time}</ScaledText>
                       </View>
                     </View>
                   ))}
@@ -388,14 +428,14 @@ export default function HomeScreen() {
                   {reminders.missed.length > 0 && <View style={styles.reminderDivider} />}
                   <View style={styles.upcomingHeader}>
                     <Clock size={16} color={Colors.text} />
-                    <Text style={styles.upcomingTitle}>Upcoming</Text>
+                    <ScaledText style={styles.upcomingTitle}>Upcoming</ScaledText>
                   </View>
                   {reminders.upcoming.map((reminder) => (
                     <View key={reminder.id} style={styles.reminderItem}>
                       <View style={[styles.reminderDot, { backgroundColor: Colors.text }]} />
                       <View style={styles.reminderContent}>
-                        <Text style={styles.reminderLabel}>{reminder.label}</Text>
-                        <Text style={styles.reminderTime}>{reminder.time}</Text>
+                        <ScaledText style={styles.reminderLabel}>{reminder.label}</ScaledText>
+                        <ScaledText style={styles.reminderTime}>{reminder.time}</ScaledText>
                       </View>
                     </View>
                   ))}
@@ -403,14 +443,14 @@ export default function HomeScreen() {
               )}
 
               {reminders.upcoming.length === 0 && reminders.missed.length === 0 && (
-                <Text style={styles.noReminders}>No reminders set for today</Text>
+                <ScaledText style={styles.noReminders}>No reminders set for today</ScaledText>
               )}
             </View>
           )
         )}
 
         <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Log Your Day</Text>
+          <ScaledText style={styles.sectionTitle}>Log Your Day</ScaledText>
           
           <TouchableOpacity
             style={[styles.actionButton, styles.dailyLogAction]}
@@ -418,14 +458,14 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.logIconContainer}>
-              <Text style={styles.logEmoji}>📝</Text>
+              <ScaledText style={styles.logEmoji}>📝</ScaledText>
             </View>
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Daily Log</Text>
-              <Text style={styles.actionSubtitle}>Quick mood check & notes</Text>
+              <ScaledText style={styles.actionTitle}>Daily Log</ScaledText>
+              <ScaledText style={styles.actionSubtitle}>Quick mood check & notes</ScaledText>
             </View>
             <View style={styles.arrowContainer}>
-              <Text style={styles.arrow}>›</Text>
+              <ScaledText style={styles.arrow}>›</ScaledText>
             </View>
           </TouchableOpacity>
 
@@ -435,14 +475,14 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.logIconContainer}>
-              <Text style={styles.logEmoji}>🌊</Text>
+              <ScaledText style={styles.logEmoji}>🌊</ScaledText>
             </View>
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Meltdown Log</Text>
-              <Text style={styles.actionSubtitle}>Track triggers & intensity</Text>
+              <ScaledText style={styles.actionTitle}>Meltdown Log</ScaledText>
+              <ScaledText style={styles.actionSubtitle}>Track triggers & intensity</ScaledText>
             </View>
             <View style={styles.arrowContainer}>
-              <Text style={styles.arrow}>›</Text>
+              <ScaledText style={styles.arrow}>›</ScaledText>
             </View>
           </TouchableOpacity>
 
@@ -456,7 +496,7 @@ export default function HomeScreen() {
                 >
                   <GlassCard style={styles.glassSecondaryAction} glassEffectStyle="clear" fallbackStyle={{ backgroundColor: Colors.surface }}>
                     <CalendarIcon size={20} color={Colors.text} />
-                    <Text style={[styles.secondaryActionText, { color: Colors.text }]}>Calendar</Text>
+                    <ScaledText style={[styles.secondaryActionText, { color: Colors.text }]}>Calendar</ScaledText>
                   </GlassCard>
                 </TouchableOpacity>
 
@@ -468,12 +508,12 @@ export default function HomeScreen() {
                 >
                   <GlassCard style={styles.glassSecondaryAction} glassEffectStyle="clear" fallbackStyle={{ backgroundColor: Colors.surface }}>
                     <MessageCircle size={20} color={Colors.text} />
-                    <Text style={[styles.secondaryActionText, { color: Colors.text }]}>Therapist</Text>
+                    <ScaledText style={[styles.secondaryActionText, { color: Colors.text }]}>Therapist</ScaledText>
                     {therapistUnreadCount > 0 && (
                       <View style={styles.unreadBadge}>
-                        <Text style={styles.unreadBadgeText}>
+                        <ScaledText style={styles.unreadBadgeText}>
                           {therapistUnreadCount > 99 ? '99+' : therapistUnreadCount}
-                        </Text>
+                        </ScaledText>
                       </View>
                     )}
                   </GlassCard>
@@ -487,7 +527,7 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                 >
                   <CalendarIcon size={20} color={Colors.primary} />
-                  <Text style={[styles.secondaryActionText, { color: Colors.primary }]}>Calendar</Text>
+                  <ScaledText style={[styles.secondaryActionText, { color: Colors.primary }]}>Calendar</ScaledText>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -500,13 +540,13 @@ export default function HomeScreen() {
                     <MessageCircle size={20} color={Colors.primary} />
                     {therapistUnreadCount > 0 && (
                       <View style={styles.unreadBadge}>
-                        <Text style={styles.unreadBadgeText}>
+                        <ScaledText style={styles.unreadBadgeText}>
                           {therapistUnreadCount > 99 ? '99+' : therapistUnreadCount}
-                        </Text>
+                        </ScaledText>
                       </View>
                     )}
                   </View>
-                  <Text style={[styles.secondaryActionText, { color: Colors.primary }]}>Therapist</Text>
+                  <ScaledText style={[styles.secondaryActionText, { color: Colors.primary }]}>Therapist</ScaledText>
                 </TouchableOpacity>
               </>
             )}
@@ -514,16 +554,60 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.aiPreview}>
-          <Text style={styles.sectionTitle}>AI Insights</Text>
-          <TouchableOpacity
-            style={[styles.aiCard, { backgroundColor: Colors.surface, borderColor: Colors.secondary }]}
-            onPress={() => router.push('/(tabs)/chat' as any)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.aiText}>
-              💡 Chat with Autumn for personalized insights and support
-            </Text>
-          </TouchableOpacity>
+          <ScaledText style={styles.sectionTitle}>AI Insights</ScaledText>
+          {recentChatSummaries.length > 0 ? (
+            <View>
+              <ScaledText style={styles.recentChatsLabel}>Recent conversations with Autumn</ScaledText>
+              {recentChatSummaries.map((chat, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.aiCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
+                  onPress={() => router.push('/(tabs)/chat' as any)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.chatSummaryItem}>
+                    <View style={styles.chatSummaryHeader}>
+                      <Sparkles size={14} color={Colors.secondary} />
+                      <ScaledText style={styles.chatSummaryQuestion} numberOfLines={2}>
+                        {chat.question}
+                      </ScaledText>
+                    </View>
+                    <ScaledText style={styles.chatSummaryAnswer} numberOfLines={2}>
+                      {chat.answer}
+                    </ScaledText>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[styles.continueChatButton, { backgroundColor: Colors.primary }]}
+                onPress={() => router.push('/(tabs)/chat' as any)}
+                activeOpacity={0.8}
+              >
+                <MessageCircle size={18} color={Colors.background} />
+                <ScaledText style={[styles.continueChatText, { color: Colors.background }]}>
+                  Continue chatting
+                </ScaledText>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.aiCard, { backgroundColor: Colors.surface, borderColor: Colors.secondary }]}
+              onPress={() => router.push('/(tabs)/chat' as any)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.aiEmptyContent}>
+                <Sparkles size={28} color={Colors.secondary} />
+                <ScaledText style={styles.aiText}>
+                  Chat with Autumn for personalized insights and support
+                </ScaledText>
+                <View style={[styles.startChatButton, { backgroundColor: Colors.primary }] }>
+                  <ScaledText style={[styles.startChatText, { color: Colors.background }]}>
+                    Start chatting
+                  </ScaledText>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={{ height: 40 }} />
@@ -772,16 +856,73 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   },
   aiCard: {
     backgroundColor: Colors.surface,
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: Colors.secondary,
-    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 10,
   },
   aiText: {
     fontSize: 16,
     color: Colors.text,
     lineHeight: 24,
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  aiEmptyContent: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  startChatButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  startChatText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+  },
+  recentChatsLabel: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.textSecondary,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  chatSummaryItem: {
+    gap: 8,
+  },
+  chatSummaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  chatSummaryQuestion: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    flex: 1,
+    lineHeight: 19,
+  },
+  chatSummaryAnswer: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+    paddingLeft: 22,
+  },
+  continueChatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  continueChatText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
   },
   remindersCard: {
     backgroundColor: Platform.OS === 'ios' ? 'transparent' : Colors.surface,

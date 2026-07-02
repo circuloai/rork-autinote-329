@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
+import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -31,7 +32,7 @@ export default function WelcomeScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+        <ScaledText style={styles.loadingText}>Loading...</ScaledText>
       </View>
     );
   }
@@ -58,11 +59,11 @@ export default function WelcomeScreen() {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>AutiNote</Text>
-            <Text style={styles.subtitle}>Track, Understand, Support</Text>
-            <Text style={styles.description}>
+            <ScaledText style={styles.title}>AutiNote</ScaledText>
+            <ScaledText style={styles.subtitle}>Track, Understand, Support</ScaledText>
+            <ScaledText style={styles.description}>
               A thoughtful companion for tracking behaviors, moods, and patterns
-            </Text>
+            </ScaledText>
           </View>
 
           <View style={styles.buttonContainer}>
@@ -73,8 +74,8 @@ export default function WelcomeScreen() {
             >
               <Sparkles size={24} color={Colors.primary} />
               <View style={styles.buttonTextContainer}>
-                <Text style={styles.primaryButtonText}>Let&apos;s Get Started</Text>
-                <Text style={styles.buttonSubtext}>Create your profile in seconds</Text>
+                <ScaledText style={styles.primaryButtonText}>Let&apos;s Get Started</ScaledText>
+                <ScaledText style={styles.buttonSubtext}>Create your profile in seconds</ScaledText>
               </View>
             </TouchableOpacity>
 
@@ -85,8 +86,8 @@ export default function WelcomeScreen() {
             >
               <LogIn size={24} color={Colors.background} />
               <View style={styles.buttonTextContainer}>
-                <Text style={styles.secondaryButtonText}>Log In</Text>
-                <Text style={styles.buttonSubtextSecondary}>Welcome back!</Text>
+                <ScaledText style={styles.secondaryButtonText}>Log In</ScaledText>
+                <ScaledText style={styles.buttonSubtextSecondary}>Welcome back!</ScaledText>
               </View>
             </TouchableOpacity>
 
@@ -96,13 +97,13 @@ export default function WelcomeScreen() {
               activeOpacity={0.7}
             >
               <Eye size={20} color={Colors.background} />
-              <Text style={styles.textButtonLabel}>Explore First</Text>
+              <ScaledText style={styles.textButtonLabel}>Explore First</ScaledText>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.footer}>
+          <ScaledText style={styles.footer}>
             Made with care for families and caregivers
-          </Text>
+          </ScaledText>
         </View>
       </LinearGradient>
     </View>

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform }
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Download, Trash2, Shield, Lock, FileText, Share2, Info } from 'lucide-react-native';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
@@ -87,82 +88,82 @@ export default function DataPrivacyScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Data & Privacy</Text>
+        <ScaledText style={styles.headerTitle}>Data & Privacy</ScaledText>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>YOUR DATA</Text>
+          <ScaledText style={styles.sectionTitle}>YOUR DATA</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <TouchableOpacity style={styles.row} onPress={handleExportData} activeOpacity={0.7}>
               <Download size={20} color={Colors.primary} />
               <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>{exporting ? 'Exporting...' : 'Export All Data'}</Text>
-                <Text style={styles.rowDesc}>Download your logs and profiles as a JSON file</Text>
+                <ScaledText style={styles.rowLabel}>{exporting ? 'Exporting...' : 'Export All Data'}</ScaledText>
+                <ScaledText style={styles.rowDesc}>Download your logs and profiles as a JSON file</ScaledText>
               </View>
             </TouchableOpacity>
             <View style={styles.rowBorder} />
             <View style={styles.row}>
               <FileText size={20} color={Colors.textSecondary} />
               <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>Total entries</Text>
-                <Text style={styles.rowDesc}>{logs.length} log entries across {profile?.children?.length || 0} child profile{profile?.children?.length !== 1 ? 's' : ''}</Text>
+                <ScaledText style={styles.rowLabel}>Total entries</ScaledText>
+                <ScaledText style={styles.rowDesc}>{logs.length} log entries across {profile?.children?.length || 0} child profile{profile?.children?.length !== 1 ? 's' : ''}</ScaledText>
               </View>
             </View>
           </GlassCard>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PRIVACY</Text>
+          <ScaledText style={styles.sectionTitle}>PRIVACY</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.row}>
               <Shield size={20} color={Colors.success} />
               <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>Data Storage</Text>
-                <Text style={styles.rowDesc}>Your data is stored securely in Supabase with row-level security. Only you can access your data.</Text>
+                <ScaledText style={styles.rowLabel}>Data Storage</ScaledText>
+                <ScaledText style={styles.rowDesc}>Your data is stored securely in Supabase with row-level security. Only you can access your data.</ScaledText>
               </View>
             </View>
             <View style={styles.rowBorder} />
             <View style={styles.row}>
               <Lock size={20} color={Colors.success} />
               <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>AI Chat Privacy</Text>
-                <Text style={styles.rowDesc}>Autumn conversations stay on your device. AI processing happens through secure API calls.</Text>
+                <ScaledText style={styles.rowLabel}>AI Chat Privacy</ScaledText>
+                <ScaledText style={styles.rowDesc}>Autumn conversations stay on your device. AI processing happens through secure API calls.</ScaledText>
               </View>
             </View>
             <View style={styles.rowBorder} />
             <View style={styles.row}>
               <Share2 size={20} color={Colors.success} />
               <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>Shared Access</Text>
-                <Text style={styles.rowDesc}>You control exactly what therapists can see. Permissions are managed from Shared Access settings.</Text>
+                <ScaledText style={styles.rowLabel}>Shared Access</ScaledText>
+                <ScaledText style={styles.rowDesc}>You control exactly what therapists can see. Permissions are managed from Shared Access settings.</ScaledText>
               </View>
             </View>
           </GlassCard>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>DANGER ZONE</Text>
+          <ScaledText style={styles.sectionTitle}>DANGER ZONE</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <TouchableOpacity style={styles.row} onPress={handleDeleteAllData} activeOpacity={0.7}>
               <Trash2 size={20} color={Colors.error} />
               <View style={styles.rowContent}>
-                <Text style={[styles.rowLabel, { color: Colors.error }]}>Delete All Data</Text>
-                <Text style={styles.rowDesc}>Permanently removes all logs, profiles, and preferences</Text>
+                <ScaledText style={[styles.rowLabel, { color: Colors.error }]}>Delete All Data</ScaledText>
+                <ScaledText style={styles.rowDesc}>Permanently removes all logs, profiles, and preferences</ScaledText>
               </View>
             </TouchableOpacity>
           </GlassCard>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ABOUT</Text>
+          <ScaledText style={styles.sectionTitle}>ABOUT</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.row}>
               <Info size={20} color={Colors.textSecondary} />
               <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>AutiNote v1.0.0</Text>
-                <Text style={styles.rowDesc}>Running on {Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Web'}</Text>
+                <ScaledText style={styles.rowLabel}>AutiNote v1.0.0</ScaledText>
+                <ScaledText style={styles.rowDesc}>Running on {Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Web'}</ScaledText>
               </View>
             </View>
           </GlassCard>

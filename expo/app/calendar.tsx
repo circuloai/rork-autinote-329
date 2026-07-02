@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import ScaledText from '@/components/ScaledText';
 import { useState } from 'react';
 
 export default function CalendarScreen() {
@@ -90,7 +91,7 @@ export default function CalendarScreen() {
     for (let i = 0; i < dayLabels.length; i++) {
       days.push(
         <View key={`label-${i}`} style={styles.dayLabel}>
-          <Text style={styles.dayLabelText}>{dayLabels[i]}</Text>
+          <ScaledText style={styles.dayLabelText}>{dayLabels[i]}</ScaledText>
         </View>
       );
     }
@@ -192,16 +193,16 @@ export default function CalendarScreen() {
             isToday && styles.today,
             firstLog && { backgroundColor: getMoodColor((firstLog as any).overallRating || (firstLog as any).moodRating) }
           ]}>
-            <Text style={[
+            <ScaledText style={[
               styles.dayText,
               isToday && styles.todayText,
               firstLog && styles.loggedDayText
             ]}>
               {day}
-            </Text>
+            </ScaledText>
             {hasMultipleLogs && (
               <View style={styles.multipleIndicator}>
-                <Text style={styles.multipleIndicatorText}>{logsForDay.length}</Text>
+                <ScaledText style={styles.multipleIndicatorText}>{logsForDay.length}</ScaledText>
               </View>
             )}
           </View>
@@ -231,9 +232,9 @@ export default function CalendarScreen() {
             <ChevronLeft size={24} color={Colors.text} />
           </TouchableOpacity>
           <TouchableOpacity onPress={goToToday} activeOpacity={0.7}>
-            <Text style={styles.monthYear}>
+            <ScaledText style={styles.monthYear}>
               {getMonthName(selectedMonth)} {selectedYear}
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
           <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
             <ChevronRight size={24} color={Colors.text} />
@@ -245,19 +246,19 @@ export default function CalendarScreen() {
         </View>
 
         <View style={styles.legend}>
-          <Text style={styles.legendTitle}>Mood Legend</Text>
+          <ScaledText style={styles.legendTitle}>Mood Legend</ScaledText>
           <View style={styles.legendItems}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.success }]} />
-              <Text style={styles.legendText}>Great</Text>
+              <ScaledText style={styles.legendText}>Great</ScaledText>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.warning }]} />
-              <Text style={styles.legendText}>Mixed</Text>
+              <ScaledText style={styles.legendText}>Mixed</ScaledText>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.error }]} />
-              <Text style={styles.legendText}>Challenging</Text>
+              <ScaledText style={styles.legendText}>Challenging</ScaledText>
             </View>
           </View>
         </View>

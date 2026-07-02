@@ -3,6 +3,7 @@ import { ChevronRight, User, Palette, Info, LogOut, Shield } from 'lucide-react-
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 
@@ -29,7 +30,7 @@ export default function TherapistSettingsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.title}>Settings</Text>
+        <ScaledText style={styles.title}>Settings</ScaledText>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -38,28 +39,28 @@ export default function TherapistSettingsScreen() {
             <User size={28} color={Colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.profileName} numberOfLines={1}>
+            <ScaledText style={styles.profileName} numberOfLines={1}>
               {profile?.caregiverName || 'Therapist'}
-            </Text>
-            <Text style={styles.profileEmail} numberOfLines={1}>
+            </ScaledText>
+            <ScaledText style={styles.profileEmail} numberOfLines={1}>
               {profile?.caregiverEmail || ''}
-            </Text>
+            </ScaledText>
             <View style={styles.roleBadge}>
               <Shield size={11} color={Colors.primary} />
-              <Text style={styles.roleBadgeText}>Therapist</Text>
+              <ScaledText style={styles.roleBadgeText}>Therapist</ScaledText>
             </View>
           </View>
         </View>
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{therapistClients.length}</Text>
-            <Text style={styles.statLabel}>Active Clients</Text>
+            <ScaledText style={styles.statValue}>{therapistClients.length}</ScaledText>
+            <ScaledText style={styles.statLabel}>Active Clients</ScaledText>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PREFERENCES</Text>
+          <ScaledText style={styles.sectionTitle}>PREFERENCES</ScaledText>
           <View style={styles.card}>
             <TouchableOpacity
               style={[styles.row, styles.rowBorder]}
@@ -70,8 +71,8 @@ export default function TherapistSettingsScreen() {
                 <Palette size={20} color={Colors.text} />
               </View>
               <View style={styles.rowContent}>
-                <Text style={styles.rowTitle}>Appearance</Text>
-                <Text style={styles.rowSubtitle}>Theme, color, font size</Text>
+                <ScaledText style={styles.rowTitle}>Appearance</ScaledText>
+                <ScaledText style={styles.rowSubtitle}>Theme, color, font size</ScaledText>
               </View>
               <ChevronRight size={18} color={Colors.textLight} />
             </TouchableOpacity>
@@ -90,8 +91,8 @@ export default function TherapistSettingsScreen() {
                 <Info size={20} color={Colors.text} />
               </View>
               <View style={styles.rowContent}>
-                <Text style={styles.rowTitle}>About</Text>
-                <Text style={styles.rowSubtitle}>Privacy & app info</Text>
+                <ScaledText style={styles.rowTitle}>About</ScaledText>
+                <ScaledText style={styles.rowSubtitle}>Privacy & app info</ScaledText>
               </View>
               <ChevronRight size={18} color={Colors.textLight} />
             </TouchableOpacity>
@@ -104,7 +105,7 @@ export default function TherapistSettingsScreen() {
           activeOpacity={0.7}
         >
           <LogOut size={20} color={Colors.error} />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <ScaledText style={styles.logoutText}>Log Out</ScaledText>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getColors } from '@/constants/colors';
+import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import type { MoodRating, AnyLogEntry, DailyLogEntry, MeltdownLogEntry, LogEntry } from '@/types';
 import { Download } from 'lucide-react-native';
@@ -389,8 +390,8 @@ export default function InsightsScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: Colors.background }]}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.title}>Insights</Text>
-            <Text style={styles.subtitle}>Last 30 Days</Text>
+            <ScaledText style={styles.title}>Insights</ScaledText>
+            <ScaledText style={styles.subtitle}>Last 30 Days</ScaledText>
           </View>
           <TouchableOpacity 
             style={styles.pdfButton} 
@@ -402,7 +403,7 @@ export default function InsightsScreen() {
             ) : (
               <>
                 <Download size={18} color="#FFFFFF" />
-                <Text style={styles.pdfButtonText}>PDF</Text>
+                <ScaledText style={styles.pdfButtonText}>PDF</ScaledText>
               </>
             )}
           </TouchableOpacity>
@@ -411,7 +412,7 @@ export default function InsightsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <GlassCard style={styles.compactCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
-          <Text style={styles.cardTitle}>😊 Mood Distribution</Text>
+          <ScaledText style={styles.cardTitle}>😊 Mood Distribution</ScaledText>
           {totalLogs > 0 ? (
             <>
               <View style={styles.progressBar}>
@@ -450,28 +451,28 @@ export default function InsightsScreen() {
                 )}
               </View>
               <View style={styles.inlineStats}>
-                <Text style={styles.inlineStatText}>
+                <ScaledText style={styles.inlineStatText}>
                   Good {Math.round((moodCounts.good / totalLogs) * 100)}% • Mixed {Math.round((moodCounts.mixed / totalLogs) * 100)}% • Tough {Math.round((moodCounts.challenging / totalLogs) * 100)}%
-                </Text>
+                </ScaledText>
               </View>
             </>
           ) : (
-            <Text style={styles.emptyText}>No data yet. Start logging to see insights!</Text>
+            <ScaledText style={styles.emptyText}>No data yet. Start logging to see insights!</ScaledText>
           )}
         </GlassCard>
 
         {moodTags.length > 0 && (
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-            <Text style={styles.cardTitle}>🏆 Most Common Moods</Text>
+            <ScaledText style={styles.cardTitle}>🏆 Most Common Moods</ScaledText>
             {moodTags.map(([tag, count], index) => (
               <View key={tag} style={styles.tagItem}>
                 <View style={styles.tagInfo}>
-                  <Text style={styles.tagRank}>#{index + 1}</Text>
-                  <Text style={styles.tagName}>
+                  <ScaledText style={styles.tagRank}>#{index + 1}</ScaledText>
+                  <ScaledText style={styles.tagName}>
                     {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                  </Text>
+                  </ScaledText>
                 </View>
-                <Text style={styles.tagCount}>{count} times</Text>
+                <ScaledText style={styles.tagCount}>{count} times</ScaledText>
               </View>
             ))}
           </GlassCard>
@@ -479,21 +480,21 @@ export default function InsightsScreen() {
 
         {meltdownStats.total > 0 && (
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-            <Text style={styles.cardTitle}>⚠️ Meltdown Analysis</Text>
+            <ScaledText style={styles.cardTitle}>⚠️ Meltdown Analysis</ScaledText>
             
             <View style={styles.meltdownGrid}>
               <View style={styles.meltdownStat}>
-                <Text style={styles.meltdownValue}>{meltdownStats.total}</Text>
-                <Text style={styles.meltdownLabel}>Total Events</Text>
+                <ScaledText style={styles.meltdownValue}>{meltdownStats.total}</ScaledText>
+                <ScaledText style={styles.meltdownLabel}>Total Events</ScaledText>
               </View>
               <View style={styles.meltdownStat}>
-                <Text style={styles.meltdownValue}>{meltdownStats.avgDuration}m</Text>
-                <Text style={styles.meltdownLabel}>Avg Duration</Text>
+                <ScaledText style={styles.meltdownValue}>{meltdownStats.avgDuration}m</ScaledText>
+                <ScaledText style={styles.meltdownLabel}>Avg Duration</ScaledText>
               </View>
             </View>
 
             <View style={styles.severitySection}>
-              <Text style={styles.sectionTitle}>Severity Distribution</Text>
+              <ScaledText style={styles.sectionTitle}>Severity Distribution</ScaledText>
               <View style={styles.severityBar}>
                 {meltdownStats.severityCounts.mild > 0 && (
                   <View
@@ -523,29 +524,29 @@ export default function InsightsScreen() {
               <View style={styles.severityLegend}>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#fbbf24' }]} />
-                  <Text style={styles.legendText}>Mild ({meltdownStats.severityCounts.mild})</Text>
+                  <ScaledText style={styles.legendText}>Mild ({meltdownStats.severityCounts.mild})</ScaledText>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#fb923c' }]} />
-                  <Text style={styles.legendText}>Moderate ({meltdownStats.severityCounts.moderate})</Text>
+                  <ScaledText style={styles.legendText}>Moderate ({meltdownStats.severityCounts.moderate})</ScaledText>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#ef4444' }]} />
-                  <Text style={styles.legendText}>Severe ({meltdownStats.severityCounts.severe})</Text>
+                  <ScaledText style={styles.legendText}>Severe ({meltdownStats.severityCounts.severe})</ScaledText>
                 </View>
               </View>
             </View>
 
             {meltdownStats.topTriggers.length > 0 && (
               <View style={styles.triggersSection}>
-                <Text style={styles.sectionTitle}>Top Triggers</Text>
+                <ScaledText style={styles.sectionTitle}>Top Triggers</ScaledText>
                 {meltdownStats.topTriggers.map(({ trigger, count }, index) => (
                   <View key={trigger} style={styles.triggerItem}>
                     <View style={styles.triggerInfo}>
-                      <Text style={styles.triggerRank}>#{index + 1}</Text>
-                      <Text style={styles.triggerName}>{getTriggerLabel(trigger)}</Text>
+                      <ScaledText style={styles.triggerRank}>#{index + 1}</ScaledText>
+                      <ScaledText style={styles.triggerName}>{getTriggerLabel(trigger)}</ScaledText>
                     </View>
-                    <Text style={styles.triggerCount}>{count}x</Text>
+                    <ScaledText style={styles.triggerCount}>{count}x</ScaledText>
                   </View>
                 ))}
               </View>
@@ -555,19 +556,19 @@ export default function InsightsScreen() {
 
         {profileBasedInsights && profileBasedInsights.length > 0 && (
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-            <Text style={styles.cardTitle}>🎯 Personalized Insights</Text>
-            <Text style={styles.helperText}>
+            <ScaledText style={styles.cardTitle}>🎯 Personalized Insights</ScaledText>
+            <ScaledText style={styles.helperText}>
               Based on {activeChild?.name}&apos;s {activeChild?.diagnosis || 'profile'}
-            </Text>
+            </ScaledText>
             {profileBasedInsights.map((insight, idx) => (
               <View key={idx} style={styles.insightItem}>
                 <View style={styles.insightHeader}>
-                  <Text style={styles.insightTitle}>{insight.title}</Text>
-                  <Text style={styles.insightValue}>
+                  <ScaledText style={styles.insightTitle}>{insight.title}</ScaledText>
+                  <ScaledText style={styles.insightValue}>
                     {insight.value}/{insight.total}
-                  </Text>
+                  </ScaledText>
                 </View>
-                <Text style={styles.insightDesc}>{insight.description}</Text>
+                <ScaledText style={styles.insightDesc}>{insight.description}</ScaledText>
                 <View style={styles.insightBar}>
                   <View style={[
                     styles.insightBarFill,
@@ -581,10 +582,10 @@ export default function InsightsScreen() {
 
         {activeChild?.commonTriggers && activeChild.commonTriggers.length > 0 && (
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-            <Text style={styles.cardTitle}>⚠️ Trigger Correlation</Text>
-            <Text style={styles.helperText}>
+            <ScaledText style={styles.cardTitle}>⚠️ Trigger Correlation</ScaledText>
+            <ScaledText style={styles.helperText}>
               How often known triggers appear in logs
-            </Text>
+            </ScaledText>
             {activeChild.commonTriggers.slice(0, 5).map((trigger: string, idx: number) => {
               const mentionCount = activeChildLogs.filter(log => {
                 const positiveNotes = log.type === 'daily' ? (log as DailyLogEntry).whatWentWell || '' : (log as LogEntry).positiveNotes || '';
@@ -594,10 +595,10 @@ export default function InsightsScreen() {
               }).length;
               return (
                 <View key={idx} style={styles.triggerCorrelationItem}>
-                  <Text style={styles.triggerCorrelationName}>{trigger}</Text>
-                  <Text style={styles.triggerCorrelationCount}>
+                  <ScaledText style={styles.triggerCorrelationName}>{trigger}</ScaledText>
+                  <ScaledText style={styles.triggerCorrelationCount}>
                     {mentionCount} {mentionCount === 1 ? 'time' : 'times'}
-                  </Text>
+                  </ScaledText>
                 </View>
               );
             })}
@@ -605,21 +606,21 @@ export default function InsightsScreen() {
         )}
 
         <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-          <Text style={styles.cardTitle}>📈 Summary</Text>
+          <ScaledText style={styles.cardTitle}>📈 Summary</ScaledText>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Total Entries</Text>
-            <Text style={styles.summaryValue}>{activeChildLogs.length}</Text>
+            <ScaledText style={styles.summaryLabel}>Total Entries</ScaledText>
+            <ScaledText style={styles.summaryValue}>{activeChildLogs.length}</ScaledText>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>This Month</Text>
-            <Text style={styles.summaryValue}>
+            <ScaledText style={styles.summaryLabel}>This Month</ScaledText>
+            <ScaledText style={styles.summaryValue}>
               {activeChildLogs.filter(log => {
                 const logDate = new Date(log.date);
                 const now = new Date();
                 return logDate.getMonth() === now.getMonth() && 
                        logDate.getFullYear() === now.getFullYear();
               }).length}
-            </Text>
+            </ScaledText>
           </View>
         </GlassCard>
 

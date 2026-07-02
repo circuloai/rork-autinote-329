@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScaledText from '@/components/ScaledText';
 import { X, Save, Edit2, User, GraduationCap, Heart, AlertCircle, Sparkles, Check } from 'lucide-react-native';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -36,7 +37,7 @@ export default function ProfileScreen() {
   if (!activeChild) {
     return (
       <View style={[styles.container, { backgroundColor: Colors.background }]}>
-        <Text>No child profile found</Text>
+        <ScaledText>No child profile found</ScaledText>
       </View>
     );
   }
@@ -47,7 +48,7 @@ export default function ProfileScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
           <X size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Child Profile</Text>
+        <ScaledText style={styles.title}>Child Profile</ScaledText>
         {!isEditing ? (
           <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editButton}>
             <Edit2 size={20} color={Colors.primary} />
@@ -77,15 +78,15 @@ export default function ProfileScreen() {
               </View>
             );
           })()}
-          <Text style={styles.profileName}>{activeChild.name}</Text>
-          <Text style={styles.profileAge}>Age {activeChild.age}</Text>
+          <ScaledText style={styles.profileName}>{activeChild.name}</ScaledText>
+          <ScaledText style={styles.profileAge}>Age {activeChild.age}</ScaledText>
         </View>
 
         {isEditing && (
           <GlassCard style={styles.infoCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.cardHeader}>
               <Sparkles size={24} color={Colors.primary} />
-              <Text style={styles.cardTitle}>Choose an Avatar</Text>
+              <ScaledText style={styles.cardTitle}>Choose an Avatar</ScaledText>
             </View>
             <View style={styles.avatarGrid}>
               {AVATAR_OPTIONS.map((opt) => {
@@ -117,11 +118,11 @@ export default function ProfileScreen() {
         <GlassCard style={styles.infoCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
           <View style={styles.cardHeader}>
             <GraduationCap size={24} color={Colors.primary} />
-            <Text style={styles.cardTitle}>Basic Information</Text>
+            <ScaledText style={styles.cardTitle}>Basic Information</ScaledText>
           </View>
           
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Name</Text>
+            <ScaledText style={styles.infoLabel}>Name</ScaledText>
             {isEditing ? (
               <TextInput
                 style={styles.input}
@@ -131,12 +132,12 @@ export default function ProfileScreen() {
                 placeholderTextColor={Colors.textLight}
               />
             ) : (
-              <Text style={styles.infoValue}>{activeChild.name}</Text>
+              <ScaledText style={styles.infoValue}>{activeChild.name}</ScaledText>
             )}
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Age</Text>
+            <ScaledText style={styles.infoLabel}>Age</ScaledText>
             {isEditing ? (
               <TextInput
                 style={styles.input}
@@ -150,13 +151,13 @@ export default function ProfileScreen() {
                 placeholderTextColor={Colors.textLight}
               />
             ) : (
-              <Text style={styles.infoValue}>{activeChild.age}</Text>
+              <ScaledText style={styles.infoValue}>{activeChild.age}</ScaledText>
             )}
           </View>
 
           {(activeChild.diagnosis || isEditing) && (
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Diagnosis</Text>
+              <ScaledText style={styles.infoLabel}>Diagnosis</ScaledText>
               {isEditing ? (
                 <TextInput
                   style={styles.input}
@@ -166,14 +167,14 @@ export default function ProfileScreen() {
                   placeholderTextColor={Colors.textLight}
                 />
               ) : (
-                <Text style={styles.infoValue}>{activeChild.diagnosis}</Text>
+                <ScaledText style={styles.infoValue}>{activeChild.diagnosis}</ScaledText>
               )}
             </View>
           )}
 
           {(activeChild.gradeLevel || isEditing) && (
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Grade Level</Text>
+              <ScaledText style={styles.infoLabel}>Grade Level</ScaledText>
               {isEditing ? (
                 <TextInput
                   style={styles.input}
@@ -183,14 +184,14 @@ export default function ProfileScreen() {
                   placeholderTextColor={Colors.textLight}
                 />
               ) : (
-                <Text style={styles.infoValue}>{activeChild.gradeLevel}</Text>
+                <ScaledText style={styles.infoValue}>{activeChild.gradeLevel}</ScaledText>
               )}
             </View>
           )}
 
           {(activeChild.schoolName || isEditing) && (
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>School Name</Text>
+              <ScaledText style={styles.infoLabel}>School Name</ScaledText>
               {isEditing ? (
                 <TextInput
                   style={styles.input}
@@ -200,7 +201,7 @@ export default function ProfileScreen() {
                   placeholderTextColor={Colors.textLight}
                 />
               ) : (
-                <Text style={styles.infoValue}>{activeChild.schoolName}</Text>
+                <ScaledText style={styles.infoValue}>{activeChild.schoolName}</ScaledText>
               )}
             </View>
           )}
@@ -209,33 +210,33 @@ export default function ProfileScreen() {
         <GlassCard style={styles.infoCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
           <View style={styles.cardHeader}>
             <AlertCircle size={24} color={Colors.secondary} />
-            <Text style={styles.cardTitle}>Known Triggers</Text>
+            <ScaledText style={styles.cardTitle}>Known Triggers</ScaledText>
           </View>
           <View style={styles.chipsContainer}>
             {activeChild.commonTriggers.map((trigger: string, idx: number) => (
               <View key={idx} style={styles.chip}>
-                <Text style={styles.chipText}>{trigger}</Text>
+                <ScaledText style={styles.chipText}>{trigger}</ScaledText>
               </View>
             ))}
             {activeChild.commonTriggers.length === 0 && (
-              <Text style={styles.emptyText}>No triggers recorded yet</Text>
+              <ScaledText style={styles.emptyText}>No triggers recorded yet</ScaledText>
             )}
           </View>
-          <Text style={styles.helperText}>
+          <ScaledText style={styles.helperText}>
             These triggers help personalize your journaling experience and AI insights
-          </Text>
+          </ScaledText>
         </GlassCard>
 
         {(activeChild.strengths && activeChild.strengths.length > 0) && (
           <GlassCard style={styles.infoCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.cardHeader}>
               <Heart size={24} color={Colors.primary} />
-              <Text style={styles.cardTitle}>Strengths</Text>
+              <ScaledText style={styles.cardTitle}>Strengths</ScaledText>
             </View>
             <View style={styles.chipsContainer}>
               {activeChild.strengths.map((strength: string, idx: number) => (
                 <View key={idx} style={[styles.chip, styles.strengthChip]}>
-                  <Text style={[styles.chipText, styles.strengthChipText]}>{strength}</Text>
+                  <ScaledText style={[styles.chipText, styles.strengthChipText]}>{strength}</ScaledText>
                 </View>
               ))}
             </View>
@@ -246,12 +247,12 @@ export default function ProfileScreen() {
           <GlassCard style={styles.infoCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.cardHeader}>
               <Sparkles size={24} color={Colors.secondary} />
-              <Text style={styles.cardTitle}>Interests</Text>
+              <ScaledText style={styles.cardTitle}>Interests</ScaledText>
             </View>
             <View style={styles.chipsContainer}>
               {activeChild.interests.map((interest: string, idx: number) => (
                 <View key={idx} style={[styles.chip, styles.interestChip]}>
-                  <Text style={[styles.chipText, styles.interestChipText]}>{interest}</Text>
+                  <ScaledText style={[styles.chipText, styles.interestChipText]}>{interest}</ScaledText>
                 </View>
               ))}
             </View>
@@ -259,30 +260,30 @@ export default function ProfileScreen() {
         )}
 
         <View style={styles.explainerCard}>
-          <Text style={styles.explainerTitle}>How this profile customizes your experience</Text>
+          <ScaledText style={styles.explainerTitle}>How this profile customizes your experience</ScaledText>
           <View style={styles.explainerItem}>
-            <Text style={styles.explainerBullet}>•</Text>
-            <Text style={styles.explainerText}>
-              <Text style={styles.explainerBold}>Diagnosis</Text> helps tailor tag suggestions and AI insights
-            </Text>
+            <ScaledText style={styles.explainerBullet}>•</ScaledText>
+            <ScaledText style={styles.explainerText}>
+              <ScaledText style={styles.explainerBold}>Diagnosis</ScaledText> helps tailor tag suggestions and AI insights
+            </ScaledText>
           </View>
           <View style={styles.explainerItem}>
-            <Text style={styles.explainerBullet}>•</Text>
-            <Text style={styles.explainerText}>
-              <Text style={styles.explainerBold}>Triggers</Text> appear as quick-select options in meltdown logs
-            </Text>
+            <ScaledText style={styles.explainerBullet}>•</ScaledText>
+            <ScaledText style={styles.explainerText}>
+              <ScaledText style={styles.explainerBold}>Triggers</ScaledText> appear as quick-select options in meltdown logs
+            </ScaledText>
           </View>
           <View style={styles.explainerItem}>
-            <Text style={styles.explainerBullet}>•</Text>
-            <Text style={styles.explainerText}>
-              <Text style={styles.explainerBold}>School info</Text> enables home vs. school behavior comparison
-            </Text>
+            <ScaledText style={styles.explainerBullet}>•</ScaledText>
+            <ScaledText style={styles.explainerText}>
+              <ScaledText style={styles.explainerBold}>School info</ScaledText> enables home vs. school behavior comparison
+            </ScaledText>
           </View>
           <View style={styles.explainerItem}>
-            <Text style={styles.explainerBullet}>•</Text>
-            <Text style={styles.explainerText}>
-              <Text style={styles.explainerBold}>Age</Text> adjusts AI responses and suggestions appropriately
-            </Text>
+            <ScaledText style={styles.explainerBullet}>•</ScaledText>
+            <ScaledText style={styles.explainerText}>
+              <ScaledText style={styles.explainerBold}>Age</ScaledText> adjusts AI responses and suggestions appropriately
+            </ScaledText>
           </View>
         </View>
 

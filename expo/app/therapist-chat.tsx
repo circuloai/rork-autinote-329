@@ -3,6 +3,7 @@ import { MessageCircle, Send, ChevronLeft, User, Check, CheckCheck } from 'lucid
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 
@@ -84,12 +85,12 @@ export default function TherapistChatScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ChevronLeft size={24} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chat</Text>
+          <ScaledText style={styles.headerTitle}>Chat</ScaledText>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyContainer}>
           <MessageCircle size={48} color={Colors.textLight} />
-          <Text style={styles.emptyText}>Conversation not found</Text>
+          <ScaledText style={styles.emptyText}>Conversation not found</ScaledText>
         </View>
       </View>
     );
@@ -111,8 +112,8 @@ export default function TherapistChatScreen() {
             <User size={20} color={Colors.primary} />
           </View>
           <View>
-            <Text style={styles.headerTitle}>{otherPersonName}</Text>
-            <Text style={styles.headerSubtitle}>{currentAccess.therapistRole}</Text>
+            <ScaledText style={styles.headerTitle}>{otherPersonName}</ScaledText>
+            <ScaledText style={styles.headerSubtitle}>{currentAccess.therapistRole}</ScaledText>
           </View>
         </View>
         <View style={{ width: 40 }} />
@@ -128,10 +129,10 @@ export default function TherapistChatScreen() {
         {conversationMessages.length === 0 ? (
           <View style={styles.emptyMessagesContainer}>
             <MessageCircle size={64} color={Colors.textLight} />
-            <Text style={styles.emptyMessagesTitle}>Start the conversation</Text>
-            <Text style={styles.emptyMessagesText}>
+            <ScaledText style={styles.emptyMessagesTitle}>Start the conversation</ScaledText>
+            <ScaledText style={styles.emptyMessagesText}>
               Send a message to {otherPersonName} to start collaborating on {activeChild?.name}&apos;s care
-            </Text>
+            </ScaledText>
           </View>
         ) : (
           <>
@@ -158,37 +159,37 @@ export default function TherapistChatScreen() {
                 <View key={message.id}>
                   {showDate && (
                     <View style={styles.dateSeparator}>
-                      <Text style={styles.dateSeparatorText}>
+                      <ScaledText style={styles.dateSeparatorText}>
                         {new Date(message.createdAt).toLocaleDateString('en-US', { 
                           month: 'short', 
                           day: 'numeric',
                           year: new Date(message.createdAt).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
                         })}
-                      </Text>
+                      </ScaledText>
                     </View>
                   )}
                   <View style={[styles.messageRow, isMyMessage && styles.myMessageRow]}>
                     <View style={[styles.messageBubble, isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble]}>
                       {!isMyMessage && (
-                        <Text style={styles.messageSenderName}>{message.senderName}</Text>
+                        <ScaledText style={styles.messageSenderName}>{message.senderName}</ScaledText>
                       )}
-                      <Text style={[styles.messageText, isMyMessage && styles.myMessageText]}>
+                      <ScaledText style={[styles.messageText, isMyMessage && styles.myMessageText]}>
                         {message.messageText}
-                      </Text>
+                      </ScaledText>
                       <View style={[styles.messageFooter, isMyMessage && styles.myMessageFooter]}>
                         {isMyMessage && status?.icon && (
                           <>{status.icon}</>
                         )}
-                        <Text style={[styles.messageTime, isMyMessage && styles.myMessageTime]}>
+                        <ScaledText style={[styles.messageTime, isMyMessage && styles.myMessageTime]}>
                           {new Date(message.createdAt).toLocaleTimeString('en-US', { 
                             hour: 'numeric', 
                             minute: '2-digit' 
                           })}
-                        </Text>
+                        </ScaledText>
                         {isMyMessage && status?.label && (
-                          <Text style={[styles.statusLabel, isMyMessage && styles.myStatusLabel]}>
+                          <ScaledText style={[styles.statusLabel, isMyMessage && styles.myStatusLabel]}>
                             {status.label}
-                          </Text>
+                          </ScaledText>
                         )}
                       </View>
                     </View>

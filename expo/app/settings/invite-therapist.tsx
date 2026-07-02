@@ -3,6 +3,7 @@ import { ChevronLeft, Mail, User, Briefcase, Send, Copy, Share2, X } from 'lucid
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Share, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import * as Clipboard from 'expo-clipboard';
@@ -137,11 +138,11 @@ export default function InviteTherapistScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ChevronLeft size={24} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Invite Therapist</Text>
+          <ScaledText style={styles.headerTitle}>Invite Therapist</ScaledText>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No child profile selected</Text>
+          <ScaledText style={styles.emptyText}>No child profile selected</ScaledText>
         </View>
       </View>
     );
@@ -153,21 +154,21 @@ export default function InviteTherapistScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Invite Therapist</Text>
+        <ScaledText style={styles.headerTitle}>Invite Therapist</ScaledText>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.childCard}>
-          <Text style={styles.childCardTitle}>Inviting for</Text>
-          <Text style={styles.childCardName}>{activeChild.name}</Text>
+          <ScaledText style={styles.childCardTitle}>Inviting for</ScaledText>
+          <ScaledText style={styles.childCardName}>{activeChild.name}</ScaledText>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Therapist Information</Text>
+          <ScaledText style={styles.sectionTitle}>Therapist Information</ScaledText>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Full Name *</Text>
+            <ScaledText style={styles.inputLabel}>Full Name *</ScaledText>
             <View style={styles.inputContainer}>
               <User size={20} color={Colors.textSecondary} />
               <TextInput
@@ -182,7 +183,7 @@ export default function InviteTherapistScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Email Address *</Text>
+            <ScaledText style={styles.inputLabel}>Email Address *</ScaledText>
             <View style={styles.inputContainer}>
               <Mail size={20} color={Colors.textSecondary} />
               <TextInput
@@ -199,7 +200,7 @@ export default function InviteTherapistScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Role *</Text>
+            <ScaledText style={styles.inputLabel}>Role *</ScaledText>
             <View style={styles.rolesContainer}>
               {THERAPIST_ROLES.map((role) => (
                 <TouchableOpacity
@@ -215,14 +216,14 @@ export default function InviteTherapistScreen() {
                     size={16}
                     color={selectedRole === role ? Colors.surface : Colors.textSecondary}
                   />
-                  <Text
+                  <ScaledText
                     style={[
                       styles.roleChipText,
                       selectedRole === role && styles.roleChipTextSelected,
                     ]}
                   >
                     {role}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -230,29 +231,29 @@ export default function InviteTherapistScreen() {
         </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Default Permissions</Text>
-          <Text style={styles.infoText}>
+          <ScaledText style={styles.infoTitle}>Default Permissions</ScaledText>
+          <ScaledText style={styles.infoText}>
             By default, invited therapists will have access to:
-          </Text>
+          </ScaledText>
           <View style={styles.infoBullet}>
-            <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.infoText}>View logs and progress</Text>
+            <ScaledText style={styles.bulletPoint}>•</ScaledText>
+            <ScaledText style={styles.infoText}>View logs and progress</ScaledText>
           </View>
           <View style={styles.infoBullet}>
-            <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.infoText}>View insights and reports</Text>
+            <ScaledText style={styles.bulletPoint}>•</ScaledText>
+            <ScaledText style={styles.infoText}>View insights and reports</ScaledText>
           </View>
           <View style={styles.infoBullet}>
-            <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.infoText}>Add professional notes</Text>
+            <ScaledText style={styles.bulletPoint}>•</ScaledText>
+            <ScaledText style={styles.infoText}>Add professional notes</ScaledText>
           </View>
           <View style={styles.infoBullet}>
-            <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.infoText}>View calendar events</Text>
+            <ScaledText style={styles.bulletPoint}>•</ScaledText>
+            <ScaledText style={styles.infoText}>View calendar events</ScaledText>
           </View>
-          <Text style={[styles.infoText, { marginTop: 12 }]}>
+          <ScaledText style={[styles.infoText, { marginTop: 12 }]}>
             You can customize these permissions after they accept the invitation.
-          </Text>
+          </ScaledText>
         </View>
 
         <TouchableOpacity
@@ -266,9 +267,9 @@ export default function InviteTherapistScreen() {
           activeOpacity={0.7}
         >
           <Send size={20} color={Colors.surface} />
-          <Text style={styles.sendButtonText}>
+          <ScaledText style={styles.sendButtonText}>
             {isSubmitting ? 'Sending...' : 'Send Invitation'}
-          </Text>
+          </ScaledText>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -286,7 +287,7 @@ export default function InviteTherapistScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: Colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Invitation Created!</Text>
+              <ScaledText style={styles.modalTitle}>Invitation Created!</ScaledText>
               <TouchableOpacity
                 onPress={() => {
                   setShowShareModal(false);
@@ -298,13 +299,13 @@ export default function InviteTherapistScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalDescription}>
+            <ScaledText style={styles.modalDescription}>
               Share this message with {therapistName} via your preferred method:
-            </Text>
+            </ScaledText>
 
             <View style={styles.messageBox}>
               <ScrollView style={styles.messageScroll} showsVerticalScrollIndicator={false}>
-                <Text style={styles.messageText}>{inviteMessage}</Text>
+                <ScaledText style={styles.messageText}>{inviteMessage}</ScaledText>
               </ScrollView>
             </View>
 
@@ -318,7 +319,7 @@ export default function InviteTherapistScreen() {
                 activeOpacity={0.7}
               >
                 <Copy size={20} color={Colors.surface} />
-                <Text style={styles.shareButtonText}>Copy Message</Text>
+                <ScaledText style={styles.shareButtonText}>Copy Message</ScaledText>
               </TouchableOpacity>
 
               {Platform.OS !== 'web' && (
@@ -336,7 +337,7 @@ export default function InviteTherapistScreen() {
                   activeOpacity={0.7}
                 >
                   <Share2 size={20} color={Colors.surface} />
-                  <Text style={styles.shareButtonText}>Share</Text>
+                  <ScaledText style={styles.shareButtonText}>Share</ScaledText>
                 </TouchableOpacity>
               )}
             </View>
@@ -349,7 +350,7 @@ export default function InviteTherapistScreen() {
               }}
               activeOpacity={0.7}
             >
-              <Text style={[styles.doneButtonText, { color: Colors.primary }]}>Done</Text>
+              <ScaledText style={[styles.doneButtonText, { color: Colors.primary }]}>Done</ScaledText>
             </TouchableOpacity>
           </View>
         </View>

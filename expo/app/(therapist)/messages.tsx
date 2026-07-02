@@ -3,6 +3,7 @@ import { MessageCircle } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { getAvatarById } from '@/constants/avatars';
@@ -58,8 +59,8 @@ export default function TherapistMessagesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.title}>Messages</Text>
-        <Text style={styles.subtitle}>Caregiver conversations</Text>
+        <ScaledText style={styles.title}>Messages</ScaledText>
+        <ScaledText style={styles.subtitle}>Caregiver conversations</ScaledText>
       </View>
 
       <ScrollView
@@ -72,10 +73,10 @@ export default function TherapistMessagesScreen() {
             <View style={styles.emptyIcon}>
               <MessageCircle size={40} color={Colors.primary} />
             </View>
-            <Text style={styles.emptyTitle}>No conversations</Text>
-            <Text style={styles.emptyText}>
+            <ScaledText style={styles.emptyTitle}>No conversations</ScaledText>
+            <ScaledText style={styles.emptyText}>
               Once a caregiver shares a child with you, you can message them here.
-            </Text>
+            </ScaledText>
           </View>
         ) : (
           conversations.map((conv) => (
@@ -97,26 +98,26 @@ export default function TherapistMessagesScreen() {
                 {conv.avatar ? (
                   <Image source={{ uri: conv.avatar.url }} style={styles.avatarImage} />
                 ) : (
-                  <Text style={[styles.avatarLetter, { color: Colors.primary }]}>
+                  <ScaledText style={[styles.avatarLetter, { color: Colors.primary }]}>
                     {conv.childName.charAt(0).toUpperCase()}
-                  </Text>
+                  </ScaledText>
                 )}
               </View>
 
               <View style={styles.rowBody}>
                 <View style={styles.rowTop}>
-                  <Text style={styles.rowName} numberOfLines={1}>
+                  <ScaledText style={styles.rowName} numberOfLines={1}>
                     {conv.parentName}
-                  </Text>
+                  </ScaledText>
                   {conv.lastTime ? (
-                    <Text style={styles.rowTime}>{formatTime(conv.lastTime)}</Text>
+                    <ScaledText style={styles.rowTime}>{formatTime(conv.lastTime)}</ScaledText>
                   ) : null}
                 </View>
-                <Text style={styles.rowChild} numberOfLines={1}>
+                <ScaledText style={styles.rowChild} numberOfLines={1}>
                   Re: {conv.childName}
-                </Text>
+                </ScaledText>
                 <View style={styles.rowBottom}>
-                  <Text
+                  <ScaledText
                     style={[
                       styles.rowPreview,
                       conv.unread > 0 && styles.rowPreviewUnread,
@@ -126,10 +127,10 @@ export default function TherapistMessagesScreen() {
                     {conv.lastMessage
                       ? `${conv.lastSenderId === profile?.id ? 'You: ' : ''}${conv.lastMessage}`
                       : 'Start the conversation'}
-                  </Text>
+                  </ScaledText>
                   {conv.unread > 0 && (
                     <View style={styles.unreadBadge}>
-                      <Text style={styles.unreadBadgeText}>{conv.unread}</Text>
+                      <ScaledText style={styles.unreadBadgeText}>{conv.unread}</ScaledText>
                     </View>
                   )}
                 </View>

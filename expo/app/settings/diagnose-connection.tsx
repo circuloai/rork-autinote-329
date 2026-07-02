@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { getColors } from '@/constants/colors';
+import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -230,7 +231,7 @@ export default function DiagnoseConnectionScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Diagnose Connection</Text>
+        <ScaledText style={styles.headerTitle}>Diagnose Connection</ScaledText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -239,12 +240,12 @@ export default function DiagnoseConnectionScreen() {
           <View style={styles.iconCircle}>
             <Stethoscope size={28} color={Colors.primary} />
           </View>
-          <Text style={styles.introTitle}>Therapist ↔ Caregiver linkage</Text>
-          <Text style={styles.introBody}>
+          <ScaledText style={styles.introTitle}>Therapist ↔ Caregiver linkage</ScaledText>
+          <ScaledText style={styles.introBody}>
             Runs every read- and write-side query against Supabase for the account you&apos;re
             currently signed in as, then prints a verdict. Share the report with support if
             the verdict isn&apos;t conclusive.
-          </Text>
+          </ScaledText>
         </View>
 
         <View style={styles.actions}>
@@ -256,9 +257,9 @@ export default function DiagnoseConnectionScreen() {
             testID="run-diagnostic"
           >
             <RefreshCw size={16} color={Colors.surface} />
-            <Text style={styles.primaryButtonText}>
+            <ScaledText style={styles.primaryButtonText}>
               {loading ? 'Running…' : 'Re-run diagnostic'}
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -269,32 +270,32 @@ export default function DiagnoseConnectionScreen() {
             testID="copy-diagnostic"
           >
             <Copy size={16} color={Colors.primary} />
-            <Text style={styles.secondaryButtonText}>Copy report</Text>
+            <ScaledText style={styles.secondaryButtonText}>Copy report</ScaledText>
           </TouchableOpacity>
         </View>
 
         {loading && !report ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={Colors.primary} />
-            <Text style={styles.loadingText}>Querying Supabase…</Text>
+            <ScaledText style={styles.loadingText}>Querying Supabase…</ScaledText>
           </View>
         ) : null}
 
         {report ? (
           <>
             <View style={styles.verdictCard}>
-              <Text style={styles.verdictLabel}>Verdict</Text>
-              <Text style={styles.verdictText}>{report.verdict}</Text>
+              <ScaledText style={styles.verdictLabel}>Verdict</ScaledText>
+              <ScaledText style={styles.verdictText}>{report.verdict}</ScaledText>
             </View>
 
             {report.sections.map((s) => (
               <View key={s.title} style={styles.sectionCard}>
-                <Text style={[styles.sectionTitle, !s.ok && { color: Colors.error }]}>
+                <ScaledText style={[styles.sectionTitle, !s.ok && { color: Colors.error }]}>
                   {s.title}
-                </Text>
-                <Text style={styles.sectionDetail} selectable>
+                </ScaledText>
+                <ScaledText style={styles.sectionDetail} selectable>
                   {s.detail}
-                </Text>
+                </ScaledText>
               </View>
             ))}
           </>

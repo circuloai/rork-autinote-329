@@ -8,6 +8,7 @@ import CustomSlider from '@/components/CustomSlider';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { MeltdownMood, MeltdownTrigger, MeltdownSeverity, MeltdownLogEntry } from '@/types';
+import ScaledText from '@/components/ScaledText';
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -145,8 +146,8 @@ export default function MeltdownLogScreen() {
       case 1:
         return (
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Step 1: Mood at Event <Text style={styles.required}>*</Text></Text>
-            <Text style={styles.stepSubtitle}>How were they feeling?</Text>
+            <ScaledText style={styles.stepTitle}>Step 1: Mood at Event <ScaledText style={styles.required}>*</ScaledText></ScaledText>
+            <ScaledText style={styles.stepSubtitle}>How were they feeling?</ScaledText>
             <View style={styles.optionsGrid}>
               {moodOptions.map((option) => (
                 <TouchableOpacity
@@ -158,15 +159,15 @@ export default function MeltdownLogScreen() {
                   onPress={() => setMoodAtEvent(option.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.gridEmoji}>{option.emoji}</Text>
-                  <Text
+                  <ScaledText style={styles.gridEmoji}>{option.emoji}</ScaledText>
+                  <ScaledText
                     style={[
                       styles.gridLabel,
                       moodAtEvent === option.value && styles.gridLabelSelected,
                     ]}
                   >
                     {option.label}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -176,13 +177,13 @@ export default function MeltdownLogScreen() {
       case 2:
         return (
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Step 2: Triggers <Text style={styles.required}>*</Text></Text>
-            <Text style={styles.stepSubtitle}>What might have caused it? (Select all that apply)</Text>
+            <ScaledText style={styles.stepTitle}>Step 2: Triggers <ScaledText style={styles.required}>*</ScaledText></ScaledText>
+            <ScaledText style={styles.stepSubtitle}>What might have caused it? (Select all that apply)</ScaledText>
             {suggestedTriggersFromProfile.length > 0 && (
               <View style={styles.suggestedTriggersHint}>
-                <Text style={styles.suggestedTriggersHintText}>
+                <ScaledText style={styles.suggestedTriggersHintText}>
                   ✨ Based on known triggers from {activeChild?.name}&apos;s profile
-                </Text>
+                </ScaledText>
               </View>
             )}
             <View style={styles.triggerList}>
@@ -198,18 +199,18 @@ export default function MeltdownLogScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={styles.triggerContent}>
-                    <Text style={styles.triggerEmoji}>{option.emoji}</Text>
+                    <ScaledText style={styles.triggerEmoji}>{option.emoji}</ScaledText>
                     <View style={{ flex: 1 }}>
-                      <Text
+                      <ScaledText
                         style={[
                           styles.triggerLabel,
                           triggers.includes(option.value) && styles.triggerLabelSelected,
                         ]}
                       >
                         {option.label}
-                      </Text>
+                      </ScaledText>
                       {option.suggested && (
-                        <Text style={styles.suggestedLabel}>Known trigger</Text>
+                        <ScaledText style={styles.suggestedLabel}>Known trigger</ScaledText>
                       )}
                     </View>
                   </View>
@@ -227,8 +228,8 @@ export default function MeltdownLogScreen() {
       case 3:
         return (
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Step 3: Severity <Text style={styles.required}>*</Text></Text>
-            <Text style={styles.stepSubtitle}>How intense was the meltdown?</Text>
+            <ScaledText style={styles.stepTitle}>Step 3: Severity <ScaledText style={styles.required}>*</ScaledText></ScaledText>
+            <ScaledText style={styles.stepSubtitle}>How intense was the meltdown?</ScaledText>
             <View style={styles.severityOptions}>
               {severityOptions.map((option) => (
                 <TouchableOpacity
@@ -243,15 +244,15 @@ export default function MeltdownLogScreen() {
                   onPress={() => setSeverity(option.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.severityEmoji}>{option.emoji}</Text>
-                  <Text
+                  <ScaledText style={styles.severityEmoji}>{option.emoji}</ScaledText>
+                  <ScaledText
                     style={[
                       styles.severityLabel,
                       severity === option.value && { color: option.color, fontWeight: '600' as const },
                     ]}
                   >
                     {option.label}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -261,10 +262,10 @@ export default function MeltdownLogScreen() {
       case 4:
         return (
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Step 4: Duration <Text style={styles.required}>*</Text></Text>
-            <Text style={styles.stepSubtitle}>How long did it last?</Text>
+            <ScaledText style={styles.stepTitle}>Step 4: Duration <ScaledText style={styles.required}>*</ScaledText></ScaledText>
+            <ScaledText style={styles.stepSubtitle}>How long did it last?</ScaledText>
             <View style={styles.sliderContainer}>
-              <Text style={styles.sliderLabel}>{durationMinutes} minutes</Text>
+              <ScaledText style={styles.sliderLabel}>{durationMinutes} minutes</ScaledText>
               <CustomSlider
                 style={styles.slider}
                 minimumValue={1}
@@ -277,8 +278,8 @@ export default function MeltdownLogScreen() {
                 thumbTintColor={Colors.primary}
               />
               <View style={styles.sliderRange}>
-                <Text style={styles.sliderRangeText}>1 min</Text>
-                <Text style={styles.sliderRangeText}>60 min</Text>
+                <ScaledText style={styles.sliderRangeText}>1 min</ScaledText>
+                <ScaledText style={styles.sliderRangeText}>60 min</ScaledText>
               </View>
             </View>
           </View>
@@ -287,10 +288,10 @@ export default function MeltdownLogScreen() {
       case 5:
         return (
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Step 5: Additional Notes</Text>
-            <Text style={styles.stepSubtitle}>
+            <ScaledText style={styles.stepTitle}>Step 5: Additional Notes</ScaledText>
+            <ScaledText style={styles.stepSubtitle}>
               Details about what happened, what helped, observations
-            </Text>
+            </ScaledText>
             <TextInput
               style={styles.textArea}
               value={additionalNotes}
@@ -316,9 +317,9 @@ export default function MeltdownLogScreen() {
             <ArrowLeft size={24} color={Colors.text} />
           )}
         </TouchableOpacity>
-        <Text style={styles.title}>Meltdown Log</Text>
+        <ScaledText style={styles.title}>Meltdown Log</ScaledText>
         <View style={styles.stepIndicator}>
-          <Text style={styles.stepIndicatorText}>{currentStep}/5</Text>
+          <ScaledText style={styles.stepIndicatorText}>{currentStep}/5</ScaledText>
         </View>
       </View>
 
@@ -339,9 +340,9 @@ export default function MeltdownLogScreen() {
             disabled={!canGoNext()}
             activeOpacity={0.8}
           >
-            <Text style={[styles.nextButtonText, !canGoNext() && styles.nextButtonTextDisabled]}>
+            <ScaledText style={[styles.nextButtonText, !canGoNext() && styles.nextButtonTextDisabled]}>
               Next Step
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -351,9 +352,9 @@ export default function MeltdownLogScreen() {
             activeOpacity={0.8}
           >
             <Check size={20} color={Colors.background} />
-            <Text style={[styles.saveButtonText, !canGoNext() && styles.saveButtonTextDisabled]}>
+            <ScaledText style={[styles.saveButtonText, !canGoNext() && styles.saveButtonTextDisabled]}>
               Save Meltdown Log
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
         )}
       </View>

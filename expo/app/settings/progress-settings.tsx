@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, TrendingUp, BarChart3, Activity, LineChart } from 'lucide-react-native';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
@@ -68,15 +69,15 @@ export default function ProgressSettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Progress Settings</Text>
+        <ScaledText style={styles.headerTitle}>Progress Settings</ScaledText>
         <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <Text style={styles.saveBtnText}>Save</Text>
+          <ScaledText style={styles.saveBtnText}>Save</ScaledText>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>DEFAULT TIME RANGE</Text>
+          <ScaledText style={styles.sectionTitle}>DEFAULT TIME RANGE</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.optionsRow}>
               {(['week', 'month', '3months'] as TimeRange[]).map((range) => (
@@ -89,14 +90,14 @@ export default function ProgressSettingsScreen() {
                   onPress={() => setTimeRange(range)}
                   activeOpacity={0.7}
                 >
-                  <Text
+                  <ScaledText
                     style={[
                       styles.optionChipText,
                       timeRange === range && styles.optionChipTextSelected,
                     ]}
                   >
                     {TIME_RANGE_LABELS[range]}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -104,8 +105,8 @@ export default function ProgressSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SHOWN CHARTS</Text>
-          <Text style={styles.sectionSubtitle}>Select which charts appear on the Insights tab</Text>
+          <ScaledText style={styles.sectionTitle}>SHOWN CHARTS</ScaledText>
+          <ScaledText style={styles.sectionSubtitle}>Select which charts appear on the Insights tab</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             {CHART_OPTIONS.map((chart, idx, arr) => (
               <View
@@ -114,7 +115,7 @@ export default function ProgressSettingsScreen() {
               >
                 <View style={styles.rowLeft}>
                   {chart.icon}
-                  <Text style={styles.rowLabel}>{chart.label}</Text>
+                  <ScaledText style={styles.rowLabel}>{chart.label}</ScaledText>
                 </View>
                 <Switch
                   value={showCharts.includes(chart.value)}
@@ -128,14 +129,14 @@ export default function ProgressSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>DISPLAY OPTIONS</Text>
+          <ScaledText style={styles.sectionTitle}>DISPLAY OPTIONS</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.row}>
               <View style={styles.rowLeft}>
                 <TrendingUp size={20} color={Colors.primary} />
                 <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={styles.rowLabel}>Show trend lines</Text>
-                  <Text style={styles.rowDesc}>Display moving average on mood and sleep charts</Text>
+                  <ScaledText style={styles.rowLabel}>Show trend lines</ScaledText>
+                  <ScaledText style={styles.rowDesc}>Display moving average on mood and sleep charts</ScaledText>
                 </View>
               </View>
               <Switch
@@ -150,8 +151,8 @@ export default function ProgressSettingsScreen() {
               <View style={styles.rowLeft}>
                 <Activity size={20} color={Colors.primary} />
                 <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={styles.rowLabel}>Show goals & milestones</Text>
-                  <Text style={styles.rowDesc}>Highlight therapy goals and progress markers</Text>
+                  <ScaledText style={styles.rowLabel}>Show goals & milestones</ScaledText>
+                  <ScaledText style={styles.rowDesc}>Highlight therapy goals and progress markers</ScaledText>
                 </View>
               </View>
               <Switch

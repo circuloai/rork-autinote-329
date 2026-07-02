@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { View, PanResponder, StyleSheet, Platform, LayoutChangeEvent } from 'react-native';
 
 interface CustomSliderProps {
@@ -28,10 +28,37 @@ export default function CustomSlider({
   const sliderRef = useRef<View>(null);
   const sliderPageXRef = useRef(0);
 
+  // Refs that mirror the latest state/props so PanResponder closures always see current values
+  const sliderWidthRef = useRef(0);
+  const onValueChangeRef = useRef(onValueChange);
+  const minRef = useRef(minimumValue);
+  const maxRef = useRef(maximumValue);
+  const stepRef = useRef(step);
+
+  useEffect(() => {
+    sliderWidthRef.current = sliderWidth;
+  }, [sliderWidth]);
+
+  useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  }, [onValueChange]);
+
+  useEffect(() => {
+    minRef.current = minimumValue;
+  }, [minimumValue]);
+
+  useEffect(() => {
+    maxRef.current = maximumValue;
+  }, [maximumValue]);
+
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width } = e.nativeEvent.layout;
     setSliderWidth(width);
-    // Measure slider's absolute position on screen
+    sliderWidthRef.current = width;
     if (sliderRef.current) {
       sliderRef.current.measureInWindow((x) => {
         sliderPageXRef.current = x;
@@ -39,35 +66,35 @@ export default function CustomSlider({
     }
   }, []);
 
-  const calculateValue = useCallback(
-    (locationInSlider: number) => {
-      if (sliderWidth <= 0) return value;
-      const ratio = Math.max(0, Math.min(1, locationInSlider / sliderWidth));
-      const rawValue = minimumValue + ratio * (maximumValue - minimumValue);
-      const steppedValue = Math.round(rawValue / step) * step;
-      return Math.max(minimumValue, Math.min(maximumValue, steppedValue));
-    },
-    [sliderWidth, minimumValue, maximumValue, step, value]
-  );
+  /**
+   * Calculate value from a screen-space X coordinate.
+   * Reads from refs so PanResponder always uses up-to-date data.
+   */
+  const calcFromRef = (pageX: number) => {
+    const w = sliderWidthRef.current;
+    if (w <= 0) return value;
+    const local = pageX - sliderPageXRef.current;
+    const ratio = Math.max(0, Math.min(1, local / w));
+    const raw = minRef.current + ratio * (maxRef.current - minRef.current);
+    const stepped = Math.round(raw / stepRef.current) * stepRef.current;
+    return Math.max(minRef.current, Math.min(maxRef.current, stepped));
+  };
 
+  // PanResponder created once; reads from refs so it never goes stale
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
-        // pageX is the absolute position on screen, subtract slider's pageX to get position within slider
-        const locationInSlider = evt.nativeEvent.pageX - sliderPageXRef.current;
-        const newValue = calculateValue(locationInSlider);
-        onValueChange(newValue);
+        const newVal = calcFromRef(evt.nativeEvent.pageX);
+        onValueChangeRef.current(newVal);
       },
       onPanResponderMove: (evt) => {
-        const locationInSlider = evt.nativeEvent.pageX - sliderPageXRef.current;
-        const newValue = calculateValue(locationInSlider);
-        onValueChange(newValue);
+        const newVal = calcFromRef(evt.nativeEvent.pageX);
+        onValueChangeRef.current(newVal);
       },
-      onPanResponderRelease: () => {
-        // No state change needed — parent already has the value
-      },
+      onPanResponderRelease: () => {},
+      onPanResponderTerminationRequest: () => false,
     })
   ).current;
 

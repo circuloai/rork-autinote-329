@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
 import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Volume2, Sparkles, Heart, Stethoscope, GraduationCap } from 'lucide-react-native';
+import ScaledText from '@/components/ScaledText';
 
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
@@ -294,15 +295,15 @@ export default function OnboardingScreen() {
               testID="back-to-welcome"
             >
               <ArrowLeft size={20} color={Colors.textSecondary} />
-              <Text style={styles.backToWelcomeText}>Back</Text>
+              <ScaledText style={styles.backToWelcomeText}>Back</ScaledText>
             </TouchableOpacity>
           )}
 
           <View style={styles.header}>
-            <Text style={[styles.title, { fontSize: getFontSize(32) }]}>
+            <ScaledText style={[styles.title, { fontSize: getFontSize(32) }]}>
               {step === 0 ? "Who's signing up?" : step === 1 ? "Let's Get Started" : step === 2 ? "Child Information" : step === 3 ? "Let's Set Up Your Daily Reminders" : step === 4 ? "Accessibility" : "You're All Set!"}
-            </Text>
-            <Text style={[styles.subtitle, { fontSize: getFontSize(16) }]}>
+            </ScaledText>
+            <ScaledText style={[styles.subtitle, { fontSize: getFontSize(16) }]}>
               {step === 0
                 ? "Pick the role that fits you best. We'll tailor the rest of setup."
                 : step === 1
@@ -314,7 +315,7 @@ export default function OnboardingScreen() {
                 : step === 4
                 ? "A few quick accessibility options."
                 : "Welcome to the AutiNote family. Let's make today a little easier, one log at a time."}
-            </Text>
+            </ScaledText>
           </View>
 
           {step < 5 && (
@@ -345,8 +346,8 @@ export default function OnboardingScreen() {
                         <Icon size={24} color={active ? Colors.background : Colors.primary} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.roleCardTitle, active && styles.roleCardTitleActive]}>{role.label}</Text>
-                        <Text style={styles.roleCardDesc}>{role.description}</Text>
+                        <ScaledText style={[styles.roleCardTitle, active && styles.roleCardTitleActive]}>{role.label}</ScaledText>
+                        <ScaledText style={styles.roleCardDesc}>{role.description}</ScaledText>
                       </View>
                     </TouchableOpacity>
                   );
@@ -358,7 +359,7 @@ export default function OnboardingScreen() {
           {step === 1 && (
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Your Name *</Text>
+                <ScaledText style={styles.label}>Your Name *</ScaledText>
                 <TextInput
                   style={styles.input}
                   value={caregiverName}
@@ -371,7 +372,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email Address *</Text>
+                <ScaledText style={styles.label}>Email Address *</ScaledText>
                 <TextInput
                   style={styles.input}
                   value={caregiverEmail}
@@ -384,7 +385,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password *</Text>
+                <ScaledText style={styles.label}>Password *</ScaledText>
                 <TextInput
                   style={styles.input}
                   value={caregiverPassword}
@@ -397,7 +398,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone Number</Text>
+                <ScaledText style={styles.label}>Phone Number</ScaledText>
                 <TextInput
                   style={styles.input}
                   value={caregiverPhone}
@@ -413,7 +414,7 @@ export default function OnboardingScreen() {
           {step === 2 && (
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Child&apos;s Name *</Text>
+                <ScaledText style={styles.label}>Child&apos;s Name *</ScaledText>
                 <TextInput
                   style={styles.input}
                   value={childName}
@@ -425,7 +426,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Age *</Text>
+                <ScaledText style={styles.label}>Age *</ScaledText>
                 <TextInput
                   style={styles.input}
                   value={childAge}
@@ -441,7 +442,7 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Diagnosis</Text>
+                <ScaledText style={styles.label}>Diagnosis</ScaledText>
                 <TextInput
                   style={styles.input}
                   value={diagnosis}
@@ -456,14 +457,14 @@ export default function OnboardingScreen() {
           {step === 4 && (
             <View style={styles.form}>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Accessibility</Text>
+                <ScaledText style={styles.sectionTitle}>Accessibility</ScaledText>
 
                 <View style={styles.accessibilityCard}>
                   <View style={styles.accessibilityRow}>
                     <Volume2 size={20} color={Colors.primary} />
                     <View style={styles.accessibilityInfo}>
-                      <Text style={styles.accessibilityLabel}>Text-to-Speech Mode</Text>
-                      <Text style={styles.accessibilityDesc}>Audio narration enabled</Text>
+                      <ScaledText style={styles.accessibilityLabel}>Text-to-Speech Mode</ScaledText>
+                      <ScaledText style={styles.accessibilityDesc}>Audio narration enabled</ScaledText>
                     </View>
                     <TouchableOpacity
                       style={[styles.toggle, textToSpeech && styles.toggleActive]}
@@ -479,7 +480,7 @@ export default function OnboardingScreen() {
                   <View style={styles.fontSizeSection}>
                     <View style={styles.fontSizeHeader}>
                       <Type size={20} color={Colors.primary} />
-                      <Text style={styles.accessibilityLabel}>Font Size</Text>
+                      <ScaledText style={styles.accessibilityLabel}>Font Size</ScaledText>
                     </View>
                     <View style={styles.fontSizeOptions}>
                       {(['small', 'medium', 'large'] as const).map((size) => (
@@ -492,22 +493,22 @@ export default function OnboardingScreen() {
                           onPress={() => setFontSizeScale(size)}
                           activeOpacity={0.7}
                         >
-                          <Text
+                          <ScaledText
                             style={[
                               styles.fontSizeText,
                               fontSizeScale === size && styles.fontSizeTextActive,
                             ]}
                           >
                             {size === 'small' ? 'A' : size === 'medium' ? 'A' : 'A'}
-                          </Text>
-                          <Text
+                          </ScaledText>
+                          <ScaledText
                             style={[
                               styles.fontSizeLabel,
                               fontSizeScale === size && styles.fontSizeLabelActive,
                             ]}
                           >
                             {size.charAt(0).toUpperCase() + size.slice(1)}
-                          </Text>
+                          </ScaledText>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -526,11 +527,11 @@ export default function OnboardingScreen() {
                 <View style={styles.sparkleContainer}>
                   <Sparkles size={64} color={Colors.primary} />
                 </View>
-                <Text style={styles.celebrationTitle}>You&apos;re All Set!</Text>
-                <Text style={styles.celebrationSubtitle}>
+                <ScaledText style={styles.celebrationTitle}>You&apos;re All Set!</ScaledText>
+                <ScaledText style={styles.celebrationSubtitle}>
                   Welcome to the AutiNote family.
                   {"\n"}Let&apos;s make today a little easier, one log at a time.
-                </Text>
+                </ScaledText>
               </Animated.View>
 
               <View style={styles.celebrationButtons}>
@@ -543,7 +544,7 @@ export default function OnboardingScreen() {
                   {isCreatingAccount ? (
                     <ActivityIndicator color={Colors.primary} />
                   ) : (
-                    <Text style={styles.dashboardButtonText}>Go to Dashboard</Text>
+                    <ScaledText style={styles.dashboardButtonText}>Go to Dashboard</ScaledText>
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -556,7 +557,7 @@ export default function OnboardingScreen() {
                     <ActivityIndicator color={Colors.background} />
                   ) : (
                     <>
-                      <Text style={styles.logNowButtonText}>Start Logging Now</Text>
+                      <ScaledText style={styles.logNowButtonText}>Start Logging Now</ScaledText>
                       <ArrowRight size={20} color={Colors.background} />
                     </>
                   )}
@@ -568,7 +569,7 @@ export default function OnboardingScreen() {
           {step === 3 && (
             <View style={styles.form}>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Quick Option Buttons</Text>
+                <ScaledText style={styles.sectionTitle}>Quick Option Buttons</ScaledText>
                 
                 {quickReminders.map((reminder) => {
                   const config = {
@@ -584,10 +585,10 @@ export default function OnboardingScreen() {
                         <View style={styles.reminderInfo}>
                           <View style={styles.reminderTitleRow}>
                             <Bell size={18} color={Colors.primary} />
-                            <Text style={styles.reminderTitle}>{config.title}</Text>
+                            <ScaledText style={styles.reminderTitle}>{config.title}</ScaledText>
                           </View>
-                          <Text style={styles.reminderDesc}>{config.desc}</Text>
-                          <Text style={styles.reminderTime}>{config.time}</Text>
+                          <ScaledText style={styles.reminderDesc}>{config.desc}</ScaledText>
+                          <ScaledText style={styles.reminderTime}>{config.time}</ScaledText>
                         </View>
                         <TouchableOpacity
                           style={[styles.toggle, reminder.enabled && styles.toggleActive]}
@@ -616,13 +617,13 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Custom Reminder Creator</Text>
+                <ScaledText style={styles.sectionTitle}>Custom Reminder Creator</ScaledText>
                 <TouchableOpacity
                   style={styles.createReminderButton}
                   onPress={() => setShowReminderModal(true)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.createReminderText}>Create Your Own Reminder</Text>
+                  <ScaledText style={styles.createReminderText}>Create Your Own Reminder</ScaledText>
                   <ArrowRight size={18} color={Colors.primary} />
                 </TouchableOpacity>
 
@@ -631,8 +632,8 @@ export default function OnboardingScreen() {
                     {customReminders.map((reminder) => (
                       <View key={reminder.id} style={styles.customReminderChip}>
                         <View>
-                          <Text style={styles.customReminderLabel}>{reminder.label}</Text>
-                          <Text style={styles.customReminderTime}>{reminder.time} • {reminder.repeat}</Text>
+                          <ScaledText style={styles.customReminderLabel}>{reminder.label}</ScaledText>
+                          <ScaledText style={styles.customReminderTime}>{reminder.time} • {reminder.repeat}</ScaledText>
                         </View>
                         <TouchableOpacity
                           onPress={() => removeCustomReminder(reminder.id)}
@@ -650,11 +651,11 @@ export default function OnboardingScreen() {
                 <View style={styles.previewSection}>
                   <View style={styles.previewHeader}>
                     <CheckCircle2 size={20} color={Colors.primary} />
-                    <Text style={styles.previewTitle}>Your Reminders</Text>
+                    <ScaledText style={styles.previewTitle}>Your Reminders</ScaledText>
                   </View>
-                  <Text style={styles.previewNote}>
+                  <ScaledText style={styles.previewNote}>
                     You can adjust reminders anytime in Settings → Notifications.
-                  </Text>
+                  </ScaledText>
                 </View>
               )}
             </View>
@@ -668,7 +669,7 @@ export default function OnboardingScreen() {
                   onPress={handleBack}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.backButtonText}>Back</Text>
+                  <ScaledText style={styles.backButtonText}>Back</ScaledText>
                 </TouchableOpacity>
               )}
 
@@ -684,9 +685,9 @@ export default function OnboardingScreen() {
                 disabled={(step === 0 && !isStep0Valid) || (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.continueButtonText}>
+                <ScaledText style={styles.continueButtonText}>
                   {step === 0 || step === 1 || step === 2 || step === 3 ? 'Continue' : 'Complete Setup'}
-                </Text>
+                </ScaledText>
                 {step < 4 && <ArrowRight size={20} color={Colors.background} />}
               </TouchableOpacity>
             </View>
@@ -708,13 +709,13 @@ export default function OnboardingScreen() {
             >
               <X size={24} color={Colors.text} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Create Your Own Reminder</Text>
+            <ScaledText style={styles.modalTitle}>Create Your Own Reminder</ScaledText>
             <View style={{ width: 24 }} />
           </View>
 
           <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Reminder Name *</Text>
+              <ScaledText style={styles.label}>Reminder Name *</ScaledText>
               <TextInput
                 style={styles.input}
                 value={newReminderLabel}
@@ -726,7 +727,7 @@ export default function OnboardingScreen() {
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Category</Text>
+              <ScaledText style={styles.label}>Category</ScaledText>
               <View style={styles.categoryGrid}>
                 {(['mood', 'behavior', 'sleep', 'food', 'therapy', 'other'] as ReminderCategory[]).map((cat) => (
                   <TouchableOpacity
@@ -738,21 +739,21 @@ export default function OnboardingScreen() {
                     onPress={() => setNewReminderCategory(cat)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <ScaledText
                       style={[
                         styles.categoryText,
                         newReminderCategory === cat && styles.categoryTextActive,
                       ]}
                     >
                       {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Time *</Text>
+              <ScaledText style={styles.label}>Time *</ScaledText>
               <TextInput
                 style={styles.input}
                 value={newReminderTime}
@@ -764,7 +765,7 @@ export default function OnboardingScreen() {
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Repeat</Text>
+              <ScaledText style={styles.label}>Repeat</ScaledText>
               <View style={styles.repeatGrid}>
                 {(['daily', 'weekdays', 'custom'] as ReminderRepeat[]).map((rep) => (
                   <TouchableOpacity
@@ -776,21 +777,21 @@ export default function OnboardingScreen() {
                     onPress={() => setNewReminderRepeat(rep)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <ScaledText
                       style={[
                         styles.repeatText,
                         newReminderRepeat === rep && styles.repeatTextActive,
                       ]}
                     >
                       {rep.charAt(0).toUpperCase() + rep.slice(1)}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Tone</Text>
+              <ScaledText style={styles.label}>Tone</ScaledText>
               <View style={styles.toneGrid}>
                 {[{ value: 'chime' as const, label: 'Gentle chime 🎵' }, { value: 'silent' as const, label: 'Silent notification 🔕' }, { value: 'text' as const, label: 'Text only 💬' }].map((tone) => (
                   <TouchableOpacity
@@ -802,21 +803,21 @@ export default function OnboardingScreen() {
                     onPress={() => setNewReminderTone(tone.value)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <ScaledText
                       style={[
                         styles.toneText,
                         newReminderTone === tone.value && styles.toneTextActive,
                       ]}
                     >
                       {tone.label}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.label}>Notification Message</Text>
+              <ScaledText style={styles.label}>Notification Message</ScaledText>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={newReminderMessage}
@@ -835,7 +836,7 @@ export default function OnboardingScreen() {
               onPress={() => setShowReminderModal(false)}
               activeOpacity={0.7}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <ScaledText style={styles.modalCancelText}>Cancel</ScaledText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -846,7 +847,7 @@ export default function OnboardingScreen() {
               disabled={!newReminderLabel.trim()}
               activeOpacity={0.7}
             >
-              <Text style={styles.modalSaveText}>Save Reminder</Text>
+              <ScaledText style={styles.modalSaveText}>Save Reminder</ScaledText>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

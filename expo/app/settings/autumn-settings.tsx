@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Sparkles, MessageCircle, Brain, Zap } from 'lucide-react-native';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
@@ -72,9 +73,9 @@ export default function AutumnSettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Customize Autumn</Text>
+        <ScaledText style={styles.headerTitle}>Customize Autumn</ScaledText>
         <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <Text style={styles.saveBtnText}>Save</Text>
+          <ScaledText style={styles.saveBtnText}>Save</ScaledText>
         </TouchableOpacity>
       </View>
 
@@ -82,7 +83,7 @@ export default function AutumnSettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Sparkles size={20} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>RESPONSE STYLE</Text>
+            <ScaledText style={styles.sectionTitle}>RESPONSE STYLE</ScaledText>
           </View>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             {Object.entries(STYLE_LABELS).map(([key, { label, desc }], idx, arr) => (
@@ -100,8 +101,8 @@ export default function AutumnSettingsScreen() {
                   {responseStyle === key && <View style={styles.radioInner} />}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.optionLabel}>{label}</Text>
-                  <Text style={styles.optionDesc}>{desc}</Text>
+                  <ScaledText style={styles.optionLabel}>{label}</ScaledText>
+                  <ScaledText style={styles.optionDesc}>{desc}</ScaledText>
                 </View>
               </TouchableOpacity>
             ))}
@@ -111,9 +112,9 @@ export default function AutumnSettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Brain size={20} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>FOCUS AREAS</Text>
+            <ScaledText style={styles.sectionTitle}>FOCUS AREAS</ScaledText>
           </View>
-          <Text style={styles.sectionSubtitle}>Select topics Autumn should specialize in</Text>
+          <ScaledText style={styles.sectionSubtitle}>Select topics Autumn should specialize in</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.focusWrap}>
               {FOCUS_OPTIONS.map((opt) => (
@@ -126,15 +127,15 @@ export default function AutumnSettingsScreen() {
                   onPress={() => toggleFocus(opt.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.focusEmoji}>{opt.emoji}</Text>
-                  <Text
+                  <ScaledText style={styles.focusEmoji}>{opt.emoji}</ScaledText>
+                  <ScaledText
                     style={[
                       styles.focusLabel,
                       focusAreas.includes(opt.value) && styles.focusLabelSelected,
                     ]}
                   >
                     {opt.label}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -144,7 +145,7 @@ export default function AutumnSettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <MessageCircle size={20} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>VERBOSITY</Text>
+            <ScaledText style={styles.sectionTitle}>VERBOSITY</ScaledText>
           </View>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.optionsRow}>
@@ -158,26 +159,26 @@ export default function AutumnSettingsScreen() {
                   onPress={() => setVerbosity(v)}
                   activeOpacity={0.7}
                 >
-                  <Text
+                  <ScaledText
                     style={[
                       styles.verbosityChipText,
                       verbosity === v && styles.verbosityChipTextSelected,
                     ]}
                   >
                     {VERBOSITY_LABELS[v]}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={[styles.rowBorder, { marginHorizontal: 0 }]} />
             <View style={{ padding: 16 }}>
-              <Text style={styles.verbosityHint}>
+              <ScaledText style={styles.verbosityHint}>
                 {verbosity === 'short'
                   ? '1-2 sentence responses. Quick and actionable.'
                   : verbosity === 'balanced'
                   ? '2-3 paragraphs with practical tips and context.'
                   : 'In-depth analysis with examples, strategies, and follow-up suggestions.'}
-              </Text>
+              </ScaledText>
             </View>
           </GlassCard>
         </View>

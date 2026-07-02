@@ -2,9 +2,10 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
-import { getColors, getFontScale } from '@/constants/colors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
+import ScaledText from '@/components/ScaledText';
 import { generateText } from '@rork-ai/toolkit-sdk';
 import type { AnyLogEntry, DailyLogEntry, MeltdownLogEntry, LogEntry, MoodTag } from '@/types';
 
@@ -44,8 +45,7 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { activeChild, activeChildLogs = [], chatHistory = [], saveChatHistory, clearChatHistory, preferences } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
-  const fontScale = useMemo(() => getFontScale(preferences), [preferences]);
-  const styles = useMemo(() => createStyles(Colors, fontScale), [Colors, fontScale]);
+  const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [input, setInput] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
@@ -289,8 +289,8 @@ You have context about their child and logs - reference it naturally when releva
           <View style={styles.headerLeft}>
             <Sparkles size={32} color={Colors.secondary} />
             <View>
-              <Text style={styles.title}>Autumn</Text>
-              <Text style={styles.subtitle}>AI Assistant</Text>
+              <ScaledText style={styles.title}>Autumn</ScaledText>
+              <ScaledText style={styles.subtitle}>AI Assistant</ScaledText>
             </View>
           </View>
           {localMessages.length > 0 && (
@@ -318,13 +318,13 @@ You have context about their child and logs - reference it naturally when releva
         >
           {localMessages.length === 0 && (
             <View style={styles.welcome}>
-              <Text style={styles.welcomeText}>
+              <ScaledText style={styles.welcomeText}>
                 Hi! I&apos;m Autumn, your AI assistant{activeChild?.name ? ` with full knowledge of ${activeChild.name}'s profile and history` : ''}. {activeChild?.name && activeChild?.age ? `I understand ${activeChild.name} is ${activeChild.age} years old` : ''}{activeChild?.diagnosis ? ` with ${activeChild.diagnosis}` : ''}{activeChild ? ', and I' : 'I'}&apos;m here to provide personalized support.
-              </Text>
-              <Text style={styles.welcomeSubtext}>
+              </ScaledText>
+              <ScaledText style={styles.welcomeSubtext}>
                 I have access to {activeChildLogs?.length || 0} log entries{activeChild?.name ? ` and know about ${activeChild.name}'s triggers, patterns, and progress` : ''}. Ask me anything!
-              </Text>
-              <Text style={styles.suggestionsTitle}>Try asking:</Text>
+              </ScaledText>
+              <ScaledText style={styles.suggestionsTitle}>Try asking:</ScaledText>
               {suggestedQuestions.map((q, i) => (
                 <GlassCard
                   key={i}
@@ -335,7 +335,7 @@ You have context about their child and logs - reference it naturally when releva
                     onPress={() => setInput(q)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.suggestionText}>{q}</Text>
+                    <ScaledText style={styles.suggestionText}>{q}</ScaledText>
                   </TouchableOpacity>
                 </GlassCard>
               ))}
@@ -354,14 +354,14 @@ You have context about their child and logs - reference it naturally when releva
                         message.role === 'user' ? styles.userBubble : styles.assistantBubble,
                       ]}
                     >
-                      <Text
+                      <ScaledText
                         style={[
                           styles.messageText,
                           message.role === 'user' ? styles.userText : styles.assistantText,
                         ]}
                       >
                         {part.text}
-                      </Text>
+                      </ScaledText>
                     </View>
                   );
                 }
@@ -406,7 +406,7 @@ You have context about their child and logs - reference it naturally when releva
   );
 }
 
-const createStyles = (Colors: ReturnType<typeof getColors>, fs: number = 1) => StyleSheet.create({
+const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -433,12 +433,12 @@ const createStyles = (Colors: ReturnType<typeof getColors>, fs: number = 1) => S
     borderRadius: 8,
   },
   title: {
-    fontSize: Math.round(24 * fs),
+    fontSize: 24,
     fontWeight: '700' as const,
     color: Colors.text,
   },
   subtitle: {
-    fontSize: Math.round(14 * fs),
+    fontSize: 14,
     color: Colors.textSecondary,
   },
   chatContainer: {

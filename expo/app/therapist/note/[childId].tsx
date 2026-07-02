@@ -3,6 +3,7 @@ import { X, Save } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { TherapistNote } from '@/types';
@@ -88,11 +89,11 @@ export default function TherapistNoteComposerScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
             <X size={22} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Session Note</Text>
+          <ScaledText style={styles.headerTitle}>Session Note</ScaledText>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Client not found.</Text>
+          <ScaledText style={styles.emptyText}>Client not found.</ScaledText>
         </View>
       </View>
     );
@@ -106,13 +107,13 @@ export default function TherapistNoteComposerScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
             <X size={22} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Session Note</Text>
+          <ScaledText style={styles.headerTitle}>Session Note</ScaledText>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>
+          <ScaledText style={styles.emptyText}>
             You don&apos;t have permission to add notes for this client.
-          </Text>
+          </ScaledText>
         </View>
       </View>
     );
@@ -129,8 +130,8 @@ export default function TherapistNoteComposerScreen() {
           <X size={22} color={Colors.text} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerEyebrow}>SESSION NOTE</Text>
-          <Text style={styles.headerTitle} numberOfLines={1}>{client.child.name}</Text>
+          <ScaledText style={styles.headerEyebrow}>SESSION NOTE</ScaledText>
+          <ScaledText style={styles.headerTitle} numberOfLines={1}>{client.child.name}</ScaledText>
         </View>
         <TouchableOpacity
           onPress={handleSave}
@@ -149,7 +150,7 @@ export default function TherapistNoteComposerScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.field}>
-          <Text style={styles.label}>Session date</Text>
+          <ScaledText style={styles.label}>Session date</ScaledText>
           <TextInput
             style={styles.input}
             value={sessionDate}
@@ -169,7 +170,7 @@ export default function TherapistNoteComposerScreen() {
           { label: 'Next session goals', value: nextSessionGoals, setter: setNextSessionGoals, hint: 'What to focus on next time' },
         ].map((f) => (
           <View key={f.label} style={styles.field}>
-            <Text style={styles.label}>{f.label}</Text>
+            <ScaledText style={styles.label}>{f.label}</ScaledText>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={f.value}
@@ -182,9 +183,9 @@ export default function TherapistNoteComposerScreen() {
           </View>
         ))}
 
-        <Text style={styles.disclaimer}>
+        <ScaledText style={styles.disclaimer}>
           This note will be visible to {client.parentName} (caregiver of {client.child.name}).
-        </Text>
+        </ScaledText>
 
         <View style={{ height: 40 }} />
       </ScrollView>

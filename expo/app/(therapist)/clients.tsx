@@ -3,6 +3,7 @@ import { Users, ChevronRight, Calendar as CalendarIcon, MessageCircle, RefreshCw
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, RefreshControl, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ScaledText from '@/components/ScaledText';
 import { useQueryClient } from '@tanstack/react-query';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -143,11 +144,11 @@ export default function TherapistClientsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.greeting}>Hello, {profile?.caregiverName || 'Therapist'}</Text>
-        <Text style={styles.title}>My Clients</Text>
-        <Text style={styles.subtitle}>
+        <ScaledText style={styles.greeting}>Hello, {profile?.caregiverName || 'Therapist'}</ScaledText>
+        <ScaledText style={styles.title}>My Clients</ScaledText>
+        <ScaledText style={styles.subtitle}>
           {clientCards.length} {clientCards.length === 1 ? 'child' : 'children'} shared with you
-        </Text>
+        </ScaledText>
       </View>
 
       <ScrollView
@@ -167,10 +168,10 @@ export default function TherapistClientsScreen() {
             <View style={styles.emptyIcon}>
               <Users size={48} color={Colors.primary} />
             </View>
-            <Text style={styles.emptyTitle}>No clients yet</Text>
-            <Text style={styles.emptyText}>
+            <ScaledText style={styles.emptyTitle}>No clients yet</ScaledText>
+            <ScaledText style={styles.emptyText}>
               When a caregiver invites you to collaborate on their child&apos;s care, they&apos;ll appear here.
-            </Text>
+            </ScaledText>
             <TouchableOpacity
               style={styles.refreshButton}
               onPress={() => { void acceptInvitesAndRefresh(); }}
@@ -179,21 +180,21 @@ export default function TherapistClientsScreen() {
               testID="check-invites"
             >
               <RefreshCw size={16} color={Colors.surface} />
-              <Text style={styles.refreshButtonText}>
+              <ScaledText style={styles.refreshButtonText}>
                 {refreshing ? 'Checking…' : 'Check for invitations'}
-              </Text>
+              </ScaledText>
             </TouchableOpacity>
-            <Text style={styles.emptyHint}>
+            <ScaledText style={styles.emptyHint}>
               Pull to refresh anytime. Make sure the caregiver invited you using exactly:{' '}
-              <Text style={{ fontWeight: '700' }}>{profile?.caregiverEmail || 'your account email'}</Text>.
-            </Text>
+              <ScaledText style={{ fontWeight: '700' }}>{profile?.caregiverEmail || 'your account email'}</ScaledText>.
+            </ScaledText>
             <TouchableOpacity
               style={styles.diagnoseLink}
               onPress={() => router.push('/settings/diagnose-connection' as any)}
               activeOpacity={0.7}
               testID="diagnose-link"
             >
-              <Text style={styles.diagnoseLinkText}>Run connection diagnostic →</Text>
+              <ScaledText style={styles.diagnoseLinkText}>Run connection diagnostic →</ScaledText>
             </TouchableOpacity>
           </View>
         ) : (
@@ -218,53 +219,53 @@ export default function TherapistClientsScreen() {
                   {avatar ? (
                     <Image source={{ uri: avatar.url }} style={styles.avatarImage} />
                   ) : (
-                    <Text style={[styles.avatarLetter, { color: Colors.primary }]}>
+                    <ScaledText style={[styles.avatarLetter, { color: Colors.primary }]}>
                       {client.child.name.charAt(0).toUpperCase()}
-                    </Text>
+                    </ScaledText>
                   )}
                 </View>
 
                 <View style={styles.clientInfo}>
                   <View style={styles.clientHeader}>
-                    <Text style={styles.clientName} numberOfLines={1}>
+                    <ScaledText style={styles.clientName} numberOfLines={1}>
                       {client.child.name}
-                    </Text>
-                    <Text style={styles.clientAge}>· {client.child.age}y</Text>
+                    </ScaledText>
+                    <ScaledText style={styles.clientAge}>· {client.child.age}y</ScaledText>
                     {client.unread > 0 && (
                       <View style={styles.unreadBadge}>
-                        <Text style={styles.unreadBadgeText}>{client.unread}</Text>
+                        <ScaledText style={styles.unreadBadgeText}>{client.unread}</ScaledText>
                       </View>
                     )}
                   </View>
 
-                  <Text style={styles.parentLine} numberOfLines={1}>
+                  <ScaledText style={styles.parentLine} numberOfLines={1}>
                     Caregiver: {client.parentName}
-                  </Text>
+                  </ScaledText>
 
                   <View style={styles.metaRow}>
                     <View style={styles.metaItem}>
                       <CalendarIcon size={12} color={Colors.textSecondary} />
-                      <Text style={styles.metaText}>
+                      <ScaledText style={styles.metaText}>
                         {client.lastLogDate
                           ? `Last log ${formatDate(client.lastLogDate)}`
                           : 'No logs yet'}
-                      </Text>
+                      </ScaledText>
                     </View>
                     {client.unread > 0 && (
                       <View style={styles.metaItem}>
                         <MessageCircle size={12} color={Colors.primary} />
-                        <Text style={[styles.metaText, { color: Colors.primary }]}>
+                        <ScaledText style={[styles.metaText, { color: Colors.primary }]}>
                           {client.unread} new
-                        </Text>
+                        </ScaledText>
                       </View>
                     )}
                   </View>
 
                   {client.child.diagnosis ? (
                     <View style={styles.diagnosisChip}>
-                      <Text style={styles.diagnosisText} numberOfLines={1}>
+                      <ScaledText style={styles.diagnosisText} numberOfLines={1}>
                         {client.child.diagnosis}
-                      </Text>
+                      </ScaledText>
                     </View>
                   ) : null}
                 </View>
