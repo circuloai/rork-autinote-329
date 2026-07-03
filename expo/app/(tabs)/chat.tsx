@@ -50,6 +50,7 @@ export default function ChatScreen() {
   const [sending, setSending] = useState<boolean>(false);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
+  const clearedRef = useRef(false);
 
   const getMoodRating = (log: AnyLogEntry): string => {
     if (log.type === 'daily') return (log as DailyLogEntry).overallRating;
@@ -85,18 +86,6 @@ export default function ChatScreen() {
   }, []);
 
   const sendChat = useCallback(async (text: string) => {
-    const toolkitUrl = process.env.EXPO_PUBLIC_TOOLKIT_URL;
-
-    console.log('=== Chat Send Started ===');
-    console.log('Toolkit URL:', toolkitUrl);
-    console.log('User input:', text);
-    console.log('===========================');
-
-    if (!toolkitUrl) {
-      console.error('[Chat] EXPO_PUBLIC_TOOLKIT_URL is not set');
-      throw new Error('AI service is not configured. Please check environment variables.');
-    }
-
     setSending(true);
 
     try {
@@ -232,6 +221,10 @@ CONTEXT USAGE: You have context about the child and their recent logs. Reference
   }, [activeChild, activeChildLogs, localMessages, preferences]);
 
   useEffect(() => {
+    if (clearedRef.current) {
+      clearedRef.current = false;
+      return;
+    }
     if (chatHistory && chatHistory.length > 0 && localMessages.length === 0) {
       setLocalMessages(chatHistory);
     }
@@ -292,6 +285,7 @@ CONTEXT USAGE: You have context about the child and their recent logs. Reference
           text: 'Clear',
           style: 'destructive',
           onPress: () => {
+            clearedRef.current = true;
             clearChatHistory();
             setLocalMessages([]);
           },
