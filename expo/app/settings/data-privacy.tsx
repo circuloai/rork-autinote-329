@@ -8,6 +8,7 @@ import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { supabase } from '@/lib/supabase';
 
 export default function DataPrivacyScreen() {
@@ -23,29 +24,68 @@ export default function DataPrivacyScreen() {
     try {
       const allData = {
         exportedAt: new Date().toISOString(),
+        appVersion: '1.0.0',
         profile: profile ? {
           name: profile.caregiverName,
           email: profile.caregiverEmail,
           phone: profile.caregiverPhone,
           role: profile.role,
         } : null,
-        children: profile?.children || [],
-        logs: activeChildLogs || [],
+        children: (profile?.children || []).map(child => ({
+          id: child.id,
+          name: child.name,
+          age: child.age,
+          diagnosis: child.diagnosis,
+          avatar: child.avatar,
+        })),
+        logs: (logs || []).map(log => ({
+          id: log.id,
+          childId: log.childId,
+          date: log.date,
+          type: log.type,
+          moodRating: log.moodRating,
+          behaviors: log.behaviors,
+          triggers: log.triggers,
+          notes: (log as any).notes,
+          duration: (log as any).duration,
+          intensity: (log as any).intensity,
+          strategies: (log as any).strategies,
+          createdAt: (log as any).createdAt,
+        })),
         totalEntries: logs.length,
+        totalChildren: profile?.children?.length || 0,
       };
+
       const json = JSON.stringify(allData, null, 2);
-      
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(`data:text/json;charset=utf-8,${encodeURIComponent(json)}`, {
-          mimeType: 'application/json',
-          dialogTitle: 'Export AutiNote Data',
-          UTI: 'public.json',
-        });
+      const filename = `autinote-export-${new Date().toISOString().split('T')[0]}.json`;
+
+      if (Platform.OS === 'web') {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
       } else {
-        Alert.alert(
-          'Export Ready',
-          `${logs.length} log entries across ${profile?.children?.length || 0} child profile(s).\n\nSharing is not available on this platform.`
-        );
+        const fileUri = FileSystem.cacheDirectory + filename;
+        await FileSystem.writeAsStringAsync(fileUri, json, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/json',
+            dialogTitle: 'Export AutiNote Data',
+            UTI: 'public.json',
+          });
+        } else {
+          Alert.alert(
+            'Export Ready',
+            `${logs.length} log entries across ${profile?.children?.length || 0} child profile(s) exported.`
+          );
+        }
       }
     } catch {
       Alert.alert('Export Failed', 'Could not export data. Please try again.');
