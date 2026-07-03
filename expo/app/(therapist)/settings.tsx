@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChevronRight, User, Palette, Info, LogOut, Shield } from 'lucide-react-native';
+import { ChevronRight, User, Palette, Info, LogOut, Shield, Pencil } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
@@ -34,7 +34,11 @@ export default function TherapistSettingsScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileCard}>
+        <TouchableOpacity
+          style={styles.profileCard}
+          onPress={() => router.push('/settings/profile' as any)}
+          activeOpacity={0.8}
+        >
           <View style={styles.profileAvatar}>
             <User size={28} color={Colors.primary} />
           </View>
@@ -50,12 +54,33 @@ export default function TherapistSettingsScreen() {
               <ScaledText style={styles.roleBadgeText}>Therapist</ScaledText>
             </View>
           </View>
-        </View>
+          <Pencil size={16} color={Colors.textLight} />
+        </TouchableOpacity>
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <ScaledText style={styles.statValue}>{therapistClients.length}</ScaledText>
             <ScaledText style={styles.statLabel}>Active Clients</ScaledText>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ScaledText style={styles.sectionTitle}>ACCOUNT</ScaledText>
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={[styles.row, styles.rowBorder]}
+              activeOpacity={0.7}
+              onPress={() => router.push('/settings/profile' as any)}
+            >
+              <View style={styles.rowIcon}>
+                <User size={20} color={Colors.text} />
+              </View>
+              <View style={styles.rowContent}>
+                <ScaledText style={styles.rowTitle}>My Profile</ScaledText>
+                <ScaledText style={styles.rowSubtitle}>Name, email, phone, password</ScaledText>
+              </View>
+              <ChevronRight size={18} color={Colors.textLight} />
+            </TouchableOpacity>
           </View>
         </View>
 
