@@ -237,9 +237,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <View style={styles.creatorBadge}>
-          <ScaledText style={styles.creatorText}>✨ Crafted with love by </ScaledText>
-          <ScaledText style={styles.creatorName}>Anika Kale</ScaledText>
-          <ScaledText style={styles.creatorText}> ✨</ScaledText>
+          <ScaledText style={styles.creatorText}>Crafted with love 🤍🧩</ScaledText>
         </View>
 
         <View style={{ height: 40 }} />
