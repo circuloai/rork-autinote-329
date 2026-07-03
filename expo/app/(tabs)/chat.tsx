@@ -126,47 +126,79 @@ export default function ChatScreen() {
         return { role, content } as { role: 'user' | 'assistant'; content: string };
       }).filter((m) => m.content.length > 0);
 
-      const systemInstructions = `You are Autumn, a warm and supportive AI assistant for caregivers of autistic children. 
-
-IMPORTANT RESPONSE STYLE:
-- Write like you're talking to a friend - conversational, empathetic, and human
-- Keep responses to 2-3 short paragraphs maximum
-- NO asterisks, NO bullet points, NO markdown formatting, NO lists
-- NO repetitive data or mechanical language
-- Focus on what matters most to the caregiver right now
-- Use natural language, contractions, and warmth
-- Avoid clinical or robotic tone
-- Connect emotionally while being practical
-
-You have context about their child and logs - reference it naturally when relevant, but don't list or repeat data they already know.`;
-
       const autumnStyle = (preferences as any)?.autumnStyle || 'warm';
-      const autumnFocus = (preferences as any)?.autumnFocus || ['autism', 'behavior', 'emotional', 'sleep', 'sensory'];
+      const autumnFocus = (preferences as any)?.autumnFocus as string[] | undefined;
       const autumnVerbosity = (preferences as any)?.autumnVerbosity || 'balanced';
 
-      let styleGuidance = '';
-      if (autumnStyle === 'professional') {
-        styleGuidance = '\nADDITIONAL STYLE: Use a professional, evidence-based tone. Reference research and clinical terminology where appropriate. Be thorough and structured.';
-      } else if (autumnStyle === 'brief') {
-        styleGuidance = '\nADDITIONAL STYLE: Keep responses extremely brief — 1-2 sentences max. Be direct and skip pleasantries. Give just the core insight or actionable tip.';
+      const focusList = Array.isArray(autumnFocus) && autumnFocus.length > 0
+        ? autumnFocus.join(', ')
+        : 'autism, behavior, emotional, sleep, sensory';
+
+      const focusAreaDescriptions: Record<string, string> = {
+        autism: 'autism spectrum support and understanding',
+        behavior: 'behavior intervention strategies and ABA techniques',
+        emotional: 'emotional regulation and co-regulation',
+        sleep: 'sleep guidance and routines',
+        sensory: 'sensory processing and sensory integration',
+      };
+      const focusDescList = Array.isArray(autumnFocus) && autumnFocus.length > 0
+        ? autumnFocus.map((f) => focusAreaDescriptions[f] || f).join('; ')
+        : Object.values(focusAreaDescriptions).join('; ');
+
+      let verbosityRule = '';
+      if (autumnVerbosity === 'short') {
+        verbosityRule = 'RESPONSE LENGTH: 1-2 sentences only. No exceptions. Be extremely concise.';
+      } else if (autumnVerbosity === 'detailed') {
+        verbosityRule = 'RESPONSE LENGTH: Provide a thorough, in-depth response. Include background context, multiple concrete strategies, examples, and follow-up suggestions. Aim for 4-6 paragraphs.';
       } else {
-        styleGuidance = '\nADDITIONAL STYLE: Be warm and conversational. Use empathy, metaphors, and a supportive tone. Make the caregiver feel heard.';
+        verbosityRule = 'RESPONSE LENGTH: 2-3 paragraphs. Include practical tips with enough context to be actionable.';
       }
 
-      if (autumnVerbosity === 'detailed') {
-        styleGuidance += ' Provide in-depth analysis with examples and strategies.';
-      } else if (autumnVerbosity === 'short') {
-        styleGuidance += ' Keep responses to absolute minimum length.';
+      let styleInstructions = '';
+      let acknowledgment = '';
+
+      if (autumnStyle === 'professional') {
+        styleInstructions = `TONE & FORMAT:
+- Use a professional, clinical, evidence-based tone throughout
+- Reference established therapeutic frameworks (ABA, DIR/Floortime, CBT, etc.) where relevant
+- Use precise clinical terminology (e.g. "sensory dysregulation", "antecedent-behavior-consequence")
+- Structure your response logically and clearly
+- Avoid casual language, slang, contractions, or emotional metaphors
+- Do NOT use bullet points, asterisks, or markdown — write in structured prose paragraphs
+- Remain objective and data-oriented`;
+        acknowledgment = "Understood. I will maintain a professional, evidence-based tone and reference clinical frameworks where appropriate.";
+      } else if (autumnStyle === 'brief') {
+        styleInstructions = `TONE & FORMAT:
+- Be extremely direct and concise — get straight to the point
+- No pleasantries, no preamble, no emotional warm-up
+- Skip any phrases like "That sounds hard" or "I understand" — just give the answer
+- Do NOT use bullet points, asterisks, or markdown
+- One clear actionable insight or tip only`;
+        acknowledgment = "Got it. I'll be direct and brief — no fluff, just the core answer.";
+      } else {
+        styleInstructions = `TONE & FORMAT:
+- Be warm, empathetic, and conversational — like a knowledgeable supportive friend
+- Use natural language and contractions
+- Connect emotionally before offering practical advice
+- Do NOT use bullet points, asterisks, or markdown — write in flowing paragraphs
+- Make the caregiver feel heard and supported`;
+        acknowledgment = "Got it — I'll be warm, conversational, and human. No formatting, just genuine support.";
       }
 
-      const focusList = Array.isArray(autumnFocus) ? autumnFocus.join(', ') : 'autism, behavior, emotional, sleep, sensory';
-      styleGuidance += `\nFOCUS AREAS: Prioritize topics related to: ${focusList}. De-emphasize topics outside these areas.`;
+      const fullInstructions = `You are Autumn, an AI assistant for caregivers of autistic children.
 
-      const fullInstructions = systemInstructions + styleGuidance;
+${styleInstructions}
+
+${verbosityRule}
+
+FOCUS AREAS: You specialize in and should prioritize: ${focusDescList}. When questions fall outside these areas, briefly acknowledge and redirect to these specialties.
+
+CONTEXT USAGE: You have context about the child and their recent logs. Reference it naturally when relevant, but never list or repeat data the caregiver already knows. Use it to personalize your response.`;
 
       const contextBlock = `Context (use when relevant):\n${JSON.stringify({ child: childContext, recentLogs: compactLogSummary }, null, 2)}`;
 
       console.log('[Chat] Sending request...');
+      console.log('[Chat] Style:', autumnStyle, '| Verbosity:', autumnVerbosity, '| Focus:', focusList);
       console.log('[Chat] History messages:', history.length);
       console.log('[Chat] Recent logs:', recentLogs.length);
       console.log('[Chat] Context size:', contextBlock.length, 'chars');
@@ -174,7 +206,7 @@ You have context about their child and logs - reference it naturally when releva
       const assistantText = await generateText({
         messages: [
           { role: 'user', content: fullInstructions },
-          { role: 'assistant', content: 'Got it - I\'ll be warm, conversational, and concise. No formatting, just human connection.' },
+          { role: 'assistant', content: acknowledgment },
           ...history,
           { role: 'user', content: `${contextBlock}\n\nUser: ${text}` },
         ],
@@ -197,7 +229,7 @@ You have context about their child and logs - reference it naturally when releva
       setSending(false);
       console.log('[Chat] Send completed');
     }
-  }, [activeChild, activeChildLogs, localMessages]);
+  }, [activeChild, activeChildLogs, localMessages, preferences]);
 
   useEffect(() => {
     if (chatHistory && chatHistory.length > 0 && localMessages.length === 0) {
