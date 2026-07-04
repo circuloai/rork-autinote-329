@@ -6,6 +6,18 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LogBox, View, ActivityIndicator, StyleSheet, Text, Platform } from "react-native";
 import { AppProvider } from "@/contexts/AppContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useFonts } from "expo-font";
+
+import {
+  PlayfairDisplay_700Bold,
+  PlayfairDisplay_700Bold_Italic,
+} from "@expo-google-fonts/playfair-display";
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+} from "@expo-google-fonts/dm-sans";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { requestNotificationPermissions } from "@/lib/notifications";
@@ -87,13 +99,20 @@ export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [hasError, setHasError] = useState(false);
 
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_700Bold_Italic,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+  });
+
   useEffect(() => {
     async function prepare() {
       try {
         console.log("[init] platform:", Platform.OS);
-
         await new Promise((resolve) => setTimeout(resolve, 150));
-
         setAppIsReady(true);
       } catch (e) {
         console.error("Error during app initialization:", e);
@@ -108,17 +127,19 @@ export default function RootLayout() {
       }
     }
 
-    const prepared = async () => {
-      await prepare();
-      void requestNotificationPermissions();
-    };
-    void prepared();
-  }, []);
+    if (fontsLoaded) {
+      const prepared = async () => {
+        await prepare();
+        void requestNotificationPermissions();
+      };
+      void prepared();
+    }
+  }, [fontsLoaded]);
 
-  if (!appIsReady) {
+  if (!appIsReady || !fontsLoaded) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#261D15" />
       </View>
     );
   }
@@ -135,13 +156,13 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <AppProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <RootLayoutNav />
-              </GestureHandlerRootView>
-            </AppProvider>
-          </AuthProvider>
+        <AuthProvider>
+          <AppProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <RootLayoutNav />
+            </GestureHandlerRootView>
+          </AppProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
@@ -152,23 +173,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#F6F5F3',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#F6F5F3',
     padding: 20,
   },
   errorText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#ef4444',
+    color: '#B85C4A',
     marginBottom: 8,
   },
   errorSubtext: {
     fontSize: 14,
-    color: '#666',
+    color: '#8C7A6B',
   },
 });

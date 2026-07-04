@@ -1,0 +1,2 @@
+- [Warm theme defaults](warm-theme-defaults.md) — AppContext hardcoded theme:'dark'; fixed with migration that maps mint→warm and clears forced-dark for old users.
+- [Font loading](font-loading.md) — Playfair Display 700 Bold + DM Sans loaded via useFonts in _layout.tsx; ScaledText auto-applies heading font (≥19px bold) vs body font by weight.
