@@ -17,8 +17,8 @@ export default function HomeScreen() {
   const { activeChild, streak, activeChildLogs, preferences, sharedAccess, profile, isLoading, chatMessages, chatHistory } = useApp();
   const { isAuthenticated: hasSession } = useAuth();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
-  
-  const styles = useMemo(() => createStyles(Colors), [Colors]);
+  const isDark = preferences?.theme === 'dark';
+  const styles = useMemo(() => createStyles(Colors, isDark), [Colors, isDark]);
 
   const avatarOption = useMemo(() => getAvatarById(activeChild?.avatar), [activeChild?.avatar]);
 
@@ -616,7 +616,7 @@ export default function HomeScreen() {
   );
 }
 
-const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create({
+const createStyles = (Colors: ReturnType<typeof getColors>, isDark = false) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -774,14 +774,14 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     shadowRadius: 4,
   },
   dailyLogAction: {
-    backgroundColor: Colors.text === '#F9FAFB' ? '#142D52' : '#DBEAFE',
+    backgroundColor: isDark ? Colors.surface : '#DBEAFE',
     borderWidth: 2,
-    borderColor: Colors.text === '#F9FAFB' ? '#1E4A7A' : '#2563EB',
+    borderColor: '#2563EB',
   },
   meltdownLogAction: {
-    backgroundColor: Colors.text === '#F9FAFB' ? '#7C3D10' : '#FFF3E0',
+    backgroundColor: isDark ? Colors.surface : '#FFF3E0',
     borderWidth: 2,
-    borderColor: Colors.text === '#F9FAFB' ? '#B85515' : '#FF9800',
+    borderColor: '#FF9800',
   },
   logIconContainer: {
     width: 56,

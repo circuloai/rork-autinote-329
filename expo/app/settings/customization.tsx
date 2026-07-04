@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
 import { Stack } from 'expo-router';
-import { Check } from 'lucide-react-native';
+import { Check, Moon } from 'lucide-react-native';
 import { getColors, getFontScale } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';

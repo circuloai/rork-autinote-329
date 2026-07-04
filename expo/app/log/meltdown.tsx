@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Check, ArrowLeft } from 'lucide-react-native';
 import * as Crypto from 'expo-crypto';
 import CustomSlider from '@/components/CustomSlider';
-import Colors from '@/constants/colors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { MeltdownMood, MeltdownTrigger, MeltdownSeverity, MeltdownLogEntry } from '@/types';
 import ScaledText from '@/components/ScaledText';
@@ -15,7 +15,9 @@ type Step = 1 | 2 | 3 | 4 | 5;
 export default function MeltdownLogScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeChild, saveLog } = useApp();
+  const { activeChild, saveLog, preferences } = useApp();
+  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const mapChildTriggerToMeltdownTrigger = (trigger: string): MeltdownTrigger | null => {
     const lowerTrigger = trigger.toLowerCase();
@@ -362,7 +364,7 @@ export default function MeltdownLogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,

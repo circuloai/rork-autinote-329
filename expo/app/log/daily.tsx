@@ -1,11 +1,11 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Check, Sparkles } from 'lucide-react-native';
 import * as Crypto from 'expo-crypto';
 import CustomSlider from '@/components/CustomSlider';
-import Colors from '@/constants/colors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { DailyMoodRating, MoodTag, DailyLogEntry } from '@/types';
 import { generateText } from '@rork-ai/toolkit-sdk';
@@ -15,7 +15,9 @@ export default function DailyLogScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string; editLogId?: string }>();
-  const { activeChild, saveLog, activeChildLogs } = useApp();
+  const { activeChild, saveLog, activeChildLogs, preferences } = useApp();
+  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const dateStr = params.date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
   const editLogId = params.editLogId || null;
@@ -516,7 +518,7 @@ ${predefinedChallengeSuggestions.join('\n')}`;
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
