@@ -8,7 +8,7 @@ import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/lib/supabase';
 
 export default function DataPrivacyScreen() {
@@ -43,9 +43,9 @@ export default function DataPrivacyScreen() {
           childId: log.childId,
           date: log.date,
           type: log.type,
-          moodRating: log.moodRating,
-          behaviors: log.behaviors,
-          triggers: log.triggers,
+          moodRating: (log as any).moodRating,
+          behaviors: (log as any).behaviors,
+          triggers: (log as any).triggers,
           notes: (log as any).notes,
           duration: (log as any).duration,
           intensity: (log as any).intensity,

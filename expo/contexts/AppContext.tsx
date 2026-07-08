@@ -336,6 +336,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         if (error || !data) {
           console.log('[AppContext] Preferences fetch error or no data:', error);
           return {
+            theme: 'auto' as const,
             colorTheme: 'warm' as const,
             fontSize: 'medium' as const,
             textToSpeech: false,
@@ -348,7 +349,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         // Neither was a deliberate user choice. Migrate those users to the new warm/light defaults.
         const isOldDefault = !data.color_theme || data.color_theme === 'mint';
         const migratedColorTheme = isOldDefault ? 'warm' : (data.color_theme as any);
-        const migratedTheme = isOldDefault ? undefined : ((data.theme as any) || undefined);
+        const migratedTheme: 'light' | 'dark' | 'auto' = isOldDefault ? 'auto' : ((data.theme as any) || 'auto');
         return {
           theme: migratedTheme,
           colorTheme: migratedColorTheme,
@@ -362,6 +363,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       } catch (error) {
         console.error('[AppContext] Preferences query error:', error);
         return {
+          theme: 'auto' as const,
           colorTheme: 'warm' as const,
           fontSize: 'medium' as const,
           textToSpeech: false,
