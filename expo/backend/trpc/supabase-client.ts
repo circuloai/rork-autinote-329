@@ -11,3 +11,28 @@ export function getSupabaseClient() {
   }
   return client;
 }
+
+// Service-role client for server-side operations that must not be reachable
+// from the public anon key (e.g. password-reset RPC functions). This client
+// uses SUPABASE_SERVICE_ROLE_KEY which is a server-only secret — never expose
+// it to the client bundle or log it.
+let serviceClient: ReturnType<typeof createClient> | null = null;
+
+export function getServiceRoleClient() {
+  if (!serviceClient) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      throw new Error(
+        "SUPABASE_SERVICE_ROLE_KEY is not configured. " +
+        "Set it as a secret in the Replit environment."
+      );
+    }
+    serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+  }
+  return serviceClient;
+}
