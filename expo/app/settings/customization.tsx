@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useRef, useCallback } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { Stack } from 'expo-router';
 import { Check, Moon } from 'lucide-react-native';
 import { getColors, getFontScale } from '@/constants/colors';
@@ -25,8 +25,13 @@ export default function CustomizationScreen() {
   const [fontSize, setFontSize] = useState<FontSize>((preferences?.fontSize as FontSize) || 'medium');
   // Preview scale based on the locally selected size (not yet saved)
   const previewScale = useMemo(() => getFontScale({ fontSize } as Preferences), [fontSize]);
-  const titlePressCountRef = useRef<number>(0);
-  const titlePressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isDarkMode = preferences?.theme === 'dark';
+  const handleToggleDark = useCallback((value: boolean) => {
+    if (preferences) {
+      savePreferences({ ...preferences, theme: value ? 'dark' : 'light' });
+    }
+  }, [preferences, savePreferences]);
 
   const handleFontSizeChange = (newSize: FontSize) => {
     setFontSize(newSize);
@@ -36,28 +41,6 @@ export default function CustomizationScreen() {
         fontSize: newSize,
       });
     }
-  };
-
-  // Hidden dev override: long-press the Appearance screen title to toggle light/dark
-  const handleTitleLongPress = () => {
-    if (!preferences) return;
-    const next = (preferences.theme as string) === 'light' ? 'dark' : 'light';
-    savePreferences({ ...preferences, theme: next });
-    Alert.alert('Theme override', `Theme set to ${next}. (Hidden dev setting)`);
-  };
-
-  // Tap counter alternative trigger (5 taps within 2s) for platforms without long-press feedback
-  const handleTitleTap = () => {
-    titlePressCountRef.current += 1;
-    if (titlePressTimerRef.current) clearTimeout(titlePressTimerRef.current);
-    if (titlePressCountRef.current >= 5) {
-      titlePressCountRef.current = 0;
-      handleTitleLongPress();
-      return;
-    }
-    titlePressTimerRef.current = setTimeout(() => {
-      titlePressCountRef.current = 0;
-    }, 2000);
   };
 
   return (
@@ -72,16 +55,34 @@ export default function CustomizationScreen() {
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity
-          activeOpacity={1}
-          onLongPress={handleTitleLongPress}
-          onPress={handleTitleTap}
-          delayLongPress={800}
-          style={styles.section}
-          testID="appearance-title-area"
-        >
+        <View style={[styles.section, { marginTop: 24 }]}>
+          <ScaledText style={styles.sectionTitle}>APPEARANCE</ScaledText>
+          <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
+            <View style={styles.settingItem}>
+              <View style={styles.settingIcon}>
+                <Moon size={24} color={Colors.text} />
+              </View>
+              <View style={styles.settingContent}>
+                <ScaledText style={styles.settingTitle}>Dark Mode</ScaledText>
+                <ScaledText style={styles.settingSubtitle}>
+                  {isDarkMode ? 'Dark theme active' : 'Light theme active'}
+                </ScaledText>
+              </View>
+              <Switch
+                value={isDarkMode}
+                onValueChange={handleToggleDark}
+                trackColor={{ false: Colors.border, true: Colors.primary }}
+                thumbColor={Colors.surface}
+                ios_backgroundColor={Colors.border}
+                testID="dark-mode-toggle"
+              />
+            </View>
+          </GlassCard>
+        </View>
+
+        <View style={styles.section}>
           <ScaledText style={styles.sectionTitle}>TEXT SIZE</ScaledText>
-        </TouchableOpacity>
+        </View>
 
         <View style={[styles.section, { marginTop: 0 }]}>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
@@ -177,6 +178,15 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
+  },
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   settingContent: {
     flex: 1,

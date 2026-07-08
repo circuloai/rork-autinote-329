@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ChevronRight, User, Bell, Palette, BookOpen, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw, KeyRound, Moon } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform, Switch } from 'react-native';
+import { ChevronRight, User, Bell, Palette, BookOpen, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw, KeyRound } from 'lucide-react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -18,16 +18,9 @@ type SettingsItem = {
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { logout, preferences, savePreferences } = useApp();
+  const { logout, preferences } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
-
-  const isDarkMode = preferences?.theme === 'dark';
-  const handleToggleDark = useCallback((value: boolean) => {
-    if (preferences) {
-      savePreferences({ ...preferences, theme: value ? 'dark' : 'light' });
-    }
-  }, [preferences, savePreferences]);
 
   const handleCheckForUpdates = useCallback(() => {
     Alert.alert('Updates', 'Update checking is not available in this build. Please check your app store for the latest version.');
@@ -233,31 +226,6 @@ export default function SettingsScreen() {
             </GlassCard>
           </View>
         ))}
-
-        {/* Appearance — Dark Mode toggle */}
-        <View style={styles.section}>
-          <ScaledText style={styles.sectionTitle}>Appearance</ScaledText>
-          <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingIcon}>
-                <Moon size={24} color={Colors.text} />
-              </View>
-              <View style={styles.settingContent}>
-                <ScaledText style={styles.settingTitle}>Dark Mode</ScaledText>
-                <ScaledText style={styles.settingSubtitle}>
-                  {isDarkMode ? 'Dark theme active' : 'Light theme active'}
-                </ScaledText>
-              </View>
-              <Switch
-                value={isDarkMode}
-                onValueChange={handleToggleDark}
-                trackColor={{ false: Colors.border, true: Colors.primary }}
-                thumbColor={Colors.surface}
-                ios_backgroundColor={Colors.border}
-              />
-            </View>
-          </GlassCard>
-        </View>
 
         <TouchableOpacity
           style={styles.logoutButton}
