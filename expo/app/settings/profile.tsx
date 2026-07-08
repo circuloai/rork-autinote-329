@@ -1,14 +1,14 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check, Image } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image as RNImage } from 'react-native';
+import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check } from 'lucide-react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors } from '@/constants/colors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { AVATAR_OPTIONS, getAvatarById } from '@/constants/avatars';
+import AvatarPicker from '@/components/AvatarPicker';
 
 export default function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -21,8 +21,6 @@ export default function ProfileSettingsScreen() {
   const [name, setName] = useState(profile?.caregiverName || '');
   const [email, setEmail] = useState(profile?.caregiverEmail || user?.email || '');
   const [phone, setPhone] = useState(profile?.caregiverPhone || '');
-  const [avatar, setAvatar] = useState((profile as any)?.avatar || '');
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -35,8 +33,16 @@ export default function ProfileSettingsScreen() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
 
-  const profileChanged = name !== (profile?.caregiverName || '') || phone !== (profile?.caregiverPhone || '') || email !== (profile?.caregiverEmail || user?.email || '') || avatar !== ((profile as any)?.avatar || '');
+  const profileChanged = name !== (profile?.caregiverName || '') || phone !== (profile?.caregiverPhone || '') || email !== (profile?.caregiverEmail || user?.email || '');
   const passwordValid = newPassword.length >= 8 && newPassword === confirmPassword && currentPassword.length > 0;
+
+  const handleAvatarChange = useCallback(
+    (value: string) => {
+      if (!profile) return;
+      saveProfile({ ...profile, avatar: value });
+    },
+    [profile, saveProfile],
+  );
 
   const handleSaveProfile = useCallback(async () => {
     if (!profile) return;
@@ -47,7 +53,6 @@ export default function ProfileSettingsScreen() {
         caregiverName: name.trim() || undefined,
         caregiverPhone: phone.trim() || undefined,
         caregiverEmail: email.trim() || undefined,
-        ...({ avatar: avatar || undefined } as any),
       };
       saveProfile(updatedProfile);
 
@@ -113,53 +118,22 @@ export default function ProfileSettingsScreen() {
         >
           <View style={styles.section}>
             <View style={styles.avatarSection}>
-              <TouchableOpacity
-                onPress={() => setShowAvatarPicker(!showAvatarPicker)}
-                activeOpacity={0.7}
-              >
-                {avatar ? (
-                  <RNImage
-                    source={{ uri: getAvatarById(avatar)?.url || '' }}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <User size={40} color={Colors.textLight} />
-                  </View>
-                )}
-                <View style={styles.avatarEditBadge}>
-                  <Image size={12} color={Colors.surface} />
+              {user?.id ? (
+                <AvatarPicker
+                  avatarValue={profile?.avatar}
+                  onChangeAvatar={handleAvatarChange}
+                  uploadTarget={{ kind: 'profile', userId: user.id }}
+                  size={88}
+                  colors={Colors}
+                  testID="settings-avatar-picker"
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <User size={40} color={Colors.textLight} />
                 </View>
-              </TouchableOpacity>
+              )}
               <ScaledText style={styles.avatarLabel}>Profile Picture</ScaledText>
             </View>
-
-            {showAvatarPicker && (
-              <View style={[styles.card, { marginBottom: 16 }]}>
-                <ScaledText style={styles.avatarPickerTitle}>Choose an avatar</ScaledText>
-                <View style={styles.avatarGrid}>
-                  {AVATAR_OPTIONS.map((option) => (
-                    <TouchableOpacity
-                      key={option.id}
-                      style={[
-                        styles.avatarOption,
-                        avatar === option.id && styles.avatarOptionSelected,
-                      ]}
-                      onPress={() => {
-                        setAvatar(option.id);
-                        setShowAvatarPicker(false);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <RNImage
-                        source={{ uri: getAvatarById(option.id)?.url || '' }}
-                        style={styles.avatarOptionImage}
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
 
             <ScaledText style={styles.sectionTitle}>PERSONAL INFORMATION</ScaledText>
             <View style={styles.card}>
@@ -559,12 +533,6 @@ const createStyles = (Colors: ReturnType<typeof getColors>) =>
       alignItems: 'center',
       marginBottom: 24,
     },
-    avatarImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: Colors.surface,
-    },
     avatarPlaceholder: {
       width: 80,
       height: 80,
@@ -576,54 +544,9 @@ const createStyles = (Colors: ReturnType<typeof getColors>) =>
       borderColor: Colors.border,
       borderStyle: 'dashed' as const,
     },
-    avatarEditBadge: {
-      position: 'absolute',
-      bottom: 0,
-      right: 0,
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: Colors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 2,
-      borderColor: Colors.background,
-    },
     avatarLabel: {
       fontSize: 14,
       color: Colors.textSecondary,
       marginTop: 10,
-    },
-    avatarPickerTitle: {
-      fontSize: 13,
-      fontWeight: '600' as const,
-      color: Colors.textSecondary,
-      padding: 16,
-      paddingBottom: 8,
-      textTransform: 'uppercase' as const,
-      letterSpacing: 0.5,
-    },
-    avatarGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-      padding: 16,
-      paddingTop: 8,
-    },
-    avatarOption: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      overflow: 'hidden',
-      borderWidth: 3,
-      borderColor: 'transparent',
-    },
-    avatarOptionSelected: {
-      borderColor: Colors.primary,
-    },
-    avatarOptionImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
     },
   });

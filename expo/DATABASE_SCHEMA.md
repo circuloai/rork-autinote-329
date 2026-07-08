@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   caregiver_email TEXT,
   caregiver_phone TEXT,
   therapist_phone TEXT,
+  avatar TEXT, -- preset avatar id OR a full URL to an uploaded photo (see MIGRATION_AVATAR_UPLOAD.sql)
   active_child_id UUID,
   is_explore_mode BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),

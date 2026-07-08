@@ -28,7 +28,19 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
   { id: 'pixel2', url: dicebear('pixel-art', 'Star'), bg: '#CFFAFE' },
 ];
 
+const CUSTOM_AVATAR_BG = '#E5E7EB';
+
+export function isCustomAvatarUrl(value?: string): boolean {
+  if (!value) return false;
+  return value.startsWith('http://') || value.startsWith('https://');
+}
+
 export function getAvatarById(id?: string): AvatarOption | undefined {
   if (!id) return undefined;
-  return AVATAR_OPTIONS.find((a) => a.id === id);
+  const preset = AVATAR_OPTIONS.find((a) => a.id === id);
+  if (preset) return preset;
+  if (isCustomAvatarUrl(id)) {
+    return { id, url: id, bg: CUSTOM_AVATAR_BG };
+  }
+  return undefined;
 }

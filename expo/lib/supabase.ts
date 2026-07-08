@@ -56,6 +56,7 @@ export type Database = {
           caregiver_email: string | null;
           caregiver_phone: string | null;
           therapist_phone: string | null;
+          avatar: string | null;
           active_child_id: string | null;
           is_explore_mode: boolean;
           created_at: string;
@@ -69,6 +70,7 @@ export type Database = {
           caregiver_email?: string | null;
           caregiver_phone?: string | null;
           therapist_phone?: string | null;
+          avatar?: string | null;
           active_child_id?: string | null;
           is_explore_mode?: boolean;
           created_at?: string;
@@ -82,6 +84,7 @@ export type Database = {
           caregiver_email?: string | null;
           caregiver_phone?: string | null;
           therapist_phone?: string | null;
+          avatar?: string | null;
           active_child_id?: string | null;
           is_explore_mode?: boolean;
           created_at?: string;

@@ -146,6 +146,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
           caregiverEmail: profile.caregiver_email || undefined,
           caregiverPhone: profile.caregiver_phone || undefined,
           therapistPhone: profile.therapist_phone || undefined,
+          avatar: profile.avatar || undefined,
           children: mappedChildren,
           activeChildId: resolvedActiveChildId,
           createdAt: profile.created_at,
@@ -577,6 +578,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
         caregiver_email: profile.caregiverEmail || null,
         caregiver_phone: profile.caregiverPhone || null,
         therapist_phone: profile.therapistPhone || null,
+        avatar: profile.avatar || null,
         active_child_id: profile.activeChildId || null,
         is_explore_mode: profile.isExploreMode || false,
       };

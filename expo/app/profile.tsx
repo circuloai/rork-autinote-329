@@ -1,18 +1,20 @@
 import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, Image } from 'react-native';
+import { useState, useMemo, useCallback } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScaledText from '@/components/ScaledText';
-import { X, Save, Edit2, User, GraduationCap, Heart, AlertCircle, Sparkles, Check } from 'lucide-react-native';
+import { X, Save, Edit2, User, GraduationCap, Heart, AlertCircle, Sparkles } from 'lucide-react-native';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import GlassCard from '@/components/GlassCard';
-import { AVATAR_OPTIONS, getAvatarById } from '@/constants/avatars';
+import AvatarPicker from '@/components/AvatarPicker';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeChild, profile, saveProfile, preferences } = useApp();
+  const { user } = useAuth();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   
@@ -33,6 +35,21 @@ export default function ProfileScreen() {
     setIsEditing(false);
     Alert.alert('Success', 'Profile updated successfully!');
   };
+
+  const handleAvatarChange = useCallback(
+    (value: string) => {
+      if (!profile || !activeChild) return;
+      const updatedProfile = {
+        ...profile,
+        children: profile.children.map((child) =>
+          child.id === activeChild.id ? { ...child, avatar: value } : child
+        ),
+      };
+      saveProfile(updatedProfile);
+      setEditedChild((prev) => (prev ? { ...prev, avatar: value } : prev));
+    },
+    [profile, activeChild, saveProfile],
+  );
 
   if (!activeChild) {
     return (
@@ -62,58 +79,23 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.avatarSection}>
-          {(() => {
-            const currentId = isEditing ? editedChild?.avatar : activeChild.avatar;
-            const current = getAvatarById(currentId);
-            if (current) {
-              return (
-                <View style={[styles.avatarLarge, { backgroundColor: current.bg }]}>
-                  <Image source={{ uri: current.url }} style={styles.avatarImage} />
-                </View>
-              );
-            }
-            return (
-              <View style={styles.avatarLarge}>
-                <User size={48} color={Colors.primary} />
-              </View>
-            );
-          })()}
+          {user?.id ? (
+            <AvatarPicker
+              avatarValue={activeChild.avatar}
+              onChangeAvatar={handleAvatarChange}
+              uploadTarget={{ kind: 'child', userId: user.id, childId: activeChild.id }}
+              size={100}
+              colors={Colors}
+              testID="child-avatar-picker"
+            />
+          ) : (
+            <View style={styles.avatarLarge}>
+              <User size={48} color={Colors.primary} />
+            </View>
+          )}
           <ScaledText style={styles.profileName}>{activeChild.name}</ScaledText>
           <ScaledText style={styles.profileAge}>Age {activeChild.age}</ScaledText>
         </View>
-
-        {isEditing && (
-          <GlassCard style={styles.infoCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
-            <View style={styles.cardHeader}>
-              <Sparkles size={24} color={Colors.primary} />
-              <ScaledText style={styles.cardTitle}>Choose an Avatar</ScaledText>
-            </View>
-            <View style={styles.avatarGrid}>
-              {AVATAR_OPTIONS.map((opt) => {
-                const selected = editedChild?.avatar === opt.id;
-                return (
-                  <TouchableOpacity
-                    key={opt.id}
-                    testID={`avatar-${opt.id}`}
-                    onPress={() => setEditedChild((prev) => prev ? { ...prev, avatar: opt.id } : null)}
-                    style={[
-                      styles.avatarTile,
-                      { backgroundColor: opt.bg },
-                      selected && { borderColor: Colors.primary, borderWidth: 3 },
-                    ]}
-                  >
-                    <Image source={{ uri: opt.url }} style={styles.avatarTileImage} />
-                    {selected && (
-                      <View style={[styles.avatarCheck, { backgroundColor: Colors.primary }]}>
-                        <Check size={12} color="#fff" />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </GlassCard>
-        )}
 
         <GlassCard style={styles.infoCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
           <View style={styles.cardHeader}>
@@ -354,41 +336,6 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     alignItems: 'center',
     marginBottom: 16,
     overflow: 'hidden' as const,
-  },
-  avatarImage: {
-    width: '100%' as const,
-    height: '100%' as const,
-  },
-  avatarGrid: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
-    gap: 12,
-    justifyContent: 'flex-start' as const,
-  },
-  avatarTile: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    overflow: 'hidden' as const,
-    borderWidth: 2,
-    borderColor: 'transparent' as const,
-    position: 'relative' as const,
-  },
-  avatarTileImage: {
-    width: '100%' as const,
-    height: '100%' as const,
-  },
-  avatarCheck: {
-    position: 'absolute' as const,
-    bottom: 2,
-    right: 2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    borderWidth: 2,
-    borderColor: '#fff',
   },
   profileName: {
     fontSize: 28,

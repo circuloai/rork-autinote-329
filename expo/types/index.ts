@@ -29,6 +29,7 @@ export interface UserProfile {
   caregiverEmail?: string;
   caregiverPhone?: string;
   therapistPhone?: string;
+  avatar?: string;
   children: ChildProfile[];
   activeChildId: string | null;
   createdAt: string;
