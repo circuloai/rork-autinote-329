@@ -1,5 +1,5 @@
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { MessageCircle, Send, ChevronLeft, User, Check, CheckCheck } from 'lucide-react-native';
+import { MessageCircle, Send, ChevronLeft, Check, CheckCheck } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
@@ -11,7 +11,7 @@ export default function TherapistChatScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { sharedAccessId } = useLocalSearchParams<{ sharedAccessId: string }>();
-  const { sharedAccess, chatMessages, profile, preferences, saveChatMessage, activeChild, markConversationAsRead } = useApp();
+  const { sharedAccess, chatMessages, profile, preferences, saveChatMessage, activeChild, markConversationAsRead, therapistClients } = useApp();
   const Colors = useMemo(() => getColors(preferences), [preferences]);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   
@@ -34,10 +34,26 @@ export default function TherapistChatScreen() {
   const otherPersonName = useMemo(() => {
     if (!currentAccess) return 'Unknown';
     if (isParent) {
-      return currentAccess.therapistName;
+      return currentAccess.therapistName || 'Therapist';
     }
-    return activeChild?.name ? `${activeChild.name}'s Caregiver` : 'Caregiver';
-  }, [currentAccess, isParent, activeChild]);
+    const client = therapistClients.find((tc) => tc.sharedAccessId === sharedAccessId);
+    return client?.parentName || 'Caregiver';
+  }, [currentAccess, isParent, therapistClients, sharedAccessId]);
+
+  const otherPersonSubtitle = useMemo(() => {
+    if (!currentAccess) return '';
+    if (isParent) {
+      return currentAccess.therapistRole || 'Therapist';
+    }
+    return 'Caregiver';
+  }, [currentAccess, isParent]);
+
+  const otherPersonInitials = useMemo(() => {
+    const words = otherPersonName.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return '?';
+    if (words.length === 1) return words[0].charAt(0).toUpperCase();
+    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+  }, [otherPersonName]);
 
   useEffect(() => {
     if (conversationMessages.length > 0) {
@@ -114,11 +130,11 @@ export default function TherapistChatScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={styles.avatarContainer}>
-            <User size={20} color={Colors.primary} />
+            <Text style={styles.avatarInitials}>{otherPersonInitials}</Text>
           </View>
-          <View>
-            <ScaledText style={styles.headerTitle}>{otherPersonName}</ScaledText>
-            <ScaledText style={styles.headerSubtitle}>{currentAccess.therapistRole}</ScaledText>
+          <View style={styles.headerTextBlock}>
+            <ScaledText style={styles.headerTitle} numberOfLines={1}>{otherPersonName}</ScaledText>
+            <ScaledText style={styles.headerSubtitle} numberOfLines={1}>{otherPersonSubtitle}</ScaledText>
           </View>
         </View>
         <View style={{ width: 40 }} />
@@ -277,6 +293,16 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     backgroundColor: Colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
+  },
+  avatarInitials: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+  },
+  headerTextBlock: {
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: 17,
