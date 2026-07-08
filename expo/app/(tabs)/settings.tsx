@@ -7,6 +7,7 @@ import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
+import AppFooter from '@/components/AppFooter';
 
 type SettingsItem = {
   icon: React.ReactNode;
@@ -236,11 +237,7 @@ export default function SettingsScreen() {
           <ScaledText style={styles.logoutText}>Log Out</ScaledText>
         </TouchableOpacity>
 
-        <View style={styles.creatorBadge}>
-          <ScaledText style={styles.creatorText}>✨🧩 Crafted with love by </ScaledText>
-          <ScaledText style={[styles.creatorText, { fontWeight: '700' }]}>Anika Kale</ScaledText>
-          <ScaledText style={styles.creatorText}> 🧩✨</ScaledText>
-        </View>
+        <AppFooter />
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -354,27 +351,5 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     fontSize: 16,
     fontWeight: '600' as const,
     color: Colors.error,
-  },
-  creatorBadge: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginTop: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  creatorText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  creatorName: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-    color: Colors.text,
   },
 });
