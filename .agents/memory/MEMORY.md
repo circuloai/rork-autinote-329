@@ -1,3 +1,4 @@
 - [Warm theme defaults](warm-theme-defaults.md) — AppContext hardcoded theme:'dark'; fixed with migration that maps mint→warm and clears forced-dark for old users.
 - [Font loading](font-loading.md) — Playfair Display 700 Bold + DM Sans loaded via useFonts in _layout.tsx; ScaledText auto-applies heading font (≥19px bold) vs body font by weight.
 - [expo-file-system SDK54 legacy API](expo-file-system-sdk54.md) — readAsStringAsync/EncodingType/cacheDirectory moved to 'expo-file-system/legacy'; import from there, not the main entrypoint.
+- [Metro cache after clean install](metro-cache-after-clean-install.md) — clear .expo/ and /tmp/metro-* after rm -rf node_modules to prevent file-watcher SHA-1 errors
