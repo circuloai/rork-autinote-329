@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "eas-build-pre-install": "sed -i 's|http://package-firewall.replit.local/npm/|https://registry.npmjs.org/|g' bun.lock 2>/dev/null || true",
     "eas-build-post-install": "node scripts/eas-log-expo-config.cjs",
     "android": "expo run:android",
     "ios": "expo run:ios",
