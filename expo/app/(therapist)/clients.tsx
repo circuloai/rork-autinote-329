@@ -23,7 +23,6 @@ export default function TherapistClientsScreen() {
     setRefreshing(true);
     let linked = 0;
     let rpcErrorMsg: string | null = null;
-    let fbErrorMsg: string | null = null;
     try {
       const { data, error } = await supabase.rpc('accept_therapist_invites');
       if (error) {
@@ -34,45 +33,6 @@ export default function TherapistClientsScreen() {
         console.log('[Therapist] RPC linked invites:', linked);
       }
 
-      const email = (profile?.caregiverEmail || '').toLowerCase().trim();
-      if (email && profile?.id) {
-        console.log('[Therapist] safety-net: force-linking rows for', email, '→', profile.id);
-        const { data: lookup, error: lookupErr } = await supabase
-          .from('shared_access')
-          .select('id, status, therapist_id, therapist_email')
-          .ilike('therapist_email', email)
-          .neq('status', 'declined');
-
-        if (lookupErr) {
-          console.log('[Therapist] safety-net lookup error:', lookupErr);
-          fbErrorMsg = lookupErr.message;
-        } else {
-          console.log('[Therapist] safety-net found rows:', lookup?.length ?? 0, lookup);
-          const needsFix = (lookup || []).filter(
-            (r: any) => r.therapist_id !== profile.id || r.status !== 'accepted',
-          );
-          if (needsFix.length > 0) {
-            const { data: fb, error: fbErr } = await supabase
-              .from('shared_access')
-              .update({
-                therapist_id: profile.id,
-                status: 'accepted',
-                accepted_at: new Date().toISOString(),
-              })
-              .in('id', needsFix.map((r: any) => r.id))
-              .select('id');
-            if (fbErr) {
-              console.log('[Therapist] safety-net update error:', fbErr);
-              fbErrorMsg = fbErr.message;
-            } else {
-              const fbLinked = fb?.length ?? 0;
-              console.log('[Therapist] safety-net linked:', fbLinked);
-              linked = Math.max(linked, fbLinked);
-            }
-          }
-        }
-      }
-
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       await queryClient.invalidateQueries({ queryKey: ['therapistClients'] });
       await queryClient.invalidateQueries({ queryKey: ['sharedAccess'] });
@@ -80,10 +40,11 @@ export default function TherapistClientsScreen() {
       await queryClient.refetchQueries({ queryKey: ['therapistClients'] });
 
       if (!silent) {
-        if (rpcErrorMsg && fbErrorMsg) {
+        const email = (profile?.caregiverEmail || '').toLowerCase().trim();
+        if (rpcErrorMsg) {
           Alert.alert(
             'Could not accept invites',
-            `${rpcErrorMsg}\n\nFallback also failed: ${fbErrorMsg}\n\nPlease run MIGRATION_THERAPIST_INVITES.sql in Supabase.`,
+            `${rpcErrorMsg}\n\nPlease run MIGRATION_THERAPIST_INVITES.sql in Supabase.`,
           );
         } else if (linked > 0) {
           Alert.alert('Connected', `Linked ${linked} ${linked === 1 ? 'client' : 'clients'}.`);

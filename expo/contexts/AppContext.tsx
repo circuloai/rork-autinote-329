@@ -50,22 +50,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
         const { data: rpcLinked, error: rpcErr } = await supabase.rpc('accept_therapist_invites');
         if (rpcErr) {
           console.warn('[AppContext] accept_therapist_invites RPC error:', rpcErr.message, rpcErr);
-          try {
-            const { data: fallback, error: fbErr } = await supabase
-              .from('shared_access')
-              .update({ therapist_id: profile.id, status: 'accepted', accepted_at: new Date().toISOString() })
-              .neq('status', 'declined')
-              .ilike('therapist_email', authEmail)
-              .select('id');
-            if (fbErr) {
-              console.warn('[AppContext] fallback link error:', fbErr.message);
-            } else {
-              linkedCount = fallback?.length ?? 0;
-              console.log('[AppContext] fallback linked', linkedCount, 'invites');
-            }
-          } catch (fbCatch) {
-            console.warn('[AppContext] fallback threw:', fbCatch);
-          }
         } else {
           linkedCount = (rpcLinked as number) ?? 0;
           console.log('[AppContext] Linked', linkedCount, 'invites for', authEmail);

@@ -57,8 +57,13 @@ export default function TherapistChatScreen() {
     }
   }, [sharedAccessId, profile?.id, conversationMessages.length > 0]);
 
+  const isReadonlyTherapist = useMemo(() => {
+    return !isParent && !!currentAccess?.readonlyMode;
+  }, [isParent, currentAccess]);
+
   const handleSendMessage = () => {
     if (!messageText.trim() || !sharedAccessId || !profile) return;
+    if (isReadonlyTherapist) return;
 
     const senderName = profile.caregiverName || profile.role || 'User';
 
@@ -203,25 +208,33 @@ export default function TherapistChatScreen() {
       </ScrollView>
 
       <View style={[styles.inputContainer, { paddingBottom: insets.bottom || 16 }]}>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.input}
-            placeholder={`Message ${otherPersonName}...`}
-            placeholderTextColor={Colors.textLight}
-            value={messageText}
-            onChangeText={setMessageText}
-            multiline
-            maxLength={1000}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !messageText.trim() && styles.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={!messageText.trim()}
-            activeOpacity={0.7}
-          >
-            <Send size={20} color={messageText.trim() ? Colors.surface : Colors.textLight} />
-          </TouchableOpacity>
-        </View>
+        {isReadonlyTherapist ? (
+          <View style={styles.readonlyBanner}>
+            <ScaledText style={styles.readonlyBannerText}>
+              Messaging is disabled — you have read-only access to this client.
+            </ScaledText>
+          </View>
+        ) : (
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder={`Message ${otherPersonName}...`}
+              placeholderTextColor={Colors.textLight}
+              value={messageText}
+              onChangeText={setMessageText}
+              multiline
+              maxLength={1000}
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, !messageText.trim() && styles.sendButtonDisabled]}
+              onPress={handleSendMessage}
+              disabled={!messageText.trim()}
+              activeOpacity={0.7}
+            >
+              <Send size={20} color={messageText.trim() ? Colors.surface : Colors.textLight} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -389,6 +402,15 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+  },
+  readonlyBanner: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  readonlyBannerText: {
+    fontSize: 13,
+    color: Colors.textLight,
+    textAlign: 'center',
   },
   inputWrapper: {
     flexDirection: 'row',
