@@ -6,6 +6,19 @@ import { supabase } from '@/lib/supabase';
 
 export const AVATAR_BUCKET = 'avatars';
 
+// The `avatars` bucket is PRIVATE. Access is controlled by Supabase Storage
+// RLS (owner can always read their own files; a therapist can read a
+// caregiver's or child's avatar only if they have an ACCEPTED shared_access
+// row for that caregiver). Because the bucket is private, we can't use
+// `getPublicUrl` (it would 404/403 for anyone without a valid Supabase auth
+// header, which <Image>/<img> tags never send). Instead we mint a signed URL
+// at upload time — creating it still goes through the same SELECT RLS check,
+// so only the uploader (who owns the file) can generate it. The resulting
+// capability URL is then stored on the profile/child row like any other
+// avatar value, and becomes visible only to whoever is allowed to read that
+// row (owner + accepted therapists), matching the existing sharing model.
+const SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365 * 10; // 10 years
+
 async function ensureLibraryPermission(): Promise<boolean> {
   const { status, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
   if (status === 'granted') return true;
@@ -103,8 +116,15 @@ export async function uploadAvatarImage(
     throw error;
   }
 
-  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-  return `${data.publicUrl}?t=${Date.now()}`;
+  const { data, error: signError } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .createSignedUrl(path, SIGNED_URL_EXPIRY_SECONDS);
+
+  if (signError || !data?.signedUrl) {
+    throw signError ?? new Error('Failed to create signed avatar URL');
+  }
+
+  return data.signedUrl;
 }
 
 export async function pickAndUploadAvatar(target: AvatarUploadTarget): Promise<string | null> {
