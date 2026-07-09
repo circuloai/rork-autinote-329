@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Download, Trash2, Shield, Lock, FileText, Share2, Info } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import * as Sharing from 'expo-sharing';
@@ -15,7 +15,7 @@ export default function DataPrivacyScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { logs, preferences, profile, activeChildLogs } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [exporting, setExporting] = useState(false);
 

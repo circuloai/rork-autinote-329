@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState } from 'react';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import * as Clipboard from 'expo-clipboard';
 import { supabase } from '@/lib/supabase';
@@ -24,7 +24,7 @@ export default function InviteTherapistScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { activeChild, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const queryClient = useQueryClient();
 

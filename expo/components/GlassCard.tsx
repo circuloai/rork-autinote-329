@@ -1,14 +1,16 @@
 import React from 'react';
-import { Platform, View, ViewStyle, StyleProp } from 'react-native';
+import { View, ViewStyle, StyleProp } from 'react-native';
 
-let GlassView: any = null;
-if (Platform.OS === 'ios') {
-  try {
-    GlassView = require('expo-glass-effect').GlassView;
-  } catch {
-    console.warn('[GlassCard] expo-glass-effect not available');
-  }
-}
+// GlassCard previously used expo-glass-effect's GlassView on iOS (a blur/glass
+// composite). When the iOS system is in dark mode the blur samples the dark
+// surface behind the app, making every card appear dark regardless of the
+// app-level theme. The fix is to always render a solid View — callers already
+// supply fallbackStyle={{ backgroundColor: Colors.surface }} so the card looks
+// identical to the web/Android path that was already using the solid fallback.
+//
+// The prop API is unchanged so no call site needs to be updated. The
+// glassEffectStyle and tintColor props are accepted but not used (kept for API
+// compatibility in case they are referenced from existing call sites).
 
 type GlassCardProps = {
   children: React.ReactNode;
@@ -22,21 +24,7 @@ export default function GlassCard({
   children,
   style,
   fallbackStyle,
-  glassEffectStyle = 'regular',
-  tintColor,
 }: GlassCardProps) {
-  if (Platform.OS === 'ios' && GlassView) {
-    return (
-      <GlassView
-        style={style}
-        glassEffectStyle={glassEffectStyle}
-        tintColor={tintColor}
-      >
-        {children}
-      </GlassView>
-    );
-  }
-
   return (
     <View style={[style, fallbackStyle]}>
       {children}

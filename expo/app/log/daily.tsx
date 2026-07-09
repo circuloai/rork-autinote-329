@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Check, Sparkles } from 'lucide-react-native';
 import * as Crypto from 'expo-crypto';
 import CustomSlider from '@/components/CustomSlider';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import type { DailyMoodRating, MoodTag, DailyLogEntry } from '@/types';
 import { generateText } from '@rork-ai/toolkit-sdk';
@@ -16,7 +16,7 @@ export default function DailyLogScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string; editLogId?: string }>();
   const { activeChild, saveLog, activeChildLogs, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const dateStr = params.date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;

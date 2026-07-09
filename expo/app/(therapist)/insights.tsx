@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronDown, Users } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import type { AnyLogEntry, DailyLogEntry, MeltdownLogEntry, LogEntry, MoodRating } from '@/types';
@@ -14,7 +14,7 @@ const ACTIVE_CLIENT_KEY = '@autinote_therapist_active_client';
 export default function TherapistInsightsTab() {
   const insets = useSafeAreaInsets();
   const { therapistClients, logs, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [activeClientId, setActiveClientId] = useState<string | null>(null);

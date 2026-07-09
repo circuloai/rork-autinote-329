@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Mail, Smartphone, ShieldCheck, Lock } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { getTRPCClient } from '@/lib/trpc';
@@ -15,7 +15,7 @@ export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { preferences, profile } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [step, setStep] = useState<Step>('email');

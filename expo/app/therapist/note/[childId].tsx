@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState } from 'react';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import type { TherapistNote } from '@/types';
 
@@ -13,7 +13,7 @@ export default function TherapistNoteComposerScreen() {
   const router = useRouter();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const { therapistClients, profile, preferences, saveTherapistNote } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const client = useMemo(

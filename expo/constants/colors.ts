@@ -140,9 +140,28 @@ const themeColors = {
   },
 };
 
-export function getColors(preferences?: Preferences | null) {
+/**
+ * Returns the color palette for the given preferences.
+ *
+ * @param preferences  User preferences (may be null/undefined for defaults).
+ * @param systemTheme  The OS-level color scheme ('light' | 'dark' | null).
+ *                     Used to resolve `theme: 'auto'`. Pass via useColors()
+ *                     so this function stays a plain synchronous helper.
+ */
+export function getColors(
+  preferences?: Preferences | null,
+  systemTheme?: 'light' | 'dark' | null,
+) {
   const colorTheme: ColorTheme = (preferences?.colorTheme as ColorTheme) || 'warm';
-  const theme: Theme = preferences?.theme === 'dark' ? 'dark' : 'light';
+
+  let theme: Theme;
+  if (preferences?.theme === 'dark') {
+    theme = 'dark';
+  } else if (preferences?.theme === 'auto') {
+    theme = systemTheme === 'dark' ? 'dark' : 'light';
+  } else {
+    theme = 'light';
+  }
 
   const tc = themeColors[colorTheme]?.[theme] ?? themeColors.warm.light;
 

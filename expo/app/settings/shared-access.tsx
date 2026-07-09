@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useCallback, useMemo, useState } from 'react';
 import ScaledText from '@/components/ScaledText';
 import { useQueryClient } from '@tanstack/react-query';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import type { SharedAccess } from '@/types';
 import GlassCard from '@/components/GlassCard';
@@ -14,7 +14,7 @@ export default function SharedAccessScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { sharedAccess, activeChild, preferences, deleteSharedAccess } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState<boolean>(false);

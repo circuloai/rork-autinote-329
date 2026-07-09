@@ -1,12 +1,12 @@
 import { Tabs } from "expo-router";
 import { Home, TrendingUp, MessageCircle, Settings } from "lucide-react-native";
 import React from "react";
-import { getColors } from "@/constants/colors";
+import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/contexts/AppContext";
 
 export default function TabLayout() {
   const { preferences } = useApp();
-  const Colors = getColors(preferences);
+  const Colors = useColors(preferences);
 
   console.log('Tab layout Colors:', Colors);
 

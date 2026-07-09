@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import type { MoodRating, AnyLogEntry, DailyLogEntry, MeltdownLogEntry, LogEntry } from '@/types';
@@ -16,7 +16,7 @@ import GlassCard from '@/components/GlassCard';
 export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const { activeChildLogs, activeChild, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 

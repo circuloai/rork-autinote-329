@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState, useEffect } from 'react';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import type { SharedAccess } from '@/types';
 
@@ -30,7 +30,7 @@ export default function ManagePermissionsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { sharedAccess, preferences, saveSharedAccess } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const access = useMemo(

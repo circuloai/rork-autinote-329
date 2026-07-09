@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Check, ArrowLeft } from 'lucide-react-native';
 import * as Crypto from 'expo-crypto';
 import CustomSlider from '@/components/CustomSlider';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import type { MeltdownMood, MeltdownTrigger, MeltdownSeverity, MeltdownLogEntry } from '@/types';
 import ScaledText from '@/components/ScaledText';
@@ -16,7 +16,7 @@ export default function MeltdownLogScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeChild, saveLog, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const mapChildTriggerToMeltdownTrigger = (trigger: string): MeltdownTrigger | null => {

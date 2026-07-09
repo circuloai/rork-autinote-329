@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
@@ -44,7 +44,7 @@ function toPlainTextFromMessageParts(parts: any[]): string {
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { activeChild, activeChildLogs = [], chatHistory = [], saveChatHistory, clearChatHistory, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [input, setInput] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);

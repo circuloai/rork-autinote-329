@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon, Sparkles } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator, Alert, useColorScheme } from 'react-native';
 import GlassCard from '@/components/GlassCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo, useCallback } from 'react';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAvatarById } from '@/constants/avatars';
@@ -16,8 +16,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { activeChild, streak, activeChildLogs, preferences, sharedAccess, profile, isLoading, chatMessages, chatHistory } = useApp();
   const { isAuthenticated: hasSession } = useAuth();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
-  const isDark = preferences?.theme === 'dark';
+  const systemScheme = useColorScheme();
+  const Colors = useColors(preferences);
+  const isDark = preferences?.theme === 'dark' || (preferences?.theme === 'auto' && systemScheme === 'dark');
   const styles = useMemo(() => createStyles(Colors, isDark), [Colors, isDark]);
 
   const avatarOption = useMemo(() => getAvatarById(activeChild?.avatar), [activeChild?.avatar]);

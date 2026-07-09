@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScaledText from '@/components/ScaledText';
 import { X, Save, Edit2, User, GraduationCap, Heart, AlertCircle, Sparkles } from 'lucide-react-native';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import GlassCard from '@/components/GlassCard';
@@ -15,7 +15,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { activeChild, profile, saveProfile, preferences } = useApp();
   const { user } = useAuth();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   
   const [isEditing, setIsEditing] = useState(false);

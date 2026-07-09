@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { ChevronRight, User, Bell, Palette, BookOpen, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw, KeyRound } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
@@ -20,7 +20,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { logout, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const handleCheckForUpdates = useCallback(() => {

@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import type { AnyLogEntry, DailyLogEntry, MeltdownLogEntry, LogEntry, MoodRating } from '@/types';
@@ -14,7 +14,7 @@ export default function TherapistInsightsScreen() {
   const router = useRouter();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const { therapistClients, logs, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const client = useMemo(

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Modal, SafeAreaView, Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Bell, Clock, X, ArrowRight, CheckCircle2 } from 'lucide-react-native';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import type { QuickReminder, CustomReminder, ReminderCategory, ReminderTone, ReminderRepeat } from '@/types';
@@ -32,7 +32,7 @@ function parseTo24h(time12: string): string {
 export default function RemindersSettingsScreen() {
   const router = useRouter();
   const { preferences, savePreferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences || undefined), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [quickReminders, setQuickReminders] = useState<QuickReminder[]>(

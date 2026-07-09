@@ -4,14 +4,14 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 
 export default function TherapistSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile, preferences, logout, therapistClients } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const handleLogout = () => {

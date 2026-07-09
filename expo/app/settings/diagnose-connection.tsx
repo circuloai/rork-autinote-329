@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Clipboard from 'expo-clipboard';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,7 +43,7 @@ export default function DiagnoseConnectionScreen() {
   const router = useRouter();
   const { preferences } = useApp();
   const { user } = useAuth();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [loading, setLoading] = useState<boolean>(false);

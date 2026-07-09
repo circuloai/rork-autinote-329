@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Sparkles, MessageCircle, Brain, Zap } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 
@@ -36,7 +36,7 @@ export default function AutumnSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { preferences, savePreferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [responseStyle, setResponseStyle] = useState<ResponseStyle>(

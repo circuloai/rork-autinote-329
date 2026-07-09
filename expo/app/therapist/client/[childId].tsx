@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo } from 'react';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import { getAvatarById } from '@/constants/avatars';
 import type { DailyLogEntry, MeltdownLogEntry } from '@/types';
@@ -14,7 +14,7 @@ export default function TherapistClientDetailScreen() {
   const router = useRouter();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const { therapistClients, logs, therapistNotes, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const client = useMemo(

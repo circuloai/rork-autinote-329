@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import ScaledText from '@/components/ScaledText';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 
 export default function TherapistChatScreen() {
@@ -12,7 +12,7 @@ export default function TherapistChatScreen() {
   const router = useRouter();
   const { sharedAccessId } = useLocalSearchParams<{ sharedAccessId: string }>();
   const { sharedAccess, chatMessages, profile, preferences, saveChatMessage, activeChild, markConversationAsRead, therapistClients } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   
   const [messageText, setMessageText] = useState<string>('');

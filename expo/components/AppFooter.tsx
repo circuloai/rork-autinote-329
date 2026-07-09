@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useApp } from '@/contexts/AppContext';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 
 type Props = {
   style?: object;
@@ -9,7 +9,7 @@ type Props = {
 
 export default function AppFooter({ style }: Props) {
   const { preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
 
   return (
     <View

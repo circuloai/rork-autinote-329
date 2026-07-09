@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +15,7 @@ export default function ProfileSettingsScreen() {
   const router = useRouter();
   const { profile, preferences, saveProfile } = useApp();
   const { user } = useAuth();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [name, setName] = useState(profile?.caregiverName || '');

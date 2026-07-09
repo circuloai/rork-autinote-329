@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ScaledText from '@/components/ScaledText';
 import { useQueryClient } from '@tanstack/react-query';
-import { getColors } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import { getAvatarById } from '@/constants/avatars';
 import { supabase } from '@/lib/supabase';
@@ -15,7 +15,7 @@ export default function TherapistClientsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { therapistClients, logs, chatMessages, profile, preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 

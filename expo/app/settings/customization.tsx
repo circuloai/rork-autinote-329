@@ -2,7 +2,8 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { Stack } from 'expo-router';
 import { Check, Moon } from 'lucide-react-native';
-import { getColors, getFontScale } from '@/constants/colors';
+import { getFontScale } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
@@ -19,7 +20,7 @@ const FONT_SIZE_LABELS: Record<FontSize, string> = {
 
 export default function CustomizationScreen() {
   const { preferences, savePreferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [fontSize, setFontSize] = useState<FontSize>((preferences?.fontSize as FontSize) || 'medium');

@@ -1,12 +1,12 @@
 import { Tabs } from "expo-router";
 import { Users, MessageCircle, Settings as SettingsIcon, TrendingUp } from "lucide-react-native";
 import React, { useMemo } from "react";
-import { getColors } from "@/constants/colors";
+import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/contexts/AppContext";
 
 export default function TherapistTabsLayout() {
   const { preferences } = useApp();
-  const Colors = useMemo(() => getColors(preferences), [preferences]);
+  const Colors = useColors(preferences);
 
   return (
     <Tabs
