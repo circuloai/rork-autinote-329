@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
-import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Volume2, Sparkles, Heart, Stethoscope, GraduationCap } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Volume2, Sparkles, Heart, Stethoscope } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
 
 import Colors from '@/constants/colors';
@@ -60,7 +60,6 @@ export default function OnboardingScreen() {
   const roles: { value: UserRole; label: string; description: string; icon: typeof Heart }[] = [
     { value: 'parent', label: 'Parent / Guardian', description: 'Track your child’s daily progress and connect with their care team.', icon: Heart },
     { value: 'therapist', label: 'Therapist', description: 'Collaborate with families and document sessions for the children you support.', icon: Stethoscope },
-    { value: 'teacher', label: 'Teacher', description: 'Stay aligned with families on classroom behaviors and supports.', icon: GraduationCap },
   ];
 
   const isStep0Valid = selectedRole !== null;

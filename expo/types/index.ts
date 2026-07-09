@@ -1,4 +1,4 @@
-export type UserRole = 'parent' | 'teacher' | 'therapist' | 'caregiver';
+export type UserRole = 'parent' | 'therapist' | 'caregiver';
 
 export type MoodRating = 'good' | 'mixed' | 'challenging';
 
