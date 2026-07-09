@@ -1,3 +1,6 @@
+-- Run after: MIGRATION_THERAPIST_INVITES.sql, MIGRATION_FIX_RLS_AUTH_USERS.sql,
+--            MIGRATION_FIX_PROFILES_RECURSION.sql
+-- (Must run last among the shared_access policy migrations — see MIGRATIONS_ORDER.md)
 -- ============================================================
 -- Fix: Therapist Access Control Hardening
 --

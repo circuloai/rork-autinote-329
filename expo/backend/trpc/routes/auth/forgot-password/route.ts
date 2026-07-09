@@ -14,6 +14,9 @@ export const requestCode = publicProcedure
 
     // Code and expiry are generated server-side inside the SQL function.
     // The caller cannot supply its own code or expiry value.
+    // A 60-second cooldown is enforced at the DB level: if a non-expired
+    // code was already issued for this email in the last 60 s the function
+    // silently no-ops and returns success (same generic message).
     const { data, error } = await (supabase as any).rpc(
       "create_password_reset_code",
       { p_email: input.email.toLowerCase().trim() }
@@ -63,8 +66,20 @@ export const verifyCode = publicProcedure
       return { success: false, message: "Invalid or expired code" };
     }
 
-    const result = data as { success: boolean; message: string } | null;
+    const result = data as {
+      success: boolean;
+      locked?: boolean;
+      message: string;
+    } | null;
+
     if (!result?.success) {
+      if (result?.locked) {
+        return {
+          success: false,
+          locked: true,
+          message: "Too many incorrect attempts. Please wait 15 minutes before trying again.",
+        };
+      }
       return { success: false, message: "Invalid or expired code" };
     }
 
@@ -96,8 +111,20 @@ export const resetPassword = publicProcedure
       return { success: false, message: "Failed to reset password. Please try again." };
     }
 
-    const result = data as { success: boolean; message: string } | null;
+    const result = data as {
+      success: boolean;
+      locked?: boolean;
+      message: string;
+    } | null;
+
     if (!result?.success) {
+      if (result?.locked) {
+        return {
+          success: false,
+          locked: true,
+          message: "Too many incorrect attempts. Please wait 15 minutes before trying again.",
+        };
+      }
       return { success: false, message: result?.message || "Invalid or expired code" };
     }
 

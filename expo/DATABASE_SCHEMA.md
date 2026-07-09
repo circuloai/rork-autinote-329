@@ -263,10 +263,20 @@ CREATE POLICY "Therapists can view their invitations"
   ON shared_access FOR SELECT
   USING (therapist_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "Therapists can update their invitations"
-  ON shared_access FOR UPDATE
-  USING (therapist_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR 
-         (therapist_email IN (SELECT email FROM auth.users WHERE id = auth.uid()) AND status = 'pending'));
+-- NOTE: The "Therapists can update their invitations" UPDATE policy that
+-- originally appeared here has been intentionally removed. It had no
+-- WITH CHECK clause, which allowed a therapist to overwrite any column
+-- on their own shared_access row (can_export, can_add_notes, readonly_mode,
+-- status, etc.) — a privilege-escalation vulnerability.
+--
+-- Invite acceptance is now only possible through the SECURITY DEFINER
+-- functions accept_therapist_invites() and accept_invite_by_token()
+-- (defined in MIGRATION_THERAPIST_INVITES.sql and updated in
+-- MIGRATION_FIX_RLS_AUTH_USERS.sql). Those functions write only
+-- therapist_id, status, and accepted_at.
+--
+-- The policy is explicitly dropped by MIGRATION_FIX_ACCESS_CONTROLS.sql.
+-- See MIGRATIONS_ORDER.md for the required migration run order.
 
 -- Policies for therapist_notes
 CREATE POLICY "Therapists can manage their notes"

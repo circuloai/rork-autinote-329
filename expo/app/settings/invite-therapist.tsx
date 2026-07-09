@@ -91,10 +91,10 @@ export default function InviteTherapistScreen() {
         can_view_logs: true,
         can_view_progress: true,
         can_view_profile: true,
-        can_add_notes: true,
-        can_add_sessions: true,
-        can_comment: true,
-        can_export: true,
+        can_add_notes: false,
+        can_add_sessions: false,
+        can_comment: false,
+        can_export: false,
         readonly_mode: false,
       };
 
