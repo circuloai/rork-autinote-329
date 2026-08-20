@@ -107,11 +107,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         email,
         password,
       });
+      const responseData = data as { session: Session | null; user: User | null };
       if (error) {
         console.error('[Auth] Sign in error:', error.message);
       } else {
-        const nextSession = data.session ?? null;
-        const nextUser = data.user ?? nextSession?.user ?? null;
+        const nextSession = responseData.session ?? null;
+        const nextUser = responseData.user ?? nextSession?.user ?? null;
         console.log('[Auth] Sign in result:', {
           hasSession: !!nextSession,
           hasUser: !!nextUser,
@@ -130,8 +131,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
       return {
         error,
-        user: data.user ?? data.session?.user ?? null,
-        session: data.session ?? null,
+        user: responseData.user ?? responseData.session?.user ?? null,
+        session: responseData.session ?? null,
       };
     } catch (err) {
       console.error('[Auth] SignIn network/unexpected error:', err);
