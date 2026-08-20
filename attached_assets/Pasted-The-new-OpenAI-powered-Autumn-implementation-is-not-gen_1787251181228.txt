@@ -1,0 +1,69 @@
+The new OpenAI-powered Autumn implementation is not generating responses.
+
+In the Autumn chat UI, I can successfully type and send messages. My messages appear in the conversation, but Autumn never responds. There is also no useful error displayed to me.
+
+This started after migrating Autumn from the Rork Toolkit to the new server-side OpenAI implementation.
+
+Diagnose and fix the issue. Do not redesign the UI or roll back to Rork.
+
+Trace one Autumn message through the entire flow:
+
+User presses Send
+chat.tsx sends the request
+Supabase authentication token is attached
+tRPC request reaches ai.autumn.respond
+Backend verifies authentication
+AI consent check succeeds
+Context builder runs
+Backend reads OPENAI_API_KEY
+OpenAI Responses API request is created
+OpenAI returns a response
+Backend extracts the generated text
+tRPC returns it to the client
+Autumn response is added to the chat UI
+
+Find the exact step where this flow is failing.
+
+Specifically verify:
+
+OPENAI_API_KEY exists on the server and is accessible to the backend process. Do NOT print or expose the key.
+The OpenAI SDK is installed correctly.
+The configured OpenAI model actually exists and is available to this API project.
+The Responses API request uses the correct current OpenAI SDK syntax.
+The response text is being extracted correctly.
+The production/development API base URL points to the running Hono/tRPC backend.
+/api/trpc is reachable from the Expo app.
+Supabase bearer authentication isn't returning a 401.
+The new AI consent requirement isn't silently blocking requests.
+Rate limiting isn't blocking the request.
+CORS/network configuration allows the request.
+chat.tsx isn't swallowing an exception.
+
+Add temporary development logging at each stage if necessary, but NEVER log the OpenAI API key, passwords, child information, journal contents, chat message contents, or other sensitive user data.
+
+Also fix the client error handling. If Autumn fails, the UI should not silently do nothing. Display a short message such as:
+
+“Autumn is having trouble responding right now. Please try again.”
+
+Log the technical error safely on the development side so it can be diagnosed.
+
+After making the fix, perform an actual end-to-end test by sending a test message through Autumn and confirm that a real OpenAI-generated response reaches the chat UI.
+
+Do not consider the issue fixed merely because the API route compiles or returns HTTP 200. Verify that the response actually appears in Autumn.
+
+Preserve:
+
+the OpenAI migration
+server-only API key architecture
+AI consent system
+minimal-context/privacy protections
+local Autumn history
+caregiver–therapist messaging
+
+When finished, tell me:
+
+What caused Autumn to stop responding
+Which files you changed
+Whether the OpenAI request successfully reached OpenAI
+Which OpenAI model is now being used
+Whether a real generated response successfully appeared in the Autumn UI
