@@ -1,0 +1,126 @@
+I want you to design a migration plan for AutiNote’s AI assistant, Autumn, from the current `@rork-ai/toolkit-sdk` implementation to a direct OpenAI API integration.
+
+Do **not** change any code yet. I only want a detailed implementation plan based on the existing codebase.
+
+Please inspect the current Autumn chat flow, AI autocomplete flow, backend structure, environment variables, and privacy-related UI, then produce a step-by-step migration plan.
+
+The goals are:
+
+1. Replace the current Rork Toolkit AI generation with a direct OpenAI API integration.
+2. Route OpenAI requests through a secure backend/server endpoint so the OpenAI API key is never exposed in the client app.
+3. Preserve the existing Autumn chat UI unless a change is necessary.
+4. Make Autumn’s responses significantly more natural, concise, personalized, and conversational.
+5. Reduce unnecessary context being sent to the AI.
+6. Improve privacy and make the implementation easier to disclose accurately for Apple App Review.
+7. Keep the human caregiver–therapist messaging system completely separate and unchanged.
+
+For Autumn’s behavior, design the prompt/instructions so that it follows these rules:
+
+* Default to concise responses, usually around 2–5 sentences.
+* Do not give long essays or generic autism information unless the user explicitly asks for detailed information.
+* Respond directly to what the caregiver actually said.
+* Ask at most one thoughtful follow-up question when more context would genuinely help.
+* Do not repeatedly summarize the user’s message back to them.
+* Avoid sounding robotic, overly clinical, overly cheerful, or repetitive.
+* Give practical suggestions only when they are relevant.
+* Use prior context naturally without constantly mentioning that it is using stored information.
+* Help caregivers reflect on patterns, routines, triggers, behaviors, communication, sensory needs, emotional regulation, sleep, school, and related concerns.
+* Do not claim to diagnose, treat, or replace a doctor, therapist, psychologist, or other licensed professional.
+* When something could reasonably require professional medical or mental-health attention, encourage the user to speak with an appropriate professional without being alarmist.
+* Never invent facts about the child or claim certainty about why a behavior occurred.
+
+For personalization and privacy, redesign the context flow.
+
+The current app may send:
+
+* child name
+* age
+* diagnosis
+* school
+* grade
+* common triggers
+* up to 14 recent logs
+* up to 10 previous Autumn messages
+* current user message
+
+I do **not** want all of that automatically sent on every request.
+
+Instead, propose a minimal-context approach. Prefer sending only information that is actually useful for the current conversation, such as:
+
+* age or age range when relevant
+* diagnosis/support context when relevant
+* relevant triggers or preferences
+* a very small number of recent relevant observations
+* only the recent conversation messages necessary for continuity
+* the current message
+
+Avoid sending direct identifiers such as the child’s name or school name unless there is a strong functional reason. Explain exactly which fields you recommend removing from AI requests by default.
+
+Also evaluate whether the existing “last 14 logs” and “last 10 messages” strategy should be replaced with:
+
+* fewer recent messages,
+* summarized memory,
+* relevant-context retrieval,
+* or another approach.
+
+For each option, explain the tradeoffs in:
+
+* response quality,
+* token usage,
+* cost,
+* privacy,
+* engineering complexity.
+
+Please also inspect the daily-log AI autocomplete feature. It currently uses AI-generated writing suggestions. Decide whether it should:
+
+* use the same OpenAI backend,
+* use a smaller/cheaper model,
+* be redesigned without AI,
+* or be removed.
+
+Explain your recommendation.
+
+For the OpenAI integration, recommend:
+
+* the appropriate OpenAI API endpoint / SDK approach,
+* a suitable model for this use case,
+* whether a cheaper model should be used for autocomplete,
+* where the server endpoint should live,
+* what environment variables will be required,
+* how requests should be authenticated,
+* how errors/timeouts/rate limits should be handled,
+* how conversation context should be constructed,
+* how response length should be controlled.
+
+Also propose the structure of the Autumn system/developer prompt. Do not just say “make a good prompt.” Write a draft prompt that could realistically be used in production.
+
+Privacy/App Store requirements are important.
+
+Based on the new architecture, identify:
+
+* what user data would be sent to OpenAI,
+* what data would remain only in AutiNote/Supabase/local storage,
+* where explicit AI consent should appear,
+* what should happen if the user declines,
+* which existing privacy statements are inaccurate and should be changed,
+* what information should eventually appear in the Privacy Policy.
+
+Do not draft the final Privacy Policy yet.
+
+Finally, give me:
+
+1. Current architecture summary
+2. Proposed architecture
+3. Exact files likely to change
+4. Exact new files/routes likely to be created
+5. Environment variables required
+6. Data sent to OpenAI under the new design
+7. Data no longer sent to AI
+8. Recommended OpenAI model(s)
+9. Draft Autumn production prompt
+10. Daily-log autocomplete recommendation
+11. Privacy/Apple-review changes required
+12. Migration steps in safest implementation order
+13. Risks or anything that could break during the migration
+
+Do not edit any code until I explicitly approve the plan.
