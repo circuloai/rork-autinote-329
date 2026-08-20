@@ -6,6 +6,7 @@ import { X, Check, Sparkles } from 'lucide-react-native';
 import * as Crypto from 'expo-crypto';
 import CustomSlider from '@/components/CustomSlider';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { DailyMoodRating, MoodTag, DailyLogEntry } from '@/types';
 import ScaledText from '@/components/ScaledText';

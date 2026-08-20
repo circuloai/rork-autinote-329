@@ -41,12 +41,6 @@ function checkRateLimit(userId: string) {
 const inputSchema = z.object({
   childId: z.string().uuid(),
   message: z.string().trim().min(1).max(500),
-  recentMessages: z.array(
-    z.object({
-      role: z.enum(["user", "assistant"]),
-      content: z.string().trim().min(1).max(800),
-    })
-  ).max(4),
   useChildContext: z.boolean().default(true),
   style: z.enum(["warm", "professional", "brief"]).default("warm"),
   focus: z.array(z.string().max(30)).max(5).default([]),
@@ -89,7 +83,8 @@ export default protectedProcedure
       style: input.style,
       focus: input.focus,
       verbosity: input.verbosity,
-      history: input.recentMessages,
+      // Autumn history remains local to the device and is never forwarded.
+      history: [],
       message: input.message,
       context,
     });

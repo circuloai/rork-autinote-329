@@ -69,18 +69,11 @@ export default function ChatScreen() {
     setSending(true);
 
     try {
-      const history = localMessages.slice(-10).map((m) => {
-        const role = m.role === 'user' ? 'user' : 'assistant';
-        const content = toPlainTextFromMessageParts(m.parts);
-        return { role, content } as { role: 'user' | 'assistant'; content: string };
-      }).filter((m) => m.content.length > 0);
-
       if (!activeChild?.id) throw new Error('No active child profile is selected.');
 
       const assistantResult = await trpcClient.ai.autumn.mutate({
         childId: activeChild.id,
         message: text,
-        recentMessages: history.slice(-4),
         useChildContext: preferences?.aiPreferences?.personalizationEnabled !== false,
         style: preferences?.autumnStyle || 'warm',
         focus: preferences?.autumnFocus || [],
@@ -103,7 +96,7 @@ export default function ChatScreen() {
       setSending(false);
       console.log('[Chat] Send completed');
     }
-  }, [activeChild, localMessages, preferences]);
+  }, [activeChild, preferences]);
 
   useEffect(() => {
     if (clearedRef.current) {
@@ -339,7 +332,7 @@ export default function ChatScreen() {
             <View style={styles.consentCard}>
               <ScaledText style={styles.consentTitle}>Use Autumn securely</ScaledText>
               <ScaledText style={styles.consentText}>
-                Autumn sends your message and a small amount of relevant, selected context to OpenAI for a response. It does not send names, schools, photos, therapist notes, or full journal entries by default. Chat history stays on this device unless you choose to share it elsewhere.
+                Autumn sends your message and a small amount of relevant, selected context to OpenAI for a response. It does not send names, schools, photos, therapist notes, full journal entries, or chat history. Chat history stays on this device.
               </ScaledText>
               <ScaledText style={styles.consentText}>
                 Autumn offers general support, not medical or clinical advice. You can withdraw this permission any time in Data & Privacy.

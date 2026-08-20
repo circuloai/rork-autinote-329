@@ -5,6 +5,7 @@ import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Download, Trash2, Shield, Lock, FileText, Share2, Info } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import * as Sharing from 'expo-sharing';
@@ -192,7 +193,7 @@ export default function DataPrivacyScreen() {
               <Lock size={20} color={Colors.success} />
               <View style={styles.rowContent}>
                 <ScaledText style={styles.rowLabel}>AI Chat Privacy</ScaledText>
-                  <ScaledText style={styles.rowDesc}>When you choose to use Autumn, your message and limited relevant context are securely sent to OpenAI to generate a response. Names, schools, photos, therapist notes, and full journal entries are not sent by default. Autumn history stays on this device.</ScaledText>
+                  <ScaledText style={styles.rowDesc}>When you choose to use Autumn, your message and limited relevant context are securely sent to OpenAI to generate a response. Names, schools, photos, therapist notes, full journal entries, and Autumn chat history are not sent. Autumn history stays on this device.</ScaledText>
               </View>
             </View>
             <View style={styles.rowBorder} />

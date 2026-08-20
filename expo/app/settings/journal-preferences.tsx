@@ -5,6 +5,7 @@ import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Sparkles, BookOpen } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 
