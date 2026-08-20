@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 export default function DataPrivacyScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { logs, preferences, profile, activeChildLogs } = useApp();
+  const { logs, preferences, profile, savePreferences } = useApp();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [exporting, setExporting] = useState(false);
@@ -121,6 +121,29 @@ export default function DataPrivacyScreen() {
     );
   };
 
+  const withdrawAutumnConsent = () => {
+    if (!preferences) return;
+    Alert.alert(
+      'Turn off Autumn',
+      'Autumn will no longer send messages or selected context for AI responses. Your on-device chat history will remain unless you clear it from Autumn.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Turn Off',
+          style: 'destructive',
+          onPress: () => savePreferences({
+            ...preferences,
+            aiPreferences: {
+              ...preferences.aiPreferences,
+              consentStatus: 'denied',
+              personalizationEnabled: false,
+            },
+          }),
+        },
+      ]
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -169,10 +192,24 @@ export default function DataPrivacyScreen() {
               <Lock size={20} color={Colors.success} />
               <View style={styles.rowContent}>
                 <ScaledText style={styles.rowLabel}>AI Chat Privacy</ScaledText>
-                <ScaledText style={styles.rowDesc}>Autumn conversations stay on your device. AI processing happens through secure API calls.</ScaledText>
+                  <ScaledText style={styles.rowDesc}>When you choose to use Autumn, your message and limited relevant context are securely sent to OpenAI to generate a response. Names, schools, photos, therapist notes, and full journal entries are not sent by default. Autumn history stays on this device.</ScaledText>
               </View>
             </View>
             <View style={styles.rowBorder} />
+              <TouchableOpacity style={styles.row} onPress={withdrawAutumnConsent} activeOpacity={0.7}>
+                <Lock size={20} color={preferences?.aiPreferences?.consentStatus === 'granted' ? Colors.error : Colors.textSecondary} />
+                <View style={styles.rowContent}>
+                  <ScaledText style={styles.rowLabel}>
+                    {preferences?.aiPreferences?.consentStatus === 'granted' ? 'Turn off Autumn AI' : 'Autumn AI is off'}
+                  </ScaledText>
+                  <ScaledText style={styles.rowDesc}>
+                    {preferences?.aiPreferences?.consentStatus === 'granted'
+                      ? 'Withdraw permission for AI responses and selected context.'
+                      : 'You can choose to enable Autumn again from its chat screen.'}
+                  </ScaledText>
+                </View>
+              </TouchableOpacity>
+              <View style={styles.rowBorder} />
             <View style={styles.row}>
               <Share2 size={20} color={Colors.success} />
               <View style={styles.rowContent}>

@@ -120,6 +120,22 @@ export interface Preferences {
   reminderTime?: string;
   quickReminders?: QuickReminder[];
   customReminders?: CustomReminder[];
+  autumnStyle?: 'warm' | 'professional' | 'brief';
+  autumnFocus?: string[];
+  autumnVerbosity?: 'short' | 'balanced' | 'detailed';
+  journalCategories?: string[];
+  journalDefaultTags?: string[];
+  journalAiSuggestions?: boolean;
+  aiPreferences?: AiPreferences;
+}
+
+export type AiConsentStatus = 'unknown' | 'granted' | 'denied';
+
+export interface AiPreferences {
+  consentStatus: AiConsentStatus;
+  consentVersion?: string;
+  consentedAt?: string;
+  personalizationEnabled: boolean;
 }
 
 export type TherapistRole = 'ABA' | 'OT' | 'Psychologist' | 'SLP' | 'Behavioral Therapist' | 'Other';

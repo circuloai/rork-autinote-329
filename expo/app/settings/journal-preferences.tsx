@@ -137,14 +137,14 @@ export default function JournalPreferencesScreen() {
         </View>
 
         <View style={styles.section}>
-          <ScaledText style={styles.sectionTitle}>AI SUGGESTIONS</ScaledText>
+          <ScaledText style={styles.sectionTitle}>LOGGING SUGGESTIONS</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.row}>
               <View style={styles.rowLeft}>
                 <Sparkles size={20} color={Colors.primary} />
                 <View style={{ marginLeft: 12, flex: 1 }}>
-                  <ScaledText style={styles.rowLabel}>AI-powered logging suggestions</ScaledText>
-                  <ScaledText style={styles.rowDesc}>Autumn suggests completions while you type in daily logs</ScaledText>
+                  <ScaledText style={styles.rowLabel}>On-device logging suggestions</ScaledText>
+                  <ScaledText style={styles.rowDesc}>Show quick matches from the app’s built-in suggestion lists while you type</ScaledText>
                 </View>
               </View>
               <Switch

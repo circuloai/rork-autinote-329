@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
-import { generateText } from '@rork-ai/toolkit-sdk';
-import type { AnyLogEntry, DailyLogEntry, MeltdownLogEntry, LogEntry, MoodTag } from '@/types';
+import { trpcClient } from '@/lib/trpc';
+import type { Preferences } from '@/types';
 
 type ChatRole = 'user' | 'assistant';
 
@@ -43,37 +44,16 @@ function toPlainTextFromMessageParts(parts: any[]): string {
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
-  const { activeChild, activeChildLogs = [], chatHistory = [], saveChatHistory, clearChatHistory, preferences } = useApp();
+  const { activeChild, chatHistory = [], saveChatHistory, clearChatHistory, preferences, savePreferences } = useApp();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [input, setInput] = useState<string>('');
   const [sending, setSending] = useState<boolean>(false);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
+  const [consentPending, setConsentPending] = useState<string | null>(null);
+  const [consentGrantedThisSession, setConsentGrantedThisSession] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const clearedRef = useRef(false);
-
-  const getMoodRating = (log: AnyLogEntry): string => {
-    if (log.type === 'daily') return (log as DailyLogEntry).overallRating;
-    if (log.type === 'meltdown') return (log as MeltdownLogEntry).moodAtEvent;
-    return (log as LogEntry).moodRating;
-  };
-
-  const getMoodTags = (log: AnyLogEntry): MoodTag[] => {
-    if (log.type === 'meltdown') return [];
-    if (log.type === 'daily') return (log as DailyLogEntry).moodTags;
-    return (log as LogEntry).moodTags;
-  };
-
-  const getPositiveNotes = (log: AnyLogEntry): string => {
-    if (log.type === 'daily') return (log as DailyLogEntry).whatWentWell || '';
-    return (log as LogEntry).positiveNotes || '';
-  };
-
-  const getChallengeNotes = (log: AnyLogEntry): string => {
-    if (log.type === 'daily') return (log as DailyLogEntry).whatWasChallenging || '';
-    if (log.type === 'meltdown') return (log as MeltdownLogEntry).additionalNotes || '';
-    return (log as LogEntry).challengeNotes || '';
-  };
 
   const appendLocalTextMessage = useCallback((role: ChatRole, text: string) => {
     const msg: ChatMessage = {
@@ -89,120 +69,25 @@ export default function ChatScreen() {
     setSending(true);
 
     try {
-      const childContext = activeChild
-        ? {
-            name: activeChild.name || 'Unknown',
-            age: activeChild.age || 0,
-            diagnosis: activeChild.diagnosis || 'Not specified',
-            school: activeChild.schoolName || 'Not specified',
-            grade: activeChild.gradeLevel || 'Not specified',
-            triggers: activeChild.commonTriggers || [],
-          }
-        : null;
-
-      const recentLogs = (activeChildLogs || []).slice(-14);
-      const compactLogSummary = recentLogs.map((l) => ({
-        date: l?.date ?? 'Unknown',
-        mood: l ? getMoodRating(l) : 'Unknown',
-        tags: l ? getMoodTags(l) : [],
-        positiveNotes: l ? getPositiveNotes(l).slice(0, 240) : '',
-        challengeNotes: l ? getChallengeNotes(l).slice(0, 240) : '',
-      }));
-
       const history = localMessages.slice(-10).map((m) => {
         const role = m.role === 'user' ? 'user' : 'assistant';
         const content = toPlainTextFromMessageParts(m.parts);
         return { role, content } as { role: 'user' | 'assistant'; content: string };
       }).filter((m) => m.content.length > 0);
 
-      const autumnStyle = (preferences as any)?.autumnStyle || 'warm';
-      const autumnFocus = (preferences as any)?.autumnFocus as string[] | undefined;
-      const autumnVerbosity = (preferences as any)?.autumnVerbosity || 'balanced';
+      if (!activeChild?.id) throw new Error('No active child profile is selected.');
 
-      const focusList = Array.isArray(autumnFocus) && autumnFocus.length > 0
-        ? autumnFocus.join(', ')
-        : 'autism, behavior, emotional, sleep, sensory';
-
-      const focusAreaDescriptions: Record<string, string> = {
-        autism: 'autism spectrum support and understanding',
-        behavior: 'behavior intervention strategies and ABA techniques',
-        emotional: 'emotional regulation and co-regulation',
-        sleep: 'sleep guidance and routines',
-        sensory: 'sensory processing and sensory integration',
-      };
-      const focusDescList = Array.isArray(autumnFocus) && autumnFocus.length > 0
-        ? autumnFocus.map((f) => focusAreaDescriptions[f] || f).join('; ')
-        : Object.values(focusAreaDescriptions).join('; ');
-
-      let verbosityRule = '';
-      if (autumnVerbosity === 'short') {
-        verbosityRule = 'RESPONSE LENGTH: 1-2 sentences only. No exceptions. Be extremely concise.';
-      } else if (autumnVerbosity === 'detailed') {
-        verbosityRule = 'RESPONSE LENGTH: Provide a thorough, in-depth response. Include background context, multiple concrete strategies, examples, and follow-up suggestions. Aim for 4-6 paragraphs.';
-      } else {
-        verbosityRule = 'RESPONSE LENGTH: 2-3 paragraphs. Include practical tips with enough context to be actionable.';
-      }
-
-      let styleInstructions = '';
-      let acknowledgment = '';
-
-      if (autumnStyle === 'professional') {
-        styleInstructions = `TONE & FORMAT:
-- Use a professional, clinical, evidence-based tone throughout
-- Reference established therapeutic frameworks (ABA, DIR/Floortime, CBT, etc.) where relevant
-- Use precise clinical terminology (e.g. "sensory dysregulation", "antecedent-behavior-consequence")
-- Structure your response logically and clearly
-- Avoid casual language, slang, contractions, or emotional metaphors
-- Do NOT use bullet points, asterisks, or markdown — write in structured prose paragraphs
-- Remain objective and data-oriented`;
-        acknowledgment = "Understood. I will maintain a professional, evidence-based tone and reference clinical frameworks where appropriate.";
-      } else if (autumnStyle === 'brief') {
-        styleInstructions = `TONE & FORMAT:
-- Be extremely direct and concise — get straight to the point
-- No pleasantries, no preamble, no emotional warm-up
-- Skip any phrases like "That sounds hard" or "I understand" — just give the answer
-- Do NOT use bullet points, asterisks, or markdown
-- One clear actionable insight or tip only`;
-        acknowledgment = "Got it. I'll be direct and brief — no fluff, just the core answer.";
-      } else {
-        styleInstructions = `TONE & FORMAT:
-- Be warm, empathetic, and conversational — like a knowledgeable supportive friend
-- Use natural language and contractions
-- Connect emotionally before offering practical advice
-- Do NOT use bullet points, asterisks, or markdown — write in flowing paragraphs
-- Make the caregiver feel heard and supported`;
-        acknowledgment = "Got it — I'll be warm, conversational, and human. No formatting, just genuine support.";
-      }
-
-      const fullInstructions = `You are Autumn, an AI assistant for caregivers of autistic children.
-
-${styleInstructions}
-
-${verbosityRule}
-
-FOCUS AREAS: You specialize in and should prioritize: ${focusDescList}. When questions fall outside these areas, briefly acknowledge and redirect to these specialties.
-
-CONTEXT USAGE: You have context about the child and their recent logs. Reference it naturally when relevant, but never list or repeat data the caregiver already knows. Use it to personalize your response.`;
-
-      const contextBlock = `Context (use when relevant):\n${JSON.stringify({ child: childContext, recentLogs: compactLogSummary }, null, 2)}`;
-
-      console.log('[Chat] Sending request...');
-      console.log('[Chat] Style:', autumnStyle, '| Verbosity:', autumnVerbosity, '| Focus:', focusList);
-      console.log('[Chat] History messages:', history.length);
-      console.log('[Chat] Recent logs:', recentLogs.length);
-      console.log('[Chat] Context size:', contextBlock.length, 'chars');
-
-      const assistantText = await generateText({
-        messages: [
-          { role: 'user', content: fullInstructions },
-          { role: 'assistant', content: acknowledgment },
-          ...history,
-          { role: 'user', content: `${contextBlock}\n\nUser: ${text}` },
-        ],
+      const assistantResult = await trpcClient.ai.autumn.mutate({
+        childId: activeChild.id,
+        message: text,
+        recentMessages: history.slice(-4),
+        useChildContext: preferences?.aiPreferences?.personalizationEnabled !== false,
+        style: preferences?.autumnStyle || 'warm',
+        focus: preferences?.autumnFocus || [],
+        verbosity: preferences?.autumnVerbosity || 'balanced',
       });
+      const assistantText = assistantResult.response;
 
-      console.log('[Chat] Response received:', assistantText?.length || 0, 'chars');
-      
       if (!assistantText || typeof assistantText !== 'string') {
         throw new Error('Invalid response from AI service');
       }
@@ -218,7 +103,7 @@ CONTEXT USAGE: You have context about the child and their recent logs. Reference
       setSending(false);
       console.log('[Chat] Send completed');
     }
-  }, [activeChild, activeChildLogs, localMessages, preferences]);
+  }, [activeChild, localMessages, preferences]);
 
   useEffect(() => {
     if (clearedRef.current) {
@@ -248,11 +133,10 @@ CONTEXT USAGE: You have context about the child and their recent logs. Reference
     const text = input.trim();
     if (!text || sending) return;
 
-    console.log('=== Chat Send Debug ===');
-    console.log('Input length:', text.length);
-    console.log('Active Child:', activeChild?.id);
-    console.log('Message count:', localMessages.length);
-    console.log('======================');
+    if (!consentGrantedThisSession && preferences?.aiPreferences?.consentStatus !== 'granted') {
+      setConsentPending(text);
+      return;
+    }
 
     setInput('');
     appendLocalTextMessage('user', text);
@@ -266,14 +150,31 @@ CONTEXT USAGE: You have context about the child and their recent logs. Reference
       console.error('Error:', err);
       console.error('==================');
       
-      const errorMessage = err instanceof Error ? err.message : 'Unable to connect to AI service';
+      const errorMessage = err instanceof Error ? err.message : 'Unable to connect to Autumn';
       Alert.alert(
-        'Connection Error', 
-        `${errorMessage}. Please check your internet connection and try again.`, 
+        'Autumn is unavailable',
+        `${errorMessage} Please check your connection and try again.`,
         [{ text: 'OK' }]
       );
     }
-  }, [activeChild?.id, appendLocalTextMessage, sendChat, input, localMessages.length, sending]);
+  }, [appendLocalTextMessage, sendChat, input, sending, preferences?.aiPreferences?.consentStatus, consentGrantedThisSession]);
+
+  const acceptConsent = useCallback(() => {
+    setConsentPending(null);
+    if (preferences) {
+      const nextPreferences: Preferences = {
+        ...preferences,
+        aiPreferences: {
+          consentStatus: 'granted',
+          consentVersion: '2026-08-20',
+          consentedAt: new Date().toISOString(),
+          personalizationEnabled: true,
+        },
+      };
+      savePreferences(nextPreferences);
+      setConsentGrantedThisSession(true);
+    }
+  }, [preferences, savePreferences]);
 
   const handleClearHistory = useCallback(() => {
     Alert.alert(
@@ -345,10 +246,10 @@ CONTEXT USAGE: You have context about the child and their recent logs. Reference
           {localMessages.length === 0 && (
             <View style={styles.welcome}>
               <ScaledText style={styles.welcomeText}>
-                Hi! I&apos;m Autumn, your AI assistant{activeChild?.name ? ` with full knowledge of ${activeChild.name}'s profile and history` : ''}. {activeChild?.name && activeChild?.age ? `I understand ${activeChild.name} is ${activeChild.age} years old` : ''}{activeChild?.diagnosis ? ` with ${activeChild.diagnosis}` : ''}{activeChild ? ', and I' : 'I'}&apos;m here to provide personalized support.
+                Hi! I&apos;m Autumn, a support companion for caregivers. I&apos;m here to help you think through routines, regulation, communication, and everyday moments.
               </ScaledText>
               <ScaledText style={styles.welcomeSubtext}>
-                I have access to {activeChildLogs?.length || 0} log entries{activeChild?.name ? ` and know about ${activeChild.name}'s triggers, patterns, and progress` : ''}. Ask me anything!
+                With your permission, I can use only relevant, limited context to make a response more helpful. You can change that permission in Data & Privacy.
               </ScaledText>
               <ScaledText style={styles.suggestionsTitle}>Try asking:</ScaledText>
               {suggestedQuestions.map((q, i) => (
@@ -428,6 +329,32 @@ CONTEXT USAGE: You have context about the child and their recent logs. Reference
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+        <Modal
+          transparent
+          visible={consentPending !== null}
+          animationType="fade"
+          onRequestClose={() => setConsentPending(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.consentCard}>
+              <ScaledText style={styles.consentTitle}>Use Autumn securely</ScaledText>
+              <ScaledText style={styles.consentText}>
+                Autumn sends your message and a small amount of relevant, selected context to OpenAI for a response. It does not send names, schools, photos, therapist notes, or full journal entries by default. Chat history stays on this device unless you choose to share it elsewhere.
+              </ScaledText>
+              <ScaledText style={styles.consentText}>
+                Autumn offers general support, not medical or clinical advice. You can withdraw this permission any time in Data & Privacy.
+              </ScaledText>
+              <View style={styles.consentActions}>
+                <TouchableOpacity style={styles.consentSecondaryButton} onPress={() => setConsentPending(null)}>
+                  <ScaledText style={styles.consentSecondaryText}>Not now</ScaledText>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.consentPrimaryButton} onPress={acceptConsent}>
+                  <ScaledText style={styles.consentPrimaryText}>I agree</ScaledText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
     </View>
   );
 }
@@ -592,5 +519,51 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  consentCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 22,
+    gap: 14,
+  },
+  consentTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  consentText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  consentActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 6,
+  },
+  consentSecondaryButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  consentSecondaryText: {
+    color: Colors.textSecondary,
+    fontWeight: '600' as const,
+  },
+  consentPrimaryButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  consentPrimaryText: {
+    color: Colors.background,
+    fontWeight: '700' as const,
   },
 });

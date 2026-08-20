@@ -6,10 +6,25 @@ import { createContext } from "./trpc/create-context";
 
 const app = new Hono();
 
-app.use("*", cors());
+const allowedOrigins = (process.env.API_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(
-  "/trpc/*",
+  "*",
+  cors({
+    origin: (origin) => {
+      if (allowedOrigins.length === 0 || allowedOrigins.includes("*")) {
+        return origin || "*";
+      }
+      return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+    },
+  })
+);
+
+app.use(
+  "/api/trpc/*",
   trpcServer({
     endpoint: "/api/trpc",
     router: appRouter,

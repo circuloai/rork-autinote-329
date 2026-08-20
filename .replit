@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "postgresql-16", "python-3.11"]
+modules = ["nodejs-20", "postgresql-16", "python-3.11", "bun-1.3"]
 [agent]
 expertMode = true
 stack = "BEST_EFFORT_FALLBACK"
@@ -18,6 +18,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Backend"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -30,6 +34,22 @@ waitForPort = 5000
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "Start Backend"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd expo && bun backend/server.ts"
+waitForPort = 3001
+
+[[ports]]
+localPort = 3001
+externalPort = 3000
+
 [[ports]]
 localPort = 5000
 externalPort = 80
@@ -40,7 +60,7 @@ externalPort = 3001
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "cd expo && bunx rork start -p i3iytomcfmnnh5v3rdwxs --web --port 5000"]
+run = ["bash", "-c", "cd expo && (bun backend/server.ts & bunx rork start -p i3iytomcfmnnh5v3rdwxs --web --port 5000)"]
 
 [postMerge]
 path = "scripts/post-merge.sh"

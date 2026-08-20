@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS preferences (
   reminder_time TEXT,
   quick_reminders JSONB,
   custom_reminders JSONB,
+  ai_preferences JSONB, -- Autumn consent + response preferences; no chat transcript
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id)

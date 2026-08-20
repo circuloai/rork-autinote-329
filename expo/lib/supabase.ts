@@ -203,6 +203,7 @@ export type Database = {
           reminder_time: string | null;
           quick_reminders: Record<string, unknown>[] | null;
           custom_reminders: Record<string, unknown>[] | null;
+          ai_preferences: Record<string, any> | null;
           created_at: string;
           updated_at: string;
         };
@@ -217,6 +218,7 @@ export type Database = {
           reminder_time?: string | null;
           quick_reminders?: Record<string, unknown>[] | null;
           custom_reminders?: Record<string, unknown>[] | null;
+          ai_preferences?: Record<string, any> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -231,6 +233,7 @@ export type Database = {
           reminder_time?: string | null;
           quick_reminders?: Record<string, unknown>[] | null;
           custom_reminders?: Record<string, unknown>[] | null;
+          ai_preferences?: Record<string, any> | null;
           created_at?: string;
           updated_at?: string;
         };

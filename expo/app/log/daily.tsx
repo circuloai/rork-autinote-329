@@ -8,7 +8,6 @@ import CustomSlider from '@/components/CustomSlider';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import type { DailyMoodRating, MoodTag, DailyLogEntry } from '@/types';
-import { generateText } from '@rork-ai/toolkit-sdk';
 import ScaledText from '@/components/ScaledText';
 
 export default function DailyLogScreen() {
@@ -49,8 +48,6 @@ export default function DailyLogScreen() {
   
   const [wellSuggestions, setWellSuggestions] = useState<string[]>([]);
   const [challengeSuggestions, setChallengeSuggestions] = useState<string[]>([]);
-  const [isGeneratingWell, setIsGeneratingWell] = useState(false);
-  const [isGeneratingChallenge, setIsGeneratingChallenge] = useState(false);
   
   const scrollViewRef = useRef<ScrollView>(null);
   const wellTextInputRef = useRef<View>(null);
@@ -153,77 +150,33 @@ export default function DailyLogScreen() {
     'Fatigue',
   ];
 
-  const generateSuggestionsForWell = async (text: string) => {
+  const findLocalSuggestions = (text: string, suggestions: string[]) => {
     const lastCommaIndex = text.lastIndexOf(',');
     const currentInput = lastCommaIndex >= 0 ? text.substring(lastCommaIndex + 1).trim() : text.trim();
 
     if (currentInput.length < 2) {
-      setWellSuggestions([]);
-      return;
+      return [];
     }
 
-    setIsGeneratingWell(true);
-    try {
-      const prompt = `A parent is logging their autistic child's daily progress. They started typing: "${currentInput}"
-
-Suggest 3 completions or related positive moments from this list. Match their typing context. Return only the suggestions, one per line:
-
-${predefinedWellSuggestions.join('\n')}`;
-      
-      const response = await generateText(prompt);
-      const suggestions = response
-        .split('\n')
-        .map(s => s.trim().replace(/^[-*•\d.]+\s*/, ''))
-        .filter(s => s.length > 0 && s.length < 100)
-        .slice(0, 3);
-      
-      setWellSuggestions(suggestions.length > 0 ? suggestions : predefinedWellSuggestions.slice(0, 3));
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
-      const filtered = predefinedWellSuggestions.filter(s => 
-        s.toLowerCase().includes(currentInput.toLowerCase())
-      ).slice(0, 3);
-      setWellSuggestions(filtered.length > 0 ? filtered : predefinedWellSuggestions.slice(0, 3));
-    } finally {
-      setIsGeneratingWell(false);
-    }
+    const words = currentInput.toLowerCase().split(/\s+/).filter(Boolean);
+    return suggestions
+      .map((suggestion) => {
+        const candidate = suggestion.toLowerCase();
+        const startsWith = candidate.startsWith(currentInput.toLowerCase()) ? 3 : 0;
+        const matches = words.filter((word) => candidate.includes(word)).length;
+        return { suggestion, score: startsWith + matches };
+      })
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score || a.suggestion.localeCompare(b.suggestion))
+      .slice(0, 3)
+      .map(({ suggestion }) => suggestion);
   };
 
-  const generateSuggestionsForChallenge = async (text: string) => {
-    const lastCommaIndex = text.lastIndexOf(',');
-    const currentInput = lastCommaIndex >= 0 ? text.substring(lastCommaIndex + 1).trim() : text.trim();
+  const generateSuggestionsForWell = (text: string) =>
+    setWellSuggestions(findLocalSuggestions(text, predefinedWellSuggestions));
 
-    if (currentInput.length < 2) {
-      setChallengeSuggestions([]);
-      return;
-    }
-
-    setIsGeneratingChallenge(true);
-    try {
-      const prompt = `A parent is logging their autistic child's challenges. They started typing: "${currentInput}"
-
-Suggest 3 completions or related challenges from this list. Match their typing context. Return only the suggestions, one per line:
-
-${predefinedChallengeSuggestions.join('\n')}`;
-      
-      const response = await generateText(prompt);
-      const suggestions = response
-        .split('\n')
-        .map(s => s.trim().replace(/^[-*•\d.]+\s*/, ''))
-        .filter(s => s.length > 0 && s.length < 100)
-        .slice(0, 3);
-      
-      setChallengeSuggestions(suggestions.length > 0 ? suggestions : predefinedChallengeSuggestions.slice(0, 3));
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
-      const filtered = predefinedChallengeSuggestions.filter(s => 
-        s.toLowerCase().includes(currentInput.toLowerCase())
-      ).slice(0, 3);
-      setChallengeSuggestions(filtered.length > 0 ? filtered : predefinedChallengeSuggestions.slice(0, 3));
-    } finally {
-      setIsGeneratingChallenge(false);
-    }
-  };
+  const generateSuggestionsForChallenge = (text: string) =>
+    setChallengeSuggestions(findLocalSuggestions(text, predefinedChallengeSuggestions));
 
   const toggleTag = (tag: MoodTag) => {
     setSelectedTags((prev) =>
@@ -390,11 +343,6 @@ ${predefinedChallengeSuggestions.join('\n')}`;
               <ScaledText style={styles.sectionTitle}>What went well today?</ScaledText>
               <ScaledText style={styles.sectionSubtitle}>Positive moments, achievements, happy experiences</ScaledText>
             </View>
-            {isGeneratingWell && (
-              <View style={styles.loadingIndicator}>
-                <Sparkles size={16} color={Colors.primary} />
-              </View>
-            )}
           </View>
           {wellSuggestions.length > 0 && (
             <View style={styles.suggestionsChips}>
@@ -427,7 +375,11 @@ ${predefinedChallengeSuggestions.join('\n')}`;
             value={whatWentWell}
             onChangeText={(text) => {
               setWhatWentWell(text);
-              generateSuggestionsForWell(text);
+              if (preferences?.journalAiSuggestions !== false) {
+                generateSuggestionsForWell(text);
+              } else {
+                setWellSuggestions([]);
+              }
             }}
             onFocus={() => {
               setTimeout(() => {
@@ -440,7 +392,7 @@ ${predefinedChallengeSuggestions.join('\n')}`;
                 );
               }, 100);
             }}
-            placeholder="Start typing for AI suggestions..."
+            placeholder="Start typing for suggestions..."
             placeholderTextColor={Colors.textLight}
             multiline
             numberOfLines={3}
@@ -454,11 +406,6 @@ ${predefinedChallengeSuggestions.join('\n')}`;
               <ScaledText style={styles.sectionTitle}>What was challenging?</ScaledText>
               <ScaledText style={styles.sectionSubtitle}>Difficulties, triggers, areas needing attention</ScaledText>
             </View>
-            {isGeneratingChallenge && (
-              <View style={styles.loadingIndicator}>
-                <Sparkles size={16} color={Colors.primary} />
-              </View>
-            )}
           </View>
           {challengeSuggestions.length > 0 && (
             <View style={styles.suggestionsChips}>
@@ -491,7 +438,11 @@ ${predefinedChallengeSuggestions.join('\n')}`;
             value={whatWasChallenging}
             onChangeText={(text) => {
               setWhatWasChallenging(text);
-              generateSuggestionsForChallenge(text);
+              if (preferences?.journalAiSuggestions !== false) {
+                generateSuggestionsForChallenge(text);
+              } else {
+                setChallengeSuggestions([]);
+              }
             }}
             onFocus={() => {
               setTimeout(() => {
@@ -504,7 +455,7 @@ ${predefinedChallengeSuggestions.join('\n')}`;
                 );
               }, 100);
             }}
-            placeholder="Start typing for AI suggestions..."
+            placeholder="Start typing for suggestions..."
             placeholderTextColor={Colors.textLight}
             multiline
             numberOfLines={3}

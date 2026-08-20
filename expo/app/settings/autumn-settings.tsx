@@ -40,13 +40,13 @@ export default function AutumnSettingsScreen() {
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [responseStyle, setResponseStyle] = useState<ResponseStyle>(
-    (preferences as any)?.autumnStyle || 'warm'
+    preferences?.autumnStyle || 'warm'
   );
   const [focusAreas, setFocusAreas] = useState<FocusArea[]>(
-    (preferences as any)?.autumnFocus || ['autism', 'behavior', 'emotional', 'sleep', 'sensory']
+    (preferences?.autumnFocus as FocusArea[] | undefined) || ['autism', 'behavior', 'emotional', 'sleep', 'sensory']
   );
   const [verbosity, setVerbosity] = useState<Verbosity>(
-    (preferences as any)?.autumnVerbosity || 'balanced'
+    preferences?.autumnVerbosity || 'balanced'
   );
 
   const toggleFocus = (area: FocusArea) => {
@@ -59,9 +59,9 @@ export default function AutumnSettingsScreen() {
     if (!preferences) return;
     savePreferences({
       ...preferences,
-      ...({ autumnStyle: responseStyle } as any),
-      ...({ autumnFocus: focusAreas } as any),
-      ...({ autumnVerbosity: verbosity } as any),
+      autumnStyle: responseStyle,
+      autumnFocus: focusAreas,
+      autumnVerbosity: verbosity,
     });
     Alert.alert('Saved', 'Autumn settings updated. New conversations will use these preferences.');
   };

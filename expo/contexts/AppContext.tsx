@@ -307,7 +307,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     retry: isSupabaseConfigured && !!user ? 2 : false,
   });
 
-  const preferencesQuery = useQuery({
+  const preferencesQuery = useQuery<Preferences>({
     queryKey: ['preferences', user?.id],
     queryFn: async () => {
       console.log('[AppContext] Fetching preferences for user:', user?.id);
@@ -324,6 +324,10 @@ export const [AppProvider, useApp] = createContextHook(() => {
             fontSize: 'medium' as const,
             textToSpeech: false,
             reminders: false,
+            aiPreferences: {
+              consentStatus: 'unknown',
+              personalizationEnabled: true,
+            },
           };
         }
 
@@ -359,6 +363,23 @@ export const [AppProvider, useApp] = createContextHook(() => {
           reminderTime: data.reminder_time || undefined,
           quickReminders: data.quick_reminders || undefined,
           customReminders: data.custom_reminders || undefined,
+          autumnStyle: data.ai_preferences?.autumnStyle || undefined,
+          autumnFocus: data.ai_preferences?.autumnFocus || undefined,
+          autumnVerbosity: data.ai_preferences?.autumnVerbosity || undefined,
+          journalCategories: data.ai_preferences?.journalCategories || undefined,
+          journalDefaultTags: data.ai_preferences?.journalDefaultTags ?? undefined,
+          journalAiSuggestions: data.ai_preferences?.journalAiSuggestions ?? undefined,
+          aiPreferences: data.ai_preferences?.consent
+            ? {
+                consentStatus: data.ai_preferences.consent.status || 'unknown',
+                consentVersion: data.ai_preferences.consent.version || undefined,
+                consentedAt: data.ai_preferences.consent.at || undefined,
+                personalizationEnabled: data.ai_preferences.personalizationEnabled !== false,
+              }
+            : {
+                consentStatus: 'unknown',
+                personalizationEnabled: true,
+              },
         };
       } catch (error) {
         console.error('[AppContext] Preferences query error:', error);
@@ -368,6 +389,10 @@ export const [AppProvider, useApp] = createContextHook(() => {
           fontSize: 'medium' as const,
           textToSpeech: false,
           reminders: false,
+          aiPreferences: {
+            consentStatus: 'unknown',
+            personalizationEnabled: true,
+          },
         };
       }
     },
@@ -794,7 +819,23 @@ export const [AppProvider, useApp] = createContextHook(() => {
         reminder_time: prefs.reminderTime || null,
         quick_reminders: prefs.quickReminders || null,
         custom_reminders: prefs.customReminders || null,
+        ai_preferences: {
+          autumnStyle: prefs.autumnStyle || 'warm',
+          autumnFocus: prefs.autumnFocus || ['autism', 'behavior', 'emotional', 'sleep', 'sensory'],
+          autumnVerbosity: prefs.autumnVerbosity || 'balanced',
+          journalCategories: prefs.journalCategories || undefined,
+          journalDefaultTags: prefs.journalDefaultTags || undefined,
+          journalAiSuggestions: prefs.journalAiSuggestions !== false,
+          consent: {
+            status: prefs.aiPreferences?.consentStatus || 'unknown',
+            version: prefs.aiPreferences?.consentVersion || undefined,
+            at: prefs.aiPreferences?.consentedAt || undefined,
+          },
+          personalizationEnabled: prefs.aiPreferences?.personalizationEnabled !== false,
+        },
       };
+
+      await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(prefs));
 
       const { data: existing } = await supabase
         .from('preferences')
