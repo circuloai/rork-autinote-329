@@ -100,7 +100,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string): Promise<{ error: AuthError | null }> => {
+  const signIn = useCallback(async (email: string, password: string): Promise<{ error: AuthError | null; user: User | null; session: Session | null }> => {
     try {
       console.log('[Auth] Signing in...');
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -109,18 +109,40 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       });
       if (error) {
         console.error('[Auth] Sign in error:', error.message);
-      } else if (data.session) {
-        console.log('[Auth] Sign in successful, user:', data.session.user.id);
+      } else {
+        const nextSession = data.session ?? null;
+        const nextUser = data.user ?? nextSession?.user ?? null;
+        console.log('[Auth] Sign in result:', {
+          hasSession: !!nextSession,
+          hasUser: !!nextUser,
+          sessionExpiresAt: nextSession?.expires_at ?? null,
+        });
+
+        // Do not rely only on onAuthStateChange here. If sign-in completes
+        // while the initial auth listener is being registered, that event can
+        // be missed even though Supabase returned and persisted a valid session.
+        if (nextSession) {
+          setSession(nextSession);
+          setUser(nextUser);
+          setIsLoading(false);
+          void queryClient.invalidateQueries();
+        }
       }
-      return { error };
+      return {
+        error,
+        user: data.user ?? data.session?.user ?? null,
+        session: data.session ?? null,
+      };
     } catch (err) {
       console.error('[Auth] SignIn network/unexpected error:', err);
       const message = err instanceof Error ? err.message : 'Network request failed';
       return {
         error: { message: `Connection error: ${message}. Please check your internet connection and try again.`, name: 'AuthError', status: 0 } as AuthError,
+        user: null,
+        session: null,
       };
     }
-  }, []);
+  }, [queryClient]);
 
   const signOut = useCallback(async (): Promise<{ error: AuthError | null }> => {
     try {

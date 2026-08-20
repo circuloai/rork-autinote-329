@@ -13,6 +13,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isValid = email.trim().length > 0 && password.trim().length > 0;
 
@@ -20,23 +21,29 @@ export default function LoginScreen() {
     if (!isValid) return;
     
     setIsLoading(true);
-    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '(not set)';
-    const hasKey = !!(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+    setErrorMessage(null);
     
     try {
-      console.log('[Login] Attempting sign in for:', email.trim());
-      const { error } = await signIn(email.trim(), password);
+      console.log('[Login] Attempting sign in');
+      const { error, session } = await signIn(email.trim(), password);
       
       if (error) {
         console.error('[Login] Sign in error:', error.message);
+        setErrorMessage(error.message);
         Alert.alert('Login Failed', error.message);
+      } else if (!session) {
+        const message = 'Sign-in completed without an authenticated session. Please try again.';
+        console.error('[Login] Sign in returned no session');
+        setErrorMessage(message);
+        Alert.alert('Login Failed', message);
       } else {
-        console.log('[Login] Sign in successful!');
+        console.log('[Login] Sign in successful; navigating to root');
         router.replace('/' as any);
       }
     } catch (err: any) {
       console.error('[Login] Unexpected error:', err);
       const errMsg = err?.message ?? String(err);
+      setErrorMessage(errMsg);
       Alert.alert('Error', errMsg.includes('Network') || errMsg.includes('fetch')
         ? 'Unable to connect. Please check your internet connection and try again.'
         : errMsg);
@@ -110,6 +117,12 @@ export default function LoginScreen() {
                 <ScaledText style={styles.loginButtonText}>Log In</ScaledText>
               )}
             </TouchableOpacity>
+
+            {errorMessage ? (
+              <ScaledText accessibilityRole="alert" style={styles.errorText}>
+                {errorMessage}
+              </ScaledText>
+            ) : null}
 
             <TouchableOpacity
               style={styles.forgotButton}
@@ -214,6 +227,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500' as const,
     color: Colors.primary,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: -8,
   },
 
   footer: {
