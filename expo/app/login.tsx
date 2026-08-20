@@ -6,6 +6,17 @@ import Colors from '@/constants/colors';
 import ScaledText from '@/components/ScaledText';
 import { useAuth } from '@/contexts/AuthContext';
 
+function getLoginErrorMessage(error: unknown): string {
+  const technicalMessage = error instanceof Error ? error.message : String(error ?? '');
+  const normalized = technicalMessage.toLowerCase();
+
+  if (normalized.includes('failed to fetch') || normalized.includes('network')) {
+    return 'We can’t reach the sign-in service right now. Please try again shortly.';
+  }
+
+  return technicalMessage || 'We couldn’t sign you in. Please try again.';
+}
+
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
@@ -29,8 +40,9 @@ export default function LoginScreen() {
       
       if (error) {
         console.error('[Login] Sign in error:', error.message);
-        setErrorMessage(error.message);
-        Alert.alert('Login Failed', error.message);
+        const message = getLoginErrorMessage(error);
+        setErrorMessage(message);
+        Alert.alert('Login Failed', message);
       } else if (!session) {
         const message = 'Sign-in completed without an authenticated session. Please try again.';
         console.error('[Login] Sign in returned no session');
@@ -42,11 +54,9 @@ export default function LoginScreen() {
       }
     } catch (err: any) {
       console.error('[Login] Unexpected error:', err);
-      const errMsg = err?.message ?? String(err);
-      setErrorMessage(errMsg);
-      Alert.alert('Error', errMsg.includes('Network') || errMsg.includes('fetch')
-        ? 'Unable to connect. Please check your internet connection and try again.'
-        : errMsg);
+      const message = getLoginErrorMessage(err);
+      setErrorMessage(message);
+      Alert.alert('Error', message);
     } finally {
       setIsLoading(false);
     }
