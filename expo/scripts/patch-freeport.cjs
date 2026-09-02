@@ -1,3 +1,5 @@
+if (process.env.EAS_BUILD || process.env.CI) process.exit(0);
+
 const fs = require("fs");
 const path = require("path");
 
