@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
 import { ArrowLeft, ArrowRight, X, Bell, CheckCircle2, Type, Volume2, Sparkles, Heart, Stethoscope } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
@@ -17,6 +18,7 @@ type Step = 0 | 1 | 2 | 3 | 4 | 5;
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { signUp } = useAuth();
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
@@ -266,6 +268,12 @@ export default function OnboardingScreen() {
       } else {
         console.log('[Onboarding] Preferences saved');
       }
+
+      // Force the providers to converge on the rows just written before
+      // leaving onboarding. This prevents Home from briefly rendering Guest
+      // or a stale child while the auth event and profile query race.
+      await queryClient.refetchQueries({ queryKey: ['userProfile', userId], exact: true });
+      await queryClient.refetchQueries({ queryKey: ['preferences', userId], exact: true });
 
       const hasEnabledReminders = quickReminders.some((reminder) => reminder.enabled)
         || customReminders.some((reminder) => reminder.enabled);

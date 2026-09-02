@@ -3,18 +3,24 @@ import { httpLink } from "@trpc/client";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import superjson from "superjson";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
 
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_BASE_URL) {
-    return process.env.EXPO_PUBLIC_API_BASE_URL;
+    return process.env.EXPO_PUBLIC_API_BASE_URL.replace(/\/+$/, '');
   }
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:3000`;
+    return `${window.location.protocol}//${window.location.hostname}:3001`;
   }
-  console.warn('EXPO_PUBLIC_API_BASE_URL not set, using local API fallback');
+  const hostUri = Constants.expoConfig?.hostUri;
+  const host = hostUri?.split(':')[0];
+  if (host) {
+    return `http://${host}:3001`;
+  }
+  console.warn('EXPO_PUBLIC_API_BASE_URL not set and no Expo host is available; using local API fallback');
   return 'http://localhost:3001';
 };
 

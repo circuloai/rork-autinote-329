@@ -99,7 +99,7 @@ export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     PlayfairDisplay_700Bold,
     PlayfairDisplay_700Bold_Italic,
     DMSans_400Regular,
@@ -127,16 +127,19 @@ export default function RootLayout() {
       }
     }
 
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
+      if (fontError) {
+        console.warn("[init] Custom fonts failed to load; continuing with system fonts", fontError);
+      }
       const prepared = async () => {
         await prepare();
         void requestNotificationPermissions();
       };
       void prepared();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!appIsReady || !fontsLoaded) {
+  if (!appIsReady && !fontError) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#261D15" />

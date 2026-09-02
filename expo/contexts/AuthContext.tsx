@@ -1,4 +1,5 @@
 import createContextHook from '@nkzw/create-context-hook';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
@@ -6,6 +7,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+
+const LOCAL_FALLBACK_KEYS = [
+  '@autinote_user_profile',
+  '@autinote_log_entries',
+  '@autinote_preferences',
+  '@autinote_chat_history',
+] as const;
+
+async function clearLocalFallbackData() {
+  await Promise.all(LOCAL_FALLBACK_KEYS.map((key) => AsyncStorage.removeItem(key)));
+}
 
 export const [AuthProvider, useAuth] = createContextHook(() => {
   const queryClient = useQueryClient();
@@ -81,6 +93,16 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       
       const needsEmailConfirmation = !error && !!data.user && !data.session;
       console.log('[Auth] SignUp result - user:', data.user?.id, 'session:', !!data.session, 'needsConfirmation:', needsEmailConfirmation);
+
+      // Supabase normally emits SIGNED_IN, but setting the returned session
+      // here also covers the short window where onboarding can navigate before
+      // the auth listener callback runs.
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user ?? data.session.user);
+        setIsLoading(false);
+        void queryClient.invalidateQueries();
+      }
       
       return { 
         error, 
@@ -98,7 +120,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         needsEmailConfirmation: false,
       };
     }
-  }, []);
+  }, [queryClient]);
 
   const signIn = useCallback(async (email: string, password: string): Promise<{ error: AuthError | null; user: User | null; session: Session | null }> => {
     try {
@@ -151,17 +173,21 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       const { error } = await supabase.auth.signOut();
       if (!error) {
         console.log('[Auth] Sign out successful');
+        await clearLocalFallbackData();
+        queryClient.clear();
         setSession(null);
         setUser(null);
       }
       return { error };
     } catch (err) {
       console.error('[Auth] SignOut error:', err);
+      await clearLocalFallbackData();
+      queryClient.clear();
       setSession(null);
       setUser(null);
       return { error: null };
     }
-  }, []);
+  }, [queryClient]);
 
   const resetPassword = useCallback(async (email: string): Promise<{ error: AuthError | null }> => {
     try {

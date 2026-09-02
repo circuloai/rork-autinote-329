@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { UserProfile, LogEntry, Preferences, SharedAccess, TherapistNote, DailyLogEntry, MeltdownLogEntry, AnyLogEntry, ChatMessage } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getChatHistoryStorageKey } from '@/lib/chatHistory';
 import { useAuth } from './AuthContext';
 
 const STORAGE_KEYS = {
@@ -401,9 +402,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
   });
 
   const chatHistoryQuery = useQuery({
-    queryKey: ['chatHistory'],
+    queryKey: ['chatHistory', user?.id || 'guest'],
     queryFn: async () => {
-      const stored = await AsyncStorage.getItem(STORAGE_KEYS.CHAT_HISTORY);
+      // Never read the legacy unscoped value. It may contain another
+      // account's transcript from an older app version.
+      await AsyncStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
+      const stored = await AsyncStorage.getItem(getChatHistoryStorageKey(user?.id));
       return stored ? JSON.parse(stored) : [];
     },
   });
@@ -858,21 +862,21 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const { mutate: saveChatHistoryMutate } = useMutation({
     mutationFn: async (messages: any[]) => {
-      await AsyncStorage.setItem(STORAGE_KEYS.CHAT_HISTORY, JSON.stringify(messages));
+      await AsyncStorage.setItem(getChatHistoryStorageKey(user?.id), JSON.stringify(messages));
       return messages;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(['chatHistory'], data);
+      queryClient.setQueryData(['chatHistory', user?.id || 'guest'], data);
     },
   });
 
   const { mutate: clearChatHistoryMutate } = useMutation({
     mutationFn: async () => {
-      await AsyncStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
+      await AsyncStorage.removeItem(getChatHistoryStorageKey(user?.id));
       return [];
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(['chatHistory'], data);
+      queryClient.setQueryData(['chatHistory', user?.id || 'guest'], data);
     },
   });
 
@@ -1072,7 +1076,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
       await AsyncStorage.removeItem(STORAGE_KEYS.LOG_ENTRIES);
       await AsyncStorage.removeItem(STORAGE_KEYS.PREFERENCES);
-      // CHAT_HISTORY intentionally preserved so AI conversations survive logout
+      // Preserve each account's namespaced transcript so it can be restored
+      // when that same account signs back in, but remove the old shared key.
+      await AsyncStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
     },
     onSuccess: () => {
       queryClient.clear();

@@ -5,6 +5,7 @@ import { Send, Sparkles, Trash2 } from 'lucide-react-native';
 import { useColors } from '@/hooks/useColors';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
 import { trpcClient } from '@/lib/trpc';
@@ -46,6 +47,7 @@ function toPlainTextFromMessageParts(parts: any[]): string {
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { activeChild, chatHistory = [], saveChatHistory, clearChatHistory, preferences, savePreferences } = useApp();
+  const { user } = useAuth();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [input, setInput] = useState<string>('');
@@ -54,8 +56,10 @@ export default function ChatScreen() {
   const [consentPending, setConsentPending] = useState<string | null>(null);
   const [consentGrantedThisSession, setConsentGrantedThisSession] = useState(false);
   const [storedAiConsent, setStoredAiConsent] = useState(false);
+  const [historyOwner, setHistoryOwner] = useState(user?.id || 'guest');
   const scrollViewRef = useRef<ScrollView>(null);
   const clearedRef = useRef(false);
+  const accountKey = user?.id || 'guest';
 
   useEffect(() => {
     let mounted = true;
@@ -111,6 +115,13 @@ export default function ChatScreen() {
   }, [activeChild, preferences]);
 
   useEffect(() => {
+    if (historyOwner === accountKey) return;
+    setHistoryOwner(accountKey);
+    setLocalMessages([]);
+    clearedRef.current = true;
+  }, [accountKey, historyOwner]);
+
+  useEffect(() => {
     if (clearedRef.current) {
       clearedRef.current = false;
       return;
@@ -118,13 +129,13 @@ export default function ChatScreen() {
     if (chatHistory && chatHistory.length > 0 && localMessages.length === 0) {
       setLocalMessages(chatHistory);
     }
-  }, [chatHistory, localMessages.length]);
+  }, [chatHistory, localMessages.length, historyOwner, accountKey]);
 
   useEffect(() => {
-    if (localMessages.length > 0) {
+    if (historyOwner === accountKey && localMessages.length > 0) {
       saveChatHistory(localMessages);
     }
-  }, [localMessages, saveChatHistory]);
+  }, [localMessages, saveChatHistory, historyOwner, accountKey]);
 
   useEffect(() => {
     if (localMessages.length > 0) {

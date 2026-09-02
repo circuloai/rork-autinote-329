@@ -8,7 +8,7 @@ import { generateAutumnResponse } from "../openai";
 type RateState = { minuteStartedAt: number; minuteCount: number; hourStartedAt: number; hourCount: number };
 const rateState = new Map<string, RateState>();
 
-function checkRateLimit(userId: string) {
+export function checkRateLimit(userId: string) {
   const now = Date.now();
   const current = rateState.get(userId) || {
     minuteStartedAt: now,
@@ -38,6 +38,44 @@ function checkRateLimit(userId: string) {
   rateState.set(userId, current);
 }
 
+type AutumnDataFailure = {
+  code: "FORBIDDEN" | "PRECONDITION_FAILED" | "INTERNAL_SERVER_ERROR";
+  message: string;
+};
+
+export function mapAutumnDataFailure(error: unknown): AutumnDataFailure {
+  const code = error instanceof Error ? error.message : "";
+  if (code === "CAREGIVER_ONLY") {
+    return { code: "FORBIDDEN", message: "Autumn is available from the caregiver account." };
+  }
+  if (code === "CHILD_NOT_FOUND") {
+    return { code: "FORBIDDEN", message: "That child profile is not available." };
+  }
+  if (code === "AI_CONSENT_REQUIRED") {
+    return { code: "PRECONDITION_FAILED", message: "Please review Autumn’s AI privacy notice before continuing." };
+  }
+  if (code === "CONSENT_STORE_UNAVAILABLE") {
+    return { code: "PRECONDITION_FAILED", message: "Autumn privacy settings are not ready yet. Please try again shortly." };
+  }
+  return { code: "INTERNAL_SERVER_ERROR", message: "Autumn could not load the selected profile." };
+}
+
+type AutumnProviderFailure = {
+  code: "PRECONDITION_FAILED" | "TIMEOUT" | "SERVICE_UNAVAILABLE";
+  message: string;
+};
+
+export function mapAutumnProviderFailure(error: unknown): AutumnProviderFailure {
+  const message = error instanceof Error ? error.message : "";
+  if (message === "OPENAI_NOT_CONFIGURED") {
+    return { code: "PRECONDITION_FAILED", message: "Autumn is not configured yet. Please try again later." };
+  }
+  if (message.includes("aborted") || message.includes("timeout")) {
+    return { code: "TIMEOUT", message: "Autumn took too long to respond. Please try again." };
+  }
+  return { code: "SERVICE_UNAVAILABLE", message: "Autumn is temporarily unavailable. Please try again." };
+}
+
 const inputSchema = z.object({
   childId: z.string().uuid(),
   message: z.string().trim().min(1).max(500),
@@ -56,20 +94,7 @@ export default protectedProcedure
     try {
       data = await loadAutumnData(ctx.auth.supabase, ctx.auth.user, input.childId);
     } catch (error) {
-      const code = error instanceof Error ? error.message : "";
-      if (code === "CAREGIVER_ONLY") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Autumn is available from the caregiver account." });
-      }
-      if (code === "CHILD_NOT_FOUND") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "That child profile is not available." });
-      }
-      if (code === "AI_CONSENT_REQUIRED") {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Please review Autumn’s AI privacy notice before continuing." });
-      }
-      if (code === "CONSENT_STORE_UNAVAILABLE") {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Autumn privacy settings are not ready yet. Please try again shortly." });
-      }
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Autumn could not load the selected profile." });
+      throw new TRPCError(mapAutumnDataFailure(error));
     }
 
     const context = buildMinimalAutumnContext({
@@ -101,14 +126,7 @@ export default protectedProcedure
       });
       return { response };
     } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (message === "OPENAI_NOT_CONFIGURED") {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Autumn is not configured yet. Please try again later." });
-      }
-      if (message.includes("aborted") || message.includes("timeout")) {
-        throw new TRPCError({ code: "TIMEOUT", message: "Autumn took too long to respond. Please try again." });
-      }
       console.error("[ai] Autumn provider error", { name: error instanceof Error ? error.name : "unknown" });
-      throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "Autumn is temporarily unavailable. Please try again." });
+      throw new TRPCError(mapAutumnProviderFailure(error));
     }
   });

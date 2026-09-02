@@ -9,7 +9,7 @@ description: How custom fonts are loaded and auto-applied in ScaledText.
 `@expo-google-fonts/playfair-display` and `@expo-google-fonts/dm-sans` (installed via bun add).
 
 ## Loading
-`useFonts({ PlayfairDisplay_700Bold, PlayfairDisplay_700Bold_Italic, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold })` in `_layout.tsx`. App shows a loading spinner until fonts resolve.
+`useFonts({ PlayfairDisplay_700Bold, PlayfairDisplay_700Bold_Italic, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold })` in `_layout.tsx`. The app waits for fonts when available, but continues with system fonts if web font loading fails so startup cannot hang indefinitely.
 
 ## Auto-application in ScaledText
 `ScaledText` calls `resolveFontFamily(style)` after scaling. Logic:

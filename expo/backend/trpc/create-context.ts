@@ -18,7 +18,7 @@ const t = initTRPC.context<Context>().create({
 export const createTRPCRouter = t.router;
 export const publicProcedure = t.procedure;
 
-const getBearerToken = (request: Request) => {
+export const getBearerToken = (request: Request) => {
   const header = request.headers.get("authorization") || "";
   if (!header.startsWith("Bearer ")) return null;
   const token = header.slice("Bearer ".length).trim();
