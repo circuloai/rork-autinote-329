@@ -1,0 +1,112 @@
+Please debug and fix the following three issues in my AutiNote app. Before making changes, inspect the relevant existing code and determine the root cause of each issue. Do not rebuild unrelated parts of the app, do not remove existing functionality, and do not change the visual design unless necessary for the fix.
+
+1. Profile picture upload is not working from the camera roll
+
+Current behavior:
+When a user tries to upload/change their profile picture, they are not able to successfully select and use an image from their device’s camera roll/photo library.
+
+Expected behavior:
+
+Tapping the profile picture upload/edit control should open the device’s photo library/image picker.
+The user should be able to select a photo from their camera roll.
+After selection, the image should be displayed as the user’s profile picture.
+The selected image should be uploaded/stored correctly using the app’s existing backend/storage system.
+The profile picture should persist after refreshing the app, navigating away, logging out and back in, or reopening the app.
+If permission to access photos is required, handle the permission request properly.
+If permission is denied, display a clear and user-friendly message rather than silently failing.
+Make sure this works correctly on iOS/mobile, not only in a desktop browser.
+Preserve any existing image size/type validation unless it is causing the bug.
+
+Please inspect the entire upload flow, including the image picker, file handling, upload request, storage bucket/database field, returned image URL, and profile state.
+
+2. Dark mode immediately switches back to light mode
+
+Current behavior:
+The dark mode toggle visually works for a moment, but the app immediately switches back to light mode after the toggle is clicked.
+
+Expected behavior:
+
+Turning dark mode ON should immediately apply the dark theme.
+It should remain in dark mode instead of reverting.
+Turning it OFF should return the app to light mode.
+The user’s theme preference should persist when navigating between pages/screens.
+The preference should also persist after refreshing, closing/reopening the app, or logging back in.
+
+Please investigate whether the theme state is being overwritten by:
+
+another useEffect/state update,
+system theme detection,
+default light-mode initialization,
+localStorage/AsyncStorage/session state,
+database user preferences,
+duplicate theme providers,
+or another component rerender.
+
+There should be one reliable source of truth for the theme preference. On startup, first load the saved user preference if one exists. Only fall back to the system/default theme if the user has never chosen a preference.
+
+Do not create a loop where loading the theme overwrites the user’s newly selected setting.
+
+3. AI chat sends messages but Autumn never responds
+
+Current behavior:
+The user can type and submit a message in the AI chat interface, and the user’s message appears in the conversation, but no AI response is returned or displayed.
+
+Expected behavior:
+
+The user submits a message.
+The message appears in the conversation.
+A loading/typing state appears while waiting for the response.
+The request is sent to the app’s existing AI backend/API.
+Autumn receives the relevant input/context.
+The AI response is returned and displayed in the conversation.
+The loading state stops after receiving the response.
+If the request fails, the user should receive a readable error message instead of nothing happening.
+
+Please trace the entire AI request lifecycle, including:
+
+chat input submission,
+frontend API call,
+API/backend route,
+environment variable/API key access,
+request sent to the AI provider,
+provider response,
+response parsing,
+frontend state update,
+rendering the assistant message.
+
+Check the server and browser logs for errors. Specifically verify that:
+
+the AI API key/environment variable exists and is being accessed on the server side,
+the API key is never exposed in frontend/client code,
+the correct AI endpoint/model is being called,
+the request body matches what the backend expects,
+authentication is not accidentally blocking the request,
+CORS/network errors are not occurring,
+errors from the AI provider are caught and logged,
+the frontend correctly reads the response property returned by the backend,
+the response is actually appended to the chat message state,
+and there is no stale loading state preventing the answer from rendering.
+
+If the AI provider/API implementation has changed or an old SDK method is being used, update it to the currently supported implementation without changing the intended functionality of Autumn.
+
+Important requirements
+
+Please do not just add workarounds. Identify and fix the underlying causes.
+
+After fixing everything:
+
+test all three features end-to-end,
+check browser/server console logs for errors,
+confirm no existing features were broken,
+confirm profile photos persist,
+confirm dark mode persists,
+and confirm Autumn returns and visibly displays an AI response.
+
+At the end, give me a short report containing:
+
+the root cause of each bug,
+the files you changed,
+what you changed,
+and how you verified that each issue is fixed.
+
+Do not make unrelated UI/design changes. Do not delete existing functionality. Do not replace working systems simply because another implementation would be easier.
