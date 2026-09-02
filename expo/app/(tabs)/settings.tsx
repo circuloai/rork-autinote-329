@@ -1,9 +1,10 @@
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { ChevronRight, User, Bell, Palette, BookOpen, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw, KeyRound } from 'lucide-react-native';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
@@ -16,6 +17,8 @@ type SettingsItem = {
   onPress: () => void;
 };
 
+const SUPPORT_URL = 'https://sites.google.com/view/autinoteus';
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -25,6 +28,12 @@ export default function SettingsScreen() {
 
   const handleCheckForUpdates = useCallback(() => {
     Alert.alert('Updates', 'Update checking is not available in this build. Please check your app store for the latest version.');
+  }, []);
+
+  const handleOpenSupport = useCallback(() => {
+    void Linking.openURL(SUPPORT_URL).catch(() => {
+      Alert.alert('Support Unavailable', 'We could not open the support page. Please try again later.');
+    });
   }, []);
 
   const handleLogout = () => {
@@ -167,8 +176,11 @@ export default function SettingsScreen() {
           onPress: () => {
             Alert.alert(
               'Resources & Help',
-              'Help & Tutorials:\n\n📝 Daily Logging: Track moods, behaviors, sleep, and daily highlights. Use suggested tags or type your own.\n\n💬 AI Chat: Autumn (your AI companion) can answer questions about autism, behavior patterns, and parenting strategies.\n\n📊 Insights: View mood trends and patterns over time to identify triggers and positive moments.\n\n📅 Calendar: Review past entries and track progress across weeks and months.\n\n💡 Tips:\n• Log daily for best insights\n• Use mood tags consistently\n• Rate meltdowns 1-10 for tracking\n• Chat with Autumn for personalized support\n\nNeed more help? Contact support@autinote.com',
-              [{ text: 'Got it' }]
+              'Help & Tutorials:\n\n📝 Daily Logging: Track moods, behaviors, sleep, and daily highlights. Use suggested tags or type your own.\n\n💬 AI Chat: Autumn (your AI companion) can answer questions about autism, behavior patterns, and parenting strategies.\n\n📊 Insights: View mood trends and patterns over time to identify triggers and positive moments.\n\n📅 Calendar: Review past entries and track progress across weeks and months.\n\n💡 Tips:\n• Log daily for best insights\n• Use mood tags consistently\n• Rate meltdowns 1-10 for tracking\n• Chat with Autumn for personalized support\n\nVisit our online support center for more help.',
+              [
+                { text: 'Close', style: 'cancel' },
+                { text: 'Open Support', onPress: handleOpenSupport },
+              ]
             );
           },
         },
