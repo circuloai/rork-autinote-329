@@ -1,33 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Modal, SafeAreaView, Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Bell, Clock, X, ArrowRight, CheckCircle2 } from 'lucide-react-native';
+import { Bell, X, ArrowRight, CheckCircle2 } from 'lucide-react-native';
 import { useColors } from '@/hooks/useColors';
 import ScaledText from '@/components/ScaledText';
+import ReminderTimePicker from '@/components/ReminderTimePicker';
 import { useApp } from '@/contexts/AppContext';
 import type { QuickReminder, CustomReminder, ReminderCategory, ReminderTone, ReminderRepeat } from '@/types';
-
-function formatTo12h(time24: string): string {
-  const [hourStr, minuteStr] = time24.split(':');
-  let hour = parseInt(hourStr, 10);
-  const minute = minuteStr || '00';
-  if (isNaN(hour)) return time24;
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  hour = hour % 12;
-  if (hour === 0) hour = 12;
-  return `${hour}:${minute} ${ampm}`;
-}
-
-function parseTo24h(time12: string): string {
-  const match = time12.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return time12;
-  let hour = parseInt(match[1], 10);
-  const minute = match[2];
-  const period = match[3].toUpperCase();
-  if (period === 'AM' && hour === 12) hour = 0;
-  if (period === 'PM' && hour !== 12) hour += 12;
-  return `${hour.toString().padStart(2, '0')}:${minute}`;
-}
+import { REMINDER_WEEKDAYS, formatReminderTime, formatRepeatLabel } from '@/lib/reminderUtils';
+import { syncReminderNotifications } from '@/lib/notifications';
+import { getColors } from '@/constants/colors';
 
 export default function RemindersSettingsScreen() {
   const router = useRouter();
@@ -49,10 +31,12 @@ export default function RemindersSettingsScreen() {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [newReminderLabel, setNewReminderLabel] = useState('');
   const [newReminderCategory, setNewReminderCategory] = useState<ReminderCategory>('mood');
-  const [newReminderTime, setNewReminderTime] = useState('9:00 AM');
+  const [newReminderTime, setNewReminderTime] = useState('09:00');
   const [newReminderRepeat, setNewReminderRepeat] = useState<ReminderRepeat>('daily');
+  const [newReminderCustomDays, setNewReminderCustomDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [newReminderTone, setNewReminderTone] = useState<ReminderTone>('chime');
   const [newReminderMessage, setNewReminderMessage] = useState('Would you like to log today notes?');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (preferences?.quickReminders) {
@@ -69,10 +53,9 @@ export default function RemindersSettingsScreen() {
     ));
   };
 
-  const updateQuickReminderTime = (id: string, displayTime: string) => {
-    const stored = parseTo24h(displayTime);
+  const updateQuickReminderTime = (id: string, storedTime: string) => {
     setQuickReminders(prev => prev.map(r => 
-      r.id === id ? { ...r, time: stored } : r
+      r.id === id ? { ...r, time: storedTime } : r
     ));
   };
 
@@ -83,8 +66,9 @@ export default function RemindersSettingsScreen() {
       id: Date.now().toString(),
       label: newReminderLabel,
       category: newReminderCategory,
-      time: parseTo24h(newReminderTime),
+      time: newReminderTime,
       repeat: newReminderRepeat,
+      customDays: newReminderRepeat === 'custom' ? newReminderCustomDays : undefined,
       tone: newReminderTone,
       message: newReminderMessage,
       enabled: true,
@@ -93,7 +77,9 @@ export default function RemindersSettingsScreen() {
     setCustomReminders(prev => [...prev, reminder]);
     setShowReminderModal(false);
     setNewReminderLabel('');
-    setNewReminderTime('9:00 AM');
+    setNewReminderTime('09:00');
+    setNewReminderRepeat('daily');
+    setNewReminderCustomDays([1, 2, 3, 4, 5]);
     setNewReminderMessage('Would you like to log today notes?');
   };
 
@@ -107,22 +93,32 @@ export default function RemindersSettingsScreen() {
     ));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!preferences) return;
+    setIsSaving(true);
     
     const hasAnyEnabled = quickReminders.some(r => r.enabled) || customReminders.some(r => r.enabled);
-    
-    savePreferences({
-      theme: preferences.theme,
-      colorTheme: preferences.colorTheme,
-      fontSize: preferences.fontSize,
-      textToSpeech: preferences.textToSpeech,
+    const updatedPreferences = {
+      ...preferences,
       reminders: hasAnyEnabled,
-      reminderTime: preferences.reminderTime,
       quickReminders,
       customReminders,
-    });
+    };
     
+    savePreferences(updatedPreferences);
+    const syncResult = await syncReminderNotifications(quickReminders, customReminders);
+    setIsSaving(false);
+
+    if (!syncResult.success) {
+      const message = syncResult.reason === 'permission-denied'
+        ? 'Your settings were saved, but notifications are turned off. Enable notifications for AutiNote in your device settings to receive reminders.'
+        : syncResult.reason === 'unsupported'
+          ? 'Your settings were saved. Device notifications are available in the iOS and Android apps.'
+          : 'Your settings were saved, but the reminders could not be scheduled. Please try again.';
+      Alert.alert('Notifications unavailable', message, [{ text: 'OK', onPress: () => router.back() }]);
+      return;
+    }
+
     Alert.alert('Saved', 'Your reminder preferences have been saved successfully!', [
       { text: 'OK', onPress: () => router.back() }
     ]);
@@ -180,14 +176,10 @@ export default function RemindersSettingsScreen() {
                 </View>
                 {reminder.enabled && (
                   <View style={styles.timeInputContainer}>
-                    <Clock size={16} color={Colors.textSecondary} />
-                    <TextInput
-                      style={styles.timeInput}
-                      value={formatTo12h(reminder.time ?? '')}
-                      onChangeText={(text) => updateQuickReminderTime(reminder.id, text)}
-                      placeholder="12:00 AM"
-                      placeholderTextColor={Colors.textLight}
-                      keyboardType="default"
+                    <ReminderTimePicker
+                      value={reminder.time || '08:00'}
+                      onChange={(time) => updateQuickReminderTime(reminder.id, time)}
+                      colors={Colors}
                     />
                   </View>
                 )}
@@ -219,7 +211,7 @@ export default function RemindersSettingsScreen() {
                     <View style={styles.customReminderInfo}>
                       <ScaledText style={styles.customReminderLabel}>{reminder.label}</ScaledText>
                       <ScaledText style={styles.customReminderTime}>
-                        {formatTo12h(reminder.time)} • {reminder.repeat} • {reminder.category}
+                        {formatReminderTime(reminder.time)} • {formatRepeatLabel(reminder.repeat, reminder.customDays)} • {reminder.category}
                       </ScaledText>
                     </View>
                     <TouchableOpacity
@@ -263,9 +255,10 @@ export default function RemindersSettingsScreen() {
         <TouchableOpacity
           style={styles.saveButton}
           onPress={handleSave}
+          disabled={isSaving}
           activeOpacity={0.8}
         >
-          <ScaledText style={styles.saveButtonText}>Save Changes</ScaledText>
+          <ScaledText style={styles.saveButtonText}>{isSaving ? 'Saving…' : 'Save Changes'}</ScaledText>
         </TouchableOpacity>
       </View>
 
@@ -327,14 +320,11 @@ export default function RemindersSettingsScreen() {
             </View>
 
             <View style={styles.modalInputGroup}>
-              <ScaledText style={styles.label}>Time *</ScaledText>
-              <TextInput
-                style={styles.input}
+              <ReminderTimePicker
                 value={newReminderTime}
-                onChangeText={setNewReminderTime}
-                placeholder="12:00 AM"
-                placeholderTextColor={Colors.textLight}
-                keyboardType="default"
+                onChange={setNewReminderTime}
+                colors={Colors}
+                label="Time *"
               />
             </View>
 
@@ -363,6 +353,36 @@ export default function RemindersSettingsScreen() {
                 ))}
               </View>
             </View>
+
+            {newReminderRepeat === 'custom' && (
+              <View style={styles.modalInputGroup}>
+                <ScaledText style={styles.label}>Choose days</ScaledText>
+                <View style={styles.dayGrid}>
+                  {REMINDER_WEEKDAYS.map((day) => {
+                    const selected = newReminderCustomDays.includes(day.value);
+                    return (
+                      <TouchableOpacity
+                        key={day.value}
+                        style={[styles.dayButton, selected && styles.dayButtonActive]}
+                        onPress={() => setNewReminderCustomDays((current) =>
+                          selected ? current.filter((value) => value !== day.value) : [...current, day.value],
+                        )}
+                        activeOpacity={0.7}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: selected }}
+                      >
+                        <ScaledText style={[styles.dayText, selected && styles.dayTextActive]}>
+                          {day.shortLabel}
+                        </ScaledText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {newReminderCustomDays.length === 0 && (
+                  <ScaledText style={styles.validationText}>Choose at least one day.</ScaledText>
+                )}
+              </View>
+            )}
 
             <View style={styles.modalInputGroup}>
               <ScaledText style={styles.label}>Tone</ScaledText>
@@ -422,7 +442,7 @@ export default function RemindersSettingsScreen() {
                 !newReminderLabel.trim() && styles.modalSaveButtonDisabled,
               ]}
               onPress={addCustomReminder}
-              disabled={!newReminderLabel.trim()}
+              disabled={!newReminderLabel.trim() || (newReminderRepeat === 'custom' && newReminderCustomDays.length === 0)}
               activeOpacity={0.7}
             >
               <ScaledText style={styles.modalSaveText}>Add Reminder</ScaledText>
@@ -733,6 +753,38 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
   repeatTextActive: {
     color: Colors.primary,
     fontWeight: '600' as const,
+  },
+  dayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  dayButton: {
+    minWidth: 48,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+  },
+  dayButtonActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '20',
+  },
+  dayText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  dayTextActive: {
+    color: Colors.primary,
+  },
+  validationText: {
+    marginTop: 8,
+    fontSize: 13,
+    color: Colors.error,
   },
   toneGrid: {
     gap: 10,

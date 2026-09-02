@@ -1,12 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal, Animated, Alert, ActivityIndicator } from 'react-native';
-import { ArrowLeft, ArrowRight, X, Bell, Clock, CheckCircle2, Type, Volume2, Sparkles, Heart, Stethoscope } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, X, Bell, CheckCircle2, Type, Volume2, Sparkles, Heart, Stethoscope } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
+import ReminderTimePicker from '@/components/ReminderTimePicker';
 
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { REMINDER_WEEKDAYS, formatReminderTime, formatRepeatLabel } from '@/lib/reminderUtils';
+import { syncReminderNotifications } from '@/lib/notifications';
 
 import type { UserRole, QuickReminder, CustomReminder, ReminderCategory, ReminderTone, ReminderRepeat } from '@/types';
 
@@ -41,6 +44,7 @@ export default function OnboardingScreen() {
   const [newReminderCategory, setNewReminderCategory] = useState<ReminderCategory>('mood');
   const [newReminderTime, setNewReminderTime] = useState('09:00');
   const [newReminderRepeat, setNewReminderRepeat] = useState<ReminderRepeat>('daily');
+  const [newReminderCustomDays, setNewReminderCustomDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [newReminderTone, setNewReminderTone] = useState<ReminderTone>('chime');
   const [newReminderMessage, setNewReminderMessage] = useState('Would you like to log today notes?');
 
@@ -112,6 +116,7 @@ export default function OnboardingScreen() {
       category: newReminderCategory,
       time: newReminderTime,
       repeat: newReminderRepeat,
+      customDays: newReminderRepeat === 'custom' ? newReminderCustomDays : undefined,
       tone: newReminderTone,
       message: newReminderMessage,
       enabled: true,
@@ -120,6 +125,9 @@ export default function OnboardingScreen() {
     setCustomReminders(prev => [...prev, reminder]);
     setShowReminderModal(false);
     setNewReminderLabel('');
+    setNewReminderTime('09:00');
+    setNewReminderRepeat('daily');
+    setNewReminderCustomDays([1, 2, 3, 4, 5]);
     setNewReminderMessage('Would you like to log today notes?');
   };
 
@@ -257,6 +265,33 @@ export default function OnboardingScreen() {
         console.error('[Onboarding] Preferences insert error:', prefsError);
       } else {
         console.log('[Onboarding] Preferences saved');
+      }
+
+      const hasEnabledReminders = quickReminders.some((reminder) => reminder.enabled)
+        || customReminders.some((reminder) => reminder.enabled);
+      if (hasEnabledReminders) {
+        const syncResult = await syncReminderNotifications(quickReminders, customReminders);
+        if (!syncResult.success) {
+          const message = syncResult.reason === 'permission-denied'
+            ? 'Your account was created, but notifications are turned off. Enable notifications for AutiNote in your device settings to receive reminders.'
+            : syncResult.reason === 'unsupported'
+              ? 'Your account was created. Device notifications are available in the iOS and Android apps.'
+              : 'Your account was created, but the reminders could not be scheduled. You can try again in Settings.';
+          Alert.alert('Reminders not enabled', message, [
+            {
+              text: 'Continue',
+              onPress: () => {
+                if (isTherapist) {
+                  router.replace('/(therapist)/clients' as any);
+                } else {
+                  router.replace('/(tabs)/home' as any);
+                }
+              },
+            },
+          ]);
+          setIsCreatingAccount(false);
+          return;
+        }
       }
 
       console.log('[Onboarding] All data saved, navigating...');
@@ -599,14 +634,10 @@ export default function OnboardingScreen() {
                       </View>
                       {reminder.enabled && (
                         <View style={styles.timeInputContainer}>
-                          <Clock size={16} color={Colors.textSecondary} />
-                          <TextInput
-                            style={styles.timeInput}
-                            value={reminder.time}
-                            onChangeText={(text) => updateQuickReminderTime(reminder.id, text)}
-                            placeholder="HH:MM"
-                            placeholderTextColor={Colors.textLight}
-                            keyboardType="numbers-and-punctuation"
+                          <ReminderTimePicker
+                            value={reminder.time || '08:00'}
+                            onChange={(time) => updateQuickReminderTime(reminder.id, time)}
+                            colors={Colors}
                           />
                         </View>
                       )}
@@ -632,7 +663,7 @@ export default function OnboardingScreen() {
                       <View key={reminder.id} style={styles.customReminderChip}>
                         <View>
                           <ScaledText style={styles.customReminderLabel}>{reminder.label}</ScaledText>
-                          <ScaledText style={styles.customReminderTime}>{reminder.time} • {reminder.repeat}</ScaledText>
+                          <ScaledText style={styles.customReminderTime}>{formatReminderTime(reminder.time)} • {formatRepeatLabel(reminder.repeat, reminder.customDays)}</ScaledText>
                         </View>
                         <TouchableOpacity
                           onPress={() => removeCustomReminder(reminder.id)}
@@ -752,14 +783,11 @@ export default function OnboardingScreen() {
             </View>
 
             <View style={styles.modalInputGroup}>
-              <ScaledText style={styles.label}>Time *</ScaledText>
-              <TextInput
-                style={styles.input}
+              <ReminderTimePicker
                 value={newReminderTime}
-                onChangeText={setNewReminderTime}
-                placeholder="HH:MM"
-                placeholderTextColor={Colors.textLight}
-                keyboardType="numbers-and-punctuation"
+                onChange={setNewReminderTime}
+                colors={Colors}
+                label="Time *"
               />
             </View>
 
@@ -788,6 +816,36 @@ export default function OnboardingScreen() {
                 ))}
               </View>
             </View>
+
+            {newReminderRepeat === 'custom' && (
+              <View style={styles.modalInputGroup}>
+                <ScaledText style={styles.label}>Choose days</ScaledText>
+                <View style={styles.dayGrid}>
+                  {REMINDER_WEEKDAYS.map((day) => {
+                    const selected = newReminderCustomDays.includes(day.value);
+                    return (
+                      <TouchableOpacity
+                        key={day.value}
+                        style={[styles.dayButton, selected && styles.dayButtonActive]}
+                        onPress={() => setNewReminderCustomDays((current) =>
+                          selected ? current.filter((value) => value !== day.value) : [...current, day.value],
+                        )}
+                        activeOpacity={0.7}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: selected }}
+                      >
+                        <ScaledText style={[styles.dayText, selected && styles.dayTextActive]}>
+                          {day.shortLabel}
+                        </ScaledText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {newReminderCustomDays.length === 0 && (
+                  <ScaledText style={styles.validationText}>Choose at least one day.</ScaledText>
+                )}
+              </View>
+            )}
 
             <View style={styles.modalInputGroup}>
               <ScaledText style={styles.label}>Tone</ScaledText>
@@ -840,10 +898,11 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               style={[
                 styles.modalSaveButton,
-                !newReminderLabel.trim() && styles.modalSaveButtonDisabled,
+                (!newReminderLabel.trim() || (newReminderRepeat === 'custom' && newReminderCustomDays.length === 0))
+                  && styles.modalSaveButtonDisabled,
               ]}
               onPress={addCustomReminder}
-              disabled={!newReminderLabel.trim()}
+              disabled={!newReminderLabel.trim() || (newReminderRepeat === 'custom' && newReminderCustomDays.length === 0)}
               activeOpacity={0.7}
             >
               <ScaledText style={styles.modalSaveText}>Save Reminder</ScaledText>
@@ -1354,6 +1413,38 @@ const styles = StyleSheet.create({
   repeatTextActive: {
     color: Colors.primary,
     fontWeight: '600' as const,
+  },
+  dayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  dayButton: {
+    minWidth: 48,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+  },
+  dayButtonActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '20',
+  },
+  dayText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  dayTextActive: {
+    color: Colors.primary,
+  },
+  validationText: {
+    marginTop: 8,
+    fontSize: 13,
+    color: Colors.error,
   },
   toneGrid: {
     gap: 10,

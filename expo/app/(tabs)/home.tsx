@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, AlertCircle, Settings as SettingsIcon, Sparkles } from 'lucide-react-native';
+import { MessageCircle, Calendar as CalendarIcon, Flame, Bell, Clock, Sparkles } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Image, ActivityIndicator, Alert, useColorScheme } from 'react-native';
 import GlassCard from '@/components/GlassCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getAvatarById } from '@/constants/avatars';
 import ScaledText from '@/components/ScaledText';
 import type { QuickReminder, CustomReminder } from '@/types';
+import { classifyReminderTime, formatReminderTime, isReminderScheduledToday, parseReminderTime } from '@/lib/reminderUtils';
+import { getColors } from '@/constants/colors';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -81,18 +83,28 @@ export default function HomeScreen() {
   const getUpcomingReminders = useCallback(() => {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    const allReminders: { id: string; label: string; time: string; type: 'quick' | 'custom'; enabled: boolean }[] = [];
+    const allReminders: {
+      id: string;
+      label: string;
+      time: string;
+      type: 'quick' | 'custom';
+      enabled: boolean;
+      repeat: 'daily' | 'weekdays' | 'custom';
+      customDays?: number[];
+    }[] = [];
 
     if (preferences?.quickReminders) {
       preferences.quickReminders.forEach((reminder: QuickReminder) => {
         if (reminder.enabled) {
           const timeStr = reminder.time || getQuickReminderTime(reminder.type);
+          if (!isReminderScheduledToday('daily', undefined, now) || parseReminderTime(timeStr) === null) return;
           allReminders.push({
-            id: reminder.id,
+            id: `quick:${reminder.id}`,
             label: getQuickReminderLabel(reminder.type),
-            time: timeStr,
+            time: formatReminderTime(timeStr),
             type: 'quick',
             enabled: reminder.enabled,
+            repeat: 'daily',
           });
         }
       });
@@ -100,50 +112,45 @@ export default function HomeScreen() {
 
     if (preferences?.customReminders) {
       preferences.customReminders.forEach((reminder: CustomReminder) => {
-        if (reminder.enabled) {
+        if (reminder.enabled && isReminderScheduledToday(reminder.repeat, reminder.customDays, now)
+          && parseReminderTime(reminder.time) !== null) {
           allReminders.push({
-            id: reminder.id,
+            id: `custom:${reminder.id}`,
             label: reminder.label,
-            time: reminder.time,
+            time: formatReminderTime(reminder.time),
             type: 'custom',
             enabled: reminder.enabled,
+            repeat: reminder.repeat,
+            customDays: reminder.customDays,
           });
         }
       });
     }
 
-    const parseTime = (timeStr: string) => {
-      const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-      if (!match) return 0;
-      let hours = parseInt(match[1]);
-      const minutes = parseInt(match[2]);
-      const period = match[3].toUpperCase();
-      
-      if (period === 'PM' && hours !== 12) hours += 12;
-      if (period === 'AM' && hours === 12) hours = 0;
-      
-      return hours * 60 + minutes;
-    };
-
-    const sorted = allReminders.sort((a, b) => parseTime(a.time) - parseTime(b.time));
+    const sorted = allReminders.sort((a, b) =>
+      (parseReminderTime(a.time) ?? 0) - (parseReminderTime(b.time) ?? 0),
+    );
     
     const upcoming: typeof allReminders = [];
-    const missed: typeof allReminders = [];
+    const earlier: typeof allReminders = [];
 
     sorted.forEach((reminder) => {
-      const reminderTime = parseTime(reminder.time);
-      if (reminderTime > currentTime) {
+      const status = classifyReminderTime(reminder.time, currentTime);
+      if (status === 'upcoming') {
         upcoming.push(reminder);
-      } else {
-        missed.push(reminder);
+      } else if (status === 'earlier') {
+        // There is no completion record attached to reminders yet, so an
+        // elapsed reminder is shown as earlier rather than incorrectly
+        // declaring that the user missed it.
+        earlier.push(reminder);
       }
     });
 
-    return { upcoming: upcoming.slice(0, 3), missed: missed.slice(0, 2) };
+    return { upcoming: upcoming.slice(0, 3), earlier: earlier.slice(-2) };
   }, [preferences]);
 
   const reminders = useMemo(() => getUpcomingReminders(), [getUpcomingReminders]);
-  const hasReminders = (reminders.upcoming.length > 0 || reminders.missed.length > 0) && preferences?.reminders;
+  const hasReminders = (reminders.upcoming.length > 0 || reminders.earlier.length > 0) && preferences?.reminders;
 
   const therapistUnreadCount = useMemo(() => {
     return chatMessages.filter(
@@ -342,26 +349,20 @@ export default function HomeScreen() {
                 <Bell size={20} color={Colors.text} />
                 <ScaledText style={styles.cardTitle}>Reminders</ScaledText>
               </View>
-              <TouchableOpacity 
-                onPress={() => router.push('/(tabs)/settings' as any)}
-                style={styles.settingsButton}
-              >
-                <SettingsIcon size={18} color={Colors.textSecondary} />
-              </TouchableOpacity>
             </View>
 
-            {reminders.missed.length > 0 && (
+            {reminders.earlier.length > 0 && (
               <View style={styles.missedSection}>
                 <View style={styles.missedHeader}>
-                  <AlertCircle size={16} color="#FF9800" />
-                  <ScaledText style={styles.missedTitle}>Missed</ScaledText>
+                  <Clock size={16} color={Colors.textSecondary} />
+                  <ScaledText style={styles.missedTitle}>Earlier today</ScaledText>
                 </View>
-                {reminders.missed.map((reminder) => (
+                {reminders.earlier.map((reminder) => (
                   <View key={reminder.id} style={[styles.reminderItem, styles.missedReminderItem]}>
-                    <Clock size={16} color="#FF9800" />
+                    <Clock size={16} color={Colors.textSecondary} />
                     <View style={styles.reminderContent}>
-                      <ScaledText style={[styles.reminderLabel, styles.missedLabel]}>{reminder.label}</ScaledText>
-                      <ScaledText style={[styles.reminderTime, styles.missedTime]}>{reminder.time}</ScaledText>
+                      <ScaledText style={styles.reminderLabel}>{reminder.label}</ScaledText>
+                      <ScaledText style={styles.reminderTime}>{reminder.time}</ScaledText>
                     </View>
                   </View>
                 ))}
@@ -370,7 +371,7 @@ export default function HomeScreen() {
 
             {reminders.upcoming.length > 0 && (
               <View style={styles.upcomingSection}>
-                {reminders.missed.length > 0 && <View style={styles.reminderDivider} />}
+                {reminders.earlier.length > 0 && <View style={styles.reminderDivider} />}
                 <View style={styles.upcomingHeader}>
                   <Clock size={16} color={Colors.text} />
                   <ScaledText style={styles.upcomingTitle}>Upcoming</ScaledText>
@@ -387,7 +388,7 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {reminders.upcoming.length === 0 && reminders.missed.length === 0 && (
+            {reminders.upcoming.length === 0 && reminders.earlier.length === 0 && (
               <ScaledText style={styles.noReminders}>No reminders set for today</ScaledText>
             )}
             </GlassCard>
@@ -398,26 +399,20 @@ export default function HomeScreen() {
                   <Bell size={20} color={Colors.text} />
                   <ScaledText style={styles.cardTitle}>Reminders</ScaledText>
                 </View>
-                <TouchableOpacity 
-                  onPress={() => router.push('/(tabs)/settings' as any)}
-                  style={styles.settingsButton}
-                >
-                  <SettingsIcon size={18} color={Colors.textSecondary} />
-                </TouchableOpacity>
               </View>
 
-              {reminders.missed.length > 0 && (
+              {reminders.earlier.length > 0 && (
                 <View style={styles.missedSection}>
                   <View style={styles.missedHeader}>
-                    <AlertCircle size={16} color="#FF9800" />
-                    <ScaledText style={styles.missedTitle}>Missed</ScaledText>
+                    <Clock size={16} color={Colors.textSecondary} />
+                    <ScaledText style={styles.missedTitle}>Earlier today</ScaledText>
                   </View>
-                  {reminders.missed.map((reminder) => (
+                  {reminders.earlier.map((reminder) => (
                     <View key={reminder.id} style={[styles.reminderItem, styles.missedReminderItem]}>
-                      <Clock size={16} color="#FF9800" />
+                      <Clock size={16} color={Colors.textSecondary} />
                       <View style={styles.reminderContent}>
-                        <ScaledText style={[styles.reminderLabel, styles.missedLabel]}>{reminder.label}</ScaledText>
-                        <ScaledText style={[styles.reminderTime, styles.missedTime]}>{reminder.time}</ScaledText>
+                        <ScaledText style={styles.reminderLabel}>{reminder.label}</ScaledText>
+                        <ScaledText style={styles.reminderTime}>{reminder.time}</ScaledText>
                       </View>
                     </View>
                   ))}
@@ -426,7 +421,7 @@ export default function HomeScreen() {
 
               {reminders.upcoming.length > 0 && (
                 <View style={styles.upcomingSection}>
-                  {reminders.missed.length > 0 && <View style={styles.reminderDivider} />}
+                  {reminders.earlier.length > 0 && <View style={styles.reminderDivider} />}
                   <View style={styles.upcomingHeader}>
                     <Clock size={16} color={Colors.text} />
                     <ScaledText style={styles.upcomingTitle}>Upcoming</ScaledText>
@@ -443,7 +438,7 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              {reminders.upcoming.length === 0 && reminders.missed.length === 0 && (
+              {reminders.upcoming.length === 0 && reminders.earlier.length === 0 && (
                 <ScaledText style={styles.noReminders}>No reminders set for today</ScaledText>
               )}
             </View>
