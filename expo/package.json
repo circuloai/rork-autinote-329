@@ -12,11 +12,12 @@
     "start-web-dev": "DEBUG=expo* bunx rork start -p i3iytomcfmnnh5v3rdwxs --web",
     "lint": "expo lint",
     "test:autumn": "bun test backend/trpc/routes/ai/autumn/*.test.ts",
-    "postinstall": "bun scripts/patch-freeport.cjs"
+    "postinstall": "node scripts/patch-freeport.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/playfair-display": "^0.4.2",
+    "@expo/config-plugins": "~54.0.4",
     "@expo/vector-icons": "^15.0.3",
     "@hono/node-server": "^1.19.9",
     "@hono/trpc-server": "^0.4.0",
