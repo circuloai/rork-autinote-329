@@ -102,9 +102,7 @@
     "@eslint/plugin-kit": "0.7.2",
     "minimatch": "3.1.5",
     "brace-expansion": "1.1.16"
-  },
-  "private": true,
-  "patchedDependencies": {
-    "@teovilla/react-native-web-maps@0.9.5": "patches/@teovilla%2Freact-native-web-maps@0.9.5.patch"
   }
+  ,
+  "private": true
 }
