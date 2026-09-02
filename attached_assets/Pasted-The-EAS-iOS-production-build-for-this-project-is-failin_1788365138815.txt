@@ -1,0 +1,59 @@
+The EAS iOS production build for this project is failing during dependency
+installation with:
+
+  error: Integrity check failed for tarball: @hono/node-server
+  error: IntegrityCheckFailed extracting tarball from @hono/node-server
+  bun install exited with non-zero code: 1
+
+Root cause: the integrity hash for @hono/node-server in expo/bun.lock is
+corrupted. Fifteen characters were dropped from the middle of the base64
+hash and fifteen "A" characters were appended to the end to preserve the
+string length. Bun downloads the real tarball, hashes it, sees the
+mismatch, and aborts.
+
+Please make exactly these changes:
+
+1. In expo/bun.lock, find the @hono/node-server entry (around line 367)
+   and replace this integrity string:
+
+   sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynASJwrPQAAAAAAAAAAAAAAA==
+
+   with the correct hash from the npm registry:
+
+   sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynAMMtNIzZNSpL9vnASJwrPQ==
+
+   Change nothing else on that line — the version (1.19.17) and the
+   peerDependencies block are correct.
+
+2. Delete expo/package-lock.json. Bun is the package manager used by the
+   EAS build, so this file is unused. It is also out of sync: it does not
+   contain any of the 25 entries from the "overrides" block in
+   expo/package.json.
+
+3. In expo/package.json, remove the "eas-build-pre-install" script. It
+   rewrites Replit package-firewall registry URLs in bun.lock, but there
+   are no such URLs left in the file, so it does nothing.
+
+4. In expo/package.json, guard the postinstall script so it does not run
+   in CI. Add this as the first line of expo/scripts/patch-freeport.cjs:
+
+     if (process.env.EAS_BUILD || process.env.CI) process.exit(0);
+
+   That script throws if its string replacement fails, which would take
+   down the whole EAS build.
+
+IMPORTANT CONSTRAINTS:
+- Do NOT run `bun install`, `npm install`, or any other install command.
+  Replit's package-firewall proxy is the likely source of the corrupted
+  hash, so regenerating the lockfile here risks reintroducing the bug.
+  Edit bun.lock as text only.
+- Do NOT change any dependency versions in expo/package.json.
+- Do NOT modify expo/eas.json, expo/app.json, or expo/app.config.js.
+
+Then verify and report the output of these two commands:
+
+  grep -c 'AAAAAAAAAA' expo/bun.lock        # must print 0
+  grep -n 'hono/node-server' expo/bun.lock  # show me the corrected line
+
+Finally, commit the changes with the message:
+"Fix corrupted @hono/node-server integrity hash in bun.lock"
