@@ -18,6 +18,7 @@ type SettingsItem = {
 };
 
 const SUPPORT_URL = 'https://sites.google.com/view/autinoteus';
+const ABOUT_URL = 'https://sites.google.com/view/autinoteus/about';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -33,6 +34,12 @@ export default function SettingsScreen() {
   const handleOpenSupport = useCallback(() => {
     void Linking.openURL(SUPPORT_URL).catch(() => {
       Alert.alert('Support Unavailable', 'We could not open the support page. Please try again later.');
+    });
+  }, []);
+
+  const handleOpenAbout = useCallback(() => {
+    void Linking.openURL(ABOUT_URL).catch(() => {
+      Alert.alert('About Unavailable', 'We could not open the About page. Please try again later.');
     });
   }, []);
 
@@ -191,8 +198,11 @@ export default function SettingsScreen() {
           onPress: () => {
             Alert.alert(
               'AutiNote',
-              'Version 1.0.0 (Beta)\n\n📱 About the App:\nAutiNote is a comprehensive behavior tracking and mood logging app designed for parents and caregivers of autistic children. Track daily moods, behaviors, sleep patterns, and meltdowns while gaining insights through AI-powered analysis.\n\nFeatures:\n• Daily mood and behavior logging\n• AI chat assistant (Autumn)\n• Pattern recognition and insights\n• Calendar view of historical data\n• Meltdown tracking with severity ratings\n\n👩\u200d💻 About the Developer:\nCreated by Anika Kale, a high school student at Montgomery High School, passionate about creating tools that make a difference in people\'s lives.\n\nMore features coming soon!\n\n✨ Crafted with love ✨',
-              [{ text: 'OK' }]
+              'Version 1.0.0 (Beta)\n\n📱 About the App:\nAutiNote is a comprehensive behavior tracking and mood logging app designed for parents and caregivers of autistic children. Track daily moods, behaviors, sleep patterns, and meltdowns while gaining insights through AI-powered analysis.\n\nFeatures:\n• Daily mood and behavior logging\n• AI chat assistant (Autumn)\n• Pattern recognition and insights\n• Calendar view of historical data\n• Meltdown tracking with severity ratings\n\n👩\u200d💻 About the Developer:\nCreated by Anika Kale, a high school student at Montgomery High School, passionate about creating tools that make a difference in people\'s lives.\n\nLearn more about AutiNote and its developer on our About page.\n\n✨ Crafted with love ✨',
+              [
+                { text: 'Close', style: 'cancel' },
+                { text: 'Open About', onPress: handleOpenAbout },
+              ]
             );
           },
         },
