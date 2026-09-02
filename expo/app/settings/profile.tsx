@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check } from 'lucide-react-native';
+import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Check, Trash2 } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +15,7 @@ export default function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile, preferences, saveProfile } = useApp();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
@@ -92,6 +93,36 @@ export default function ProfileSettingsScreen() {
       setIsChangingPassword(false);
     }
   }, [newPassword, passwordValid]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    try {
+      // TODO: Replace this stub with the authenticated backend account-deletion
+      // request that removes the user's account and associated server data.
+      await Promise.resolve();
+
+      const { error } = await signOut();
+      if (error) throw error;
+      router.replace('/login' as any);
+    } catch (error: any) {
+      console.error('[Account] Delete account failed:', error?.message || error);
+      Alert.alert('Delete Account', 'We could not complete account deletion. Please try again.');
+    }
+  }, [router, signOut]);
+
+  const confirmDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account and all associated data? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => void handleDeleteAccount(),
+        },
+      ],
+    );
+  }, [handleDeleteAccount]);
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
@@ -370,6 +401,25 @@ export default function ProfileSettingsScreen() {
             )}
           </View>
 
+          <View style={styles.section}>
+            <ScaledText style={styles.sectionTitle}>DANGER ZONE</ScaledText>
+            <TouchableOpacity
+              style={styles.deleteAccountButton}
+              onPress={confirmDeleteAccount}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Account"
+            >
+              <Trash2 size={20} color={Colors.error} />
+              <View style={styles.deleteAccountContent}>
+                <ScaledText style={styles.deleteAccountTitle}>Delete Account</ScaledText>
+                <ScaledText style={styles.deleteAccountHint}>
+                  Permanently remove your account and associated data
+                </ScaledText>
+              </View>
+            </TouchableOpacity>
+          </View>
+
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -528,6 +578,30 @@ const createStyles = (Colors: ReturnType<typeof getColors>) =>
     updatePasswordText: {
       fontSize: 15,
       fontWeight: '600' as const,
+    },
+    deleteAccountButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: Colors.error,
+      backgroundColor: Colors.surface,
+    },
+    deleteAccountContent: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    deleteAccountTitle: {
+      fontSize: 16,
+      fontWeight: '600' as const,
+      color: Colors.error,
+    },
+    deleteAccountHint: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: Colors.textSecondary,
+      marginTop: 2,
     },
     avatarSection: {
       alignItems: 'center',

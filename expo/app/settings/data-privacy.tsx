@@ -11,6 +11,7 @@ import GlassCard from '@/components/GlassCard';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/lib/supabase';
+import { clearStoredAiConsent } from '@/components/AiConsentModal';
 
 export default function DataPrivacyScreen() {
   const insets = useSafeAreaInsets();
@@ -132,14 +133,17 @@ export default function DataPrivacyScreen() {
         {
           text: 'Turn Off',
           style: 'destructive',
-          onPress: () => savePreferences({
-            ...preferences,
-            aiPreferences: {
-              ...preferences.aiPreferences,
-              consentStatus: 'denied',
-              personalizationEnabled: false,
-            },
-          }),
+          onPress: async () => {
+            await clearStoredAiConsent();
+            savePreferences({
+              ...preferences,
+              aiPreferences: {
+                ...preferences.aiPreferences,
+                consentStatus: 'denied',
+                personalizationEnabled: false,
+              },
+            });
+          },
         },
       ]
     );

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
 import { useColors } from '@/hooks/useColors';
@@ -9,6 +9,7 @@ import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
 import { trpcClient } from '@/lib/trpc';
 import type { Preferences } from '@/types';
+import AiConsentModal, { getStoredAiConsent } from '@/components/AiConsentModal';
 
 type ChatRole = 'user' | 'assistant';
 
@@ -52,8 +53,19 @@ export default function ChatScreen() {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [consentPending, setConsentPending] = useState<string | null>(null);
   const [consentGrantedThisSession, setConsentGrantedThisSession] = useState(false);
+  const [storedAiConsent, setStoredAiConsent] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const clearedRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void getStoredAiConsent().then((accepted) => {
+      if (mounted) setStoredAiConsent(accepted);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const appendLocalTextMessage = useCallback((role: ChatRole, text: string) => {
     const msg: ChatMessage = {
@@ -126,7 +138,11 @@ export default function ChatScreen() {
     const text = input.trim();
     if (!text || sending) return;
 
-    if (!consentGrantedThisSession && preferences?.aiPreferences?.consentStatus !== 'granted') {
+    if (
+      !consentGrantedThisSession &&
+      preferences?.aiPreferences?.consentStatus !== 'granted' &&
+      !storedAiConsent
+    ) {
       setConsentPending(text);
       return;
     }
@@ -150,7 +166,7 @@ export default function ChatScreen() {
         [{ text: 'OK' }]
       );
     }
-  }, [appendLocalTextMessage, sendChat, input, sending, preferences?.aiPreferences?.consentStatus, consentGrantedThisSession]);
+  }, [appendLocalTextMessage, sendChat, input, sending, preferences?.aiPreferences?.consentStatus, consentGrantedThisSession, storedAiConsent]);
 
   const acceptConsent = useCallback(() => {
     setConsentPending(null);
@@ -322,32 +338,16 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-        <Modal
-          transparent
+        <AiConsentModal
           visible={consentPending !== null}
-          animationType="fade"
-          onRequestClose={() => setConsentPending(null)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={styles.consentCard}>
-              <ScaledText style={styles.consentTitle}>Use Autumn securely</ScaledText>
-              <ScaledText style={styles.consentText}>
-                Autumn sends your message and a small amount of relevant, selected context to OpenAI for a response. It does not send names, schools, photos, therapist notes, full journal entries, or chat history. Chat history stays on this device.
-              </ScaledText>
-              <ScaledText style={styles.consentText}>
-                Autumn offers general support, not medical or clinical advice. You can withdraw this permission any time in Data & Privacy.
-              </ScaledText>
-              <View style={styles.consentActions}>
-                <TouchableOpacity style={styles.consentSecondaryButton} onPress={() => setConsentPending(null)}>
-                  <ScaledText style={styles.consentSecondaryText}>Not now</ScaledText>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.consentPrimaryButton} onPress={acceptConsent}>
-                  <ScaledText style={styles.consentPrimaryText}>I agree</ScaledText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+          onCancel={() => setConsentPending(null)}
+          onAgree={() => {
+            setStoredAiConsent(true);
+            acceptConsent();
+          }}
+          providerName="OpenAI"
+          preferences={preferences}
+        />
     </View>
   );
 }

@@ -74,8 +74,13 @@ export default function AvatarPicker({
   return (
     <View style={styles.wrapper}>
       <TouchableOpacity
+        style={styles.avatarButton}
         onPress={() => setMenuVisible(true)}
         activeOpacity={0.7}
+        hitSlop={{ top: 16, right: 16, bottom: 16, left: 16 }}
+        pressRetentionOffset={{ top: 20, right: 20, bottom: 20, left: 20 }}
+        accessibilityRole="button"
+        accessibilityLabel="Change profile picture"
         testID={testID}
       >
         <View style={[styles.avatarCircle, { backgroundColor: current?.bg || Colors.primary + '20' }]}>
@@ -190,6 +195,13 @@ const createStyles = (Colors: ReturnType<typeof getColors>, size: number) =>
   StyleSheet.create({
     wrapper: {
       alignItems: 'center',
+      zIndex: 2,
+      elevation: 2,
+    },
+    avatarButton: {
+      width: size,
+      height: size,
+      position: 'relative',
     },
     avatarCircle: {
       width: size,
