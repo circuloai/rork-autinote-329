@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import type { MoodRating, AnyLogEntry, DailyLogEntry, MeltdownLogEntry, LogEntry } from '@/types';
@@ -10,7 +11,21 @@ import { Download } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import GlassCard from '@/components/GlassCard';
+import {
+  calculateLoggingGoal,
+  filterLogsByProgressRange,
+  type ProgressTimeRange,
+} from '@/lib/progressUtils';
 
+type ProgressChart = 'mood' | 'sleep' | 'meltdowns' | 'behaviors';
+
+const RANGE_LABELS: Record<ProgressTimeRange, string> = {
+  week: 'This Week',
+  month: 'This Month',
+  '3months': 'Last 3 Months',
+};
+
+const ALL_CHARTS: ProgressChart[] = ['mood', 'sleep', 'meltdowns', 'behaviors'];
 
 
 export default function InsightsScreen() {
@@ -20,11 +35,22 @@ export default function InsightsScreen() {
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
+  const progressTimeRange: ProgressTimeRange = preferences?.progressTimeRange || 'month';
+  const visibleCharts = preferences?.progressCharts?.length
+    ? preferences.progressCharts
+    : ALL_CHARTS;
+  const showTrends = preferences?.progressShowTrends !== false;
+  const showGoals = preferences?.progressShowGoals !== false;
+
+  const filteredLogs = useMemo(() => {
+    return filterLogsByProgressRange(activeChildLogs, progressTimeRange);
+  }, [activeChildLogs, progressTimeRange]);
+
 
 
   const moodCounts = useMemo(() => {
     const counts = { good: 0, mixed: 0, challenging: 0 };
-    const dailyLogs = activeChildLogs.filter(log => log.type === 'daily');
+    const dailyLogs = filteredLogs.filter(log => log.type === 'daily');
     
     dailyLogs.forEach(logEntry => {
       const log = logEntry as AnyLogEntry;
@@ -38,13 +64,13 @@ export default function InsightsScreen() {
       }
     });
     return counts;
-  }, [activeChildLogs]);
+  }, [filteredLogs]);
 
   const totalLogs = moodCounts.good + moodCounts.mixed + moodCounts.challenging;
 
   const moodTags = useMemo(() => {
     const tagCounts: Record<string, number> = {};
-    const dailyLogs = activeChildLogs.filter(log => log.type === 'daily');
+    const dailyLogs = filteredLogs.filter(log => log.type === 'daily');
     
     dailyLogs.forEach(logEntry => {
       const log = logEntry as AnyLogEntry;
@@ -57,13 +83,13 @@ export default function InsightsScreen() {
     return Object.entries(tagCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
-  }, [activeChildLogs]);
+  }, [filteredLogs]);
 
   const meltdownLogs = useMemo(() => {
-    return activeChildLogs
+    return filteredLogs
       .map(log => log as AnyLogEntry)
       .filter((log): log is MeltdownLogEntry => log.type === 'meltdown');
-  }, [activeChildLogs]);
+  }, [filteredLogs]);
 
   const profileBasedInsights = useMemo(() => {
     if (!activeChild) return null;
@@ -71,7 +97,7 @@ export default function InsightsScreen() {
     const insights = [];
     
     if (activeChild.diagnosis?.toLowerCase().includes('autism') || activeChild.diagnosis?.toLowerCase().includes('asd')) {
-      const sensoryLogs = activeChildLogs.filter(log => {
+      const sensoryLogs = filteredLogs.filter(log => {
         const moodTags = log.type === 'daily' ? (log as DailyLogEntry).moodTags : log.type === 'meltdown' ? [] : (log as LogEntry).moodTags;
         const triggers = log.type === 'meltdown' ? (log as MeltdownLogEntry).triggers : [];
         return moodTags?.includes('sensory') || triggers?.some((t: string) => t.toLowerCase().includes('sensory'));
@@ -79,26 +105,26 @@ export default function InsightsScreen() {
       insights.push({
         title: 'Sensory Processing',
         value: sensoryLogs.length,
-        total: activeChildLogs.length,
+        total: filteredLogs.length,
         description: 'Logs mentioning sensory experiences',
       });
     }
     
     if (activeChild.diagnosis?.toLowerCase().includes('adhd')) {
-      const focusLogs = activeChildLogs.filter(log => {
+      const focusLogs = filteredLogs.filter(log => {
         const moodTags = log.type === 'daily' ? (log as DailyLogEntry).moodTags : log.type === 'meltdown' ? [] : (log as LogEntry).moodTags;
         return moodTags?.includes('focused');
       });
       insights.push({
         title: 'Focus Tracking',
         value: focusLogs.length,
-        total: activeChildLogs.length,
+        total: filteredLogs.length,
         description: 'Days with good focus',
       });
     }
     
     if (activeChild.commonTriggers && activeChild.commonTriggers.length > 0) {
-      const triggerRelatedLogs = activeChildLogs.filter(log => {
+      const triggerRelatedLogs = filteredLogs.filter(log => {
         if (log.type === 'meltdown') return true;
         if (log.type === 'daily') return (log as DailyLogEntry).overallRating === 'challenging';
         return (log as LogEntry).moodRating === 'challenging';
@@ -106,13 +132,13 @@ export default function InsightsScreen() {
       insights.push({
         title: 'Known Trigger Events',
         value: triggerRelatedLogs.length,
-        total: activeChildLogs.length,
+        total: filteredLogs.length,
         description: 'Challenging moments tracked',
       });
     }
     
     return insights;
-  }, [activeChild, activeChildLogs]);
+  }, [activeChild, filteredLogs]);
 
   const meltdownStats = useMemo(() => {
     const stats = {
@@ -147,14 +173,71 @@ export default function InsightsScreen() {
     return stats;
   }, [meltdownLogs]);
 
+  const trendData = useMemo(() => {
+    const byDate = new Map<string, {
+      moodTotal: number;
+      moodCount: number;
+      sleepTotal: number;
+      sleepCount: number;
+    }>();
+
+    filteredLogs.forEach((entry) => {
+      const date = new Date(entry.date).toISOString().split('T')[0];
+      const current = byDate.get(date) || {
+        moodTotal: 0,
+        moodCount: 0,
+        sleepTotal: 0,
+        sleepCount: 0,
+      };
+
+      if (entry.type === 'daily') {
+        const daily = entry as DailyLogEntry;
+        current.moodTotal += daily.overallRating === 'great' ? 3 : daily.overallRating === 'mixed' ? 2 : 1;
+        current.moodCount += 1;
+        if (typeof daily.sleepHours === 'number') {
+          current.sleepTotal += daily.sleepHours;
+          current.sleepCount += 1;
+        }
+      } else if ('sleepHours' in entry && typeof (entry as LogEntry).sleepHours === 'number') {
+        current.sleepTotal += (entry as LogEntry).sleepHours || 0;
+        current.sleepCount += 1;
+      }
+      byDate.set(date, current);
+    });
+
+    return Array.from(byDate.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, values]) => ({
+        date,
+        mood: values.moodCount ? values.moodTotal / values.moodCount : 0,
+        sleep: values.sleepCount ? values.sleepTotal / values.sleepCount : 0,
+      }));
+  }, [filteredLogs]);
+
+  const behaviorStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredLogs.forEach((entry) => {
+      if ('behaviors' in entry && Array.isArray((entry as LogEntry).behaviors)) {
+        (entry as LogEntry).behaviors?.forEach((behavior) => {
+          counts[behavior] = (counts[behavior] || 0) + 1;
+        });
+      }
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [filteredLogs]);
+
+  const goalStats = useMemo(() => {
+    return calculateLoggingGoal(filteredLogs, progressTimeRange);
+  }, [filteredLogs, progressTimeRange]);
+
   const generatePDFReport = async () => {
     if (!activeChild) return;
     
     setIsGeneratingPDF(true);
 
     let dateRange = null;
-    if (activeChildLogs.length > 0) {
-      const dates = activeChildLogs.map(log => new Date(log.date).getTime());
+    if (filteredLogs.length > 0) {
+      const dates = filteredLogs.map(log => new Date(log.date).getTime());
       const earliest = new Date(Math.min(...dates));
       const latest = new Date(Math.max(...dates));
       dateRange = {
@@ -202,7 +285,7 @@ export default function InsightsScreen() {
           <div class="card">
             <div class="stat-grid">
               <div class="stat">
-                <div class="stat-value">${activeChildLogs.length}</div>
+                <div class="stat-value">${filteredLogs.length}</div>
                 <div class="stat-label">Total Entries</div>
               </div>
               <div class="stat">
@@ -210,7 +293,7 @@ export default function InsightsScreen() {
                 <div class="stat-label">Meltdown Logs</div>
               </div>
               <div class="stat">
-                <div class="stat-value">${activeChildLogs.filter(log => {
+                <div class="stat-value">${filteredLogs.filter(log => {
                   const logDate = new Date(log.date);
                   const now = new Date();
                   return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
@@ -314,7 +397,7 @@ export default function InsightsScreen() {
           ` : ''}
 
           <h2>Daily Log Entries</h2>
-          ${activeChildLogs
+          ${filteredLogs
             .map(log => log as AnyLogEntry)
             .filter((log): log is DailyLogEntry => log.type === 'daily' && 'overallRating' in log)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -391,12 +474,12 @@ export default function InsightsScreen() {
         <View style={styles.headerTop}>
           <View>
             <ScaledText style={styles.title}>Insights</ScaledText>
-            <ScaledText style={styles.subtitle}>Last 30 Days</ScaledText>
+            <ScaledText style={styles.subtitle}>{RANGE_LABELS[progressTimeRange]}</ScaledText>
           </View>
           <TouchableOpacity 
             style={styles.pdfButton} 
             onPress={generatePDFReport}
-            disabled={isGeneratingPDF || activeChildLogs.length === 0}
+            disabled={isGeneratingPDF || filteredLogs.length === 0}
           >
             {isGeneratingPDF ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -411,6 +494,78 @@ export default function InsightsScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {showGoals && (
+          <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
+            <View style={styles.goalHeader}>
+              <View>
+                <ScaledText style={styles.cardTitle}>🎯 Logging Goal</ScaledText>
+                <ScaledText style={styles.helperText}>
+                  {goalStats.loggedDays} of {goalStats.targetDays} target days
+                </ScaledText>
+              </View>
+              <ScaledText style={styles.goalPercent}>{goalStats.percent}%</ScaledText>
+            </View>
+            <View style={styles.goalBar}>
+              <View style={[styles.goalBarFill, { width: `${goalStats.percent}%` }]} />
+            </View>
+            <ScaledText style={styles.chartNote}>
+              {goalStats.loggedDays >= goalStats.targetDays
+                ? 'Goal reached for this period.'
+                : `${Math.max(0, goalStats.nextMilestone - goalStats.loggedDays)} more logged ${goalStats.nextMilestone - goalStats.loggedDays === 1 ? 'day' : 'days'} to the next milestone.`}
+            </ScaledText>
+          </GlassCard>
+        )}
+
+        {visibleCharts.includes('mood') && trendData.length > 0 && (
+          <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
+            <ScaledText style={styles.cardTitle}>📈 Mood Trend</ScaledText>
+            <View style={styles.miniChart}>
+              {trendData.slice(-14).map((point) => (
+                <View key={point.date} style={styles.miniChartColumn}>
+                  <View
+                    style={[
+                      styles.miniChartBar,
+                      {
+                        height: `${Math.max(8, (point.mood / 3) * 100)}%`,
+                        backgroundColor: point.mood >= 2.5 ? Colors.goodDay : point.mood >= 1.5 ? Colors.mixedDay : Colors.challengingDay,
+                      },
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
+            {showTrends && (
+              <ScaledText style={styles.chartNote}>
+                Moving trend: {trendData[trendData.length - 1].mood >= trendData[0].mood ? 'improving' : 'needs attention'}
+              </ScaledText>
+            )}
+          </GlassCard>
+        )}
+
+        {visibleCharts.includes('sleep') && trendData.some((point) => point.sleep > 0) && (
+          <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
+            <ScaledText style={styles.cardTitle}>🌙 Sleep Pattern</ScaledText>
+            <View style={styles.miniChart}>
+              {trendData.slice(-14).map((point) => (
+                <View key={point.date} style={styles.miniChartColumn}>
+                  <View
+                    style={[
+                      styles.miniChartBar,
+                      { height: `${Math.max(8, Math.min(100, (point.sleep / 12) * 100))}%`, backgroundColor: '#3B82F6' },
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
+            {showTrends && (
+              <ScaledText style={styles.chartNote}>
+                Average sleep: {(trendData.reduce((total, point) => total + point.sleep, 0) / Math.max(1, trendData.filter((point) => point.sleep > 0).length)).toFixed(1)} hours
+              </ScaledText>
+            )}
+          </GlassCard>
+        )}
+
+        {visibleCharts.includes('mood') && (
         <GlassCard style={styles.compactCard} fallbackStyle={{ backgroundColor: Colors.surface }}>
           <ScaledText style={styles.cardTitle}>😊 Mood Distribution</ScaledText>
           {totalLogs > 0 ? (
@@ -460,6 +615,7 @@ export default function InsightsScreen() {
             <ScaledText style={styles.emptyText}>No data yet. Start logging to see insights!</ScaledText>
           )}
         </GlassCard>
+        )}
 
         {moodTags.length > 0 && (
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
@@ -478,7 +634,7 @@ export default function InsightsScreen() {
           </GlassCard>
         )}
 
-        {meltdownStats.total > 0 && (
+        {visibleCharts.includes('meltdowns') && meltdownStats.total > 0 && (
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <ScaledText style={styles.cardTitle}>⚠️ Meltdown Analysis</ScaledText>
             
@@ -554,6 +710,20 @@ export default function InsightsScreen() {
           </GlassCard>
         )}
 
+        {visibleCharts.includes('behaviors') && (
+          <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
+            <ScaledText style={styles.cardTitle}>📊 Behavior Analysis</ScaledText>
+            {behaviorStats.length > 0 ? behaviorStats.map(([behavior, count]) => (
+              <View key={behavior} style={styles.triggerItem}>
+                <ScaledText style={styles.triggerName}>{getTriggerLabel(behavior)}</ScaledText>
+                <ScaledText style={styles.triggerCount}>{count} {count === 1 ? 'entry' : 'entries'}</ScaledText>
+              </View>
+            )) : (
+              <ScaledText style={styles.emptyText}>No behavior data in this period.</ScaledText>
+            )}
+          </GlassCard>
+        )}
+
         {profileBasedInsights && profileBasedInsights.length > 0 && (
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <ScaledText style={styles.cardTitle}>🎯 Personalized Insights</ScaledText>
@@ -587,7 +757,7 @@ export default function InsightsScreen() {
               How often known triggers appear in logs
             </ScaledText>
             {activeChild.commonTriggers.slice(0, 5).map((trigger: string, idx: number) => {
-              const mentionCount = activeChildLogs.filter(log => {
+              const mentionCount = filteredLogs.filter(log => {
                 const positiveNotes = log.type === 'daily' ? (log as DailyLogEntry).whatWentWell || '' : (log as LogEntry).positiveNotes || '';
                 const challengeNotes = log.type === 'daily' ? (log as DailyLogEntry).whatWasChallenging || '' : log.type === 'meltdown' ? (log as MeltdownLogEntry).additionalNotes || '' : (log as LogEntry).challengeNotes || '';
                 const logText = `${positiveNotes} ${challengeNotes}`.toLowerCase();
@@ -609,12 +779,12 @@ export default function InsightsScreen() {
           <ScaledText style={styles.cardTitle}>📈 Summary</ScaledText>
           <View style={styles.summaryItem}>
             <ScaledText style={styles.summaryLabel}>Total Entries</ScaledText>
-            <ScaledText style={styles.summaryValue}>{activeChildLogs.length}</ScaledText>
+            <ScaledText style={styles.summaryValue}>{filteredLogs.length}</ScaledText>
           </View>
           <View style={styles.summaryItem}>
             <ScaledText style={styles.summaryLabel}>This Month</ScaledText>
             <ScaledText style={styles.summaryValue}>
-              {activeChildLogs.filter(log => {
+              {filteredLogs.filter(log => {
                 const logDate = new Date(log.date);
                 const now = new Date();
                 return logDate.getMonth() === now.getMonth() && 
@@ -684,6 +854,46 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     fontWeight: '600' as const,
     color: Colors.text,
     marginBottom: 16,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  goalPercent: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+  },
+  goalBar: {
+    height: 10,
+    borderRadius: 5,
+    overflow: 'hidden',
+    backgroundColor: Colors.borderLight,
+    marginTop: 4,
+  },
+  goalBarFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 5,
+  },
+  miniChart: {
+    height: 120,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+    paddingTop: 10,
+  },
+  miniChartColumn: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'flex-end',
+    maxWidth: 18,
+  },
+  miniChartBar: {
+    width: '100%',
+    minHeight: 6,
+    borderRadius: 4,
   },
   chart: {
     flexDirection: 'row',

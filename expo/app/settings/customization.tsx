@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Stack } from 'expo-router';
 import { Check, Moon } from 'lucide-react-native';
-import { getFontScale } from '@/constants/colors';
+import { getFontScale, getColors } from '@/constants/colors';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
@@ -19,28 +19,46 @@ const FONT_SIZE_LABELS: Record<FontSize, string> = {
 };
 
 export default function CustomizationScreen() {
-  const { preferences, savePreferences } = useApp();
+  const { preferences, savePreferencesAsync } = useApp();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [fontSize, setFontSize] = useState<FontSize>((preferences?.fontSize as FontSize) || 'medium');
+  const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => {
+    if (preferences?.fontSize) setFontSize(preferences.fontSize);
+  }, [preferences?.fontSize]);
   // Preview scale based on the locally selected size (not yet saved)
   const previewScale = useMemo(() => getFontScale({ fontSize } as Preferences), [fontSize]);
 
   const isDarkMode = preferences?.theme === 'dark';
-  const handleToggleDark = useCallback((value: boolean) => {
-    if (preferences) {
-      savePreferences({ ...preferences, theme: value ? 'dark' : 'light' });
+  const handleToggleDark = useCallback(async (value: boolean) => {
+    if (!preferences || isSaving) return;
+    setIsSaving(true);
+    try {
+      await savePreferencesAsync({ ...preferences, theme: value ? 'dark' : 'light' });
+    } catch (error: any) {
+      Alert.alert('Could not save appearance', error?.message || 'Please try again.');
+    } finally {
+      setIsSaving(false);
     }
-  }, [preferences, savePreferences]);
+  }, [preferences, savePreferencesAsync, isSaving]);
 
-  const handleFontSizeChange = (newSize: FontSize) => {
+  const handleFontSizeChange = async (newSize: FontSize) => {
+    if (!preferences || isSaving) return;
+    const previousSize = fontSize;
     setFontSize(newSize);
-    if (preferences) {
-      savePreferences({
+    setIsSaving(true);
+    try {
+      await savePreferencesAsync({
         ...preferences,
         fontSize: newSize,
       });
+    } catch (error: any) {
+      setFontSize(previousSize);
+      Alert.alert('Could not save text size', error?.message || 'Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -109,7 +127,7 @@ export default function CustomizationScreen() {
                     testID={`font-size-${size}`}
                   >
                     <View style={styles.optionContent}>
-                      <Text
+                      <ScaledText
                         style={[
                           styles.optionText,
                           { fontSize: Math.round(16 * optionScale) },
@@ -117,7 +135,7 @@ export default function CustomizationScreen() {
                         ]}
                       >
                         {FONT_SIZE_LABELS[size]}
-                      </Text>
+                      </ScaledText>
                       {fontSize === size && <Check size={20} color={Colors.primary} />}
                     </View>
                   </TouchableOpacity>
@@ -131,12 +149,12 @@ export default function CustomizationScreen() {
           <ScaledText style={styles.sectionTitle}>PREVIEW</ScaledText>
           <GlassCard style={styles.card} fallbackStyle={{ backgroundColor: Colors.surface }}>
             <View style={styles.previewContent}>
-              <Text style={[styles.previewTitle, { fontSize: Math.round(20 * previewScale) }]}>
+              <ScaledText style={[styles.previewTitle, { fontSize: Math.round(20 * previewScale) }]}>
                 Sample Text
-              </Text>
-              <Text style={[styles.previewBody, { fontSize: Math.round(16 * previewScale), lineHeight: Math.round(24 * previewScale) }]}>
+              </ScaledText>
+              <ScaledText style={[styles.previewBody, { fontSize: Math.round(16 * previewScale), lineHeight: Math.round(24 * previewScale) }]}>
                 This is how your text will appear throughout the app with the selected font size. Daily logs, insights, and all other content will use this size.
-              </Text>
+              </ScaledText>
             </View>
           </GlassCard>
         </View>

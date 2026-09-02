@@ -317,11 +317,23 @@ export const [AppProvider, useApp] = createContextHook(() => {
           const stored = await AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES);
           if (stored) {
             const parsed = JSON.parse(stored) as Preferences;
-            return { ...parsed, theme: 'dark' as const };
+            // Earlier builds forced every locally stored preference to dark
+            // and used mint as the default palette. Only migrate that legacy
+            // combination; preserve deliberate choices made in newer builds.
+            const isLegacyDefault = parsed.colorTheme === 'mint';
+            return {
+              ...parsed,
+              colorTheme: isLegacyDefault ? 'warm' : parsed.colorTheme,
+              theme: isLegacyDefault && parsed.theme === 'dark'
+                ? 'auto'
+                : parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'auto'
+                  ? parsed.theme
+                  : 'auto',
+            };
           }
           return {
-            theme: 'dark' as const,
-            colorTheme: 'mint' as const,
+            theme: 'auto' as const,
+            colorTheme: 'warm' as const,
             fontSize: 'medium' as const,
             textToSpeech: false,
             reminders: false,
@@ -370,6 +382,10 @@ export const [AppProvider, useApp] = createContextHook(() => {
           journalCategories: data.ai_preferences?.journalCategories || undefined,
           journalDefaultTags: data.ai_preferences?.journalDefaultTags ?? undefined,
           journalAiSuggestions: data.ai_preferences?.journalAiSuggestions ?? undefined,
+           progressTimeRange: data.ai_preferences?.progressTimeRange || undefined,
+           progressCharts: data.ai_preferences?.progressCharts || undefined,
+           progressShowTrends: data.ai_preferences?.progressShowTrends ?? undefined,
+           progressShowGoals: data.ai_preferences?.progressShowGoals ?? undefined,
           aiPreferences: data.ai_preferences?.consent
             ? {
                 consentStatus: data.ai_preferences.consent.status || 'unknown',
@@ -579,7 +595,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     };
   }, [user, sharedAccessQuery.data, queryClient]);
 
-  const { mutate: saveProfileMutate } = useMutation({
+  const { mutate: saveProfileMutate, mutateAsync: saveProfileMutateAsync } = useMutation({
     mutationFn: async (profile: UserProfile) => {
       if (!user) {
         await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
@@ -598,11 +614,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
         is_explore_mode: profile.isExploreMode || false,
       };
 
-      const { data: existingProfile } = await supabase
+       const { data: existingProfile, error: existingProfileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
+       if (existingProfileError && existingProfileError.code !== 'PGRST116') {
+         throw existingProfileError;
+       }
 
       let savedProfile;
       if (existingProfile) {
@@ -630,11 +649,13 @@ export const [AppProvider, useApp] = createContextHook(() => {
           .map(child => child.id);
 
         if (existingChildIds.length > 0) {
-          await supabase.from('children').delete()
+          const { error: deleteChildrenError } = await supabase.from('children').delete()
             .eq('profile_id', savedProfile.id)
             .not('id', 'in', `(${existingChildIds.join(',')})`);
+          if (deleteChildrenError) throw deleteChildrenError;
         } else {
-          await supabase.from('children').delete().eq('profile_id', savedProfile.id);
+          const { error: deleteChildrenError } = await supabase.from('children').delete().eq('profile_id', savedProfile.id);
+          if (deleteChildrenError) throw deleteChildrenError;
         }
 
         for (const child of profile.children) {
@@ -657,13 +678,13 @@ export const [AppProvider, useApp] = createContextHook(() => {
             const { error: upsertError } = await supabase.from('children')
               .upsert({ id: child.id, ...childData }, { onConflict: 'id' });
             if (upsertError) {
-              console.error('[AppContext] Child upsert error:', upsertError);
+              throw upsertError;
             }
           } else {
             const { error: insertError } = await supabase.from('children')
               .insert(childData);
             if (insertError) {
-              console.error('[AppContext] Child insert error:', insertError);
+              throw insertError;
             }
           }
         }
@@ -675,15 +696,28 @@ export const [AppProvider, useApp] = createContextHook(() => {
           .limit(1);
 
         if (freshChildren && freshChildren.length > 0 && !profile.activeChildId) {
-          await supabase.from('profiles')
+          const { error: activeChildError } = await supabase.from('profiles')
             .update({ active_child_id: freshChildren[0].id })
             .eq('id', savedProfile.id);
+          if (activeChildError) throw activeChildError;
         }
       }
 
       return profile;
     },
-    onSuccess: () => {
+     onMutate: async (nextProfile) => {
+       await queryClient.cancelQueries({ queryKey: ['userProfile', user?.id] });
+       const previous = queryClient.getQueryData<UserProfile>(['userProfile', user?.id]);
+       queryClient.setQueryData(['userProfile', user?.id], nextProfile);
+       return { previous };
+     },
+     onError: (error, _nextProfile, context) => {
+       if (context?.previous) {
+         queryClient.setQueryData(['userProfile', user?.id], context.previous);
+       }
+       console.error('[AppContext] Profile save failed:', error);
+     },
+     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['userProfile', user?.id] });
       setIsAuthenticated(true);
     },
@@ -806,56 +840,84 @@ export const [AppProvider, useApp] = createContextHook(() => {
     },
   });
 
-  const { mutate: savePreferencesMutate } = useMutation({
+  const { mutate: savePreferencesMutate, mutateAsync: savePreferencesMutateAsync } = useMutation({
     mutationFn: async (prefs: Preferences) => {
+      const persistedPrefs = prefs.colorTheme === 'mint'
+        ? { ...prefs, colorTheme: 'warm' as const }
+        : prefs;
       if (!user) {
-        await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(prefs));
-        return prefs;
+        await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(persistedPrefs));
+        return persistedPrefs;
       }
 
       const prefsData = {
         user_id: user.id,
-        theme: prefs.theme,
-        color_theme: prefs.colorTheme,
-        font_size: prefs.fontSize,
-        text_to_speech: prefs.textToSpeech,
-        reminders: prefs.reminders,
-        reminder_time: prefs.reminderTime || null,
-        quick_reminders: prefs.quickReminders || null,
-        custom_reminders: prefs.customReminders || null,
-        ai_preferences: {
-          autumnStyle: prefs.autumnStyle || 'warm',
-          autumnFocus: prefs.autumnFocus || ['autism', 'behavior', 'emotional', 'sleep', 'sensory'],
-          autumnVerbosity: prefs.autumnVerbosity || 'balanced',
-          journalCategories: prefs.journalCategories || undefined,
-          journalDefaultTags: prefs.journalDefaultTags || undefined,
-          journalAiSuggestions: prefs.journalAiSuggestions !== false,
+        theme: persistedPrefs.theme,
+        color_theme: persistedPrefs.colorTheme,
+        font_size: persistedPrefs.fontSize,
+        text_to_speech: persistedPrefs.textToSpeech,
+        reminders: persistedPrefs.reminders,
+        reminder_time: persistedPrefs.reminderTime || null,
+        quick_reminders: persistedPrefs.quickReminders || null,
+        custom_reminders: persistedPrefs.customReminders || null,
+         ai_preferences: {
+          autumnStyle: persistedPrefs.autumnStyle || 'warm',
+          autumnFocus: persistedPrefs.autumnFocus || ['autism', 'behavior', 'emotional', 'sleep', 'sensory'],
+          autumnVerbosity: persistedPrefs.autumnVerbosity || 'balanced',
+          journalCategories: persistedPrefs.journalCategories || undefined,
+          journalDefaultTags: persistedPrefs.journalDefaultTags || undefined,
+          journalAiSuggestions: persistedPrefs.journalAiSuggestions !== false,
+          progressTimeRange: persistedPrefs.progressTimeRange || undefined,
+          progressCharts: persistedPrefs.progressCharts || undefined,
+          progressShowTrends: persistedPrefs.progressShowTrends ?? true,
+          progressShowGoals: persistedPrefs.progressShowGoals ?? true,
           consent: {
-            status: prefs.aiPreferences?.consentStatus || 'unknown',
-            version: prefs.aiPreferences?.consentVersion || undefined,
-            at: prefs.aiPreferences?.consentedAt || undefined,
+            status: persistedPrefs.aiPreferences?.consentStatus || 'unknown',
+            version: persistedPrefs.aiPreferences?.consentVersion || undefined,
+            at: persistedPrefs.aiPreferences?.consentedAt || undefined,
           },
-          personalizationEnabled: prefs.aiPreferences?.personalizationEnabled !== false,
+          personalizationEnabled: persistedPrefs.aiPreferences?.personalizationEnabled !== false,
         },
       };
 
-      await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(prefs));
-
-      const { data: existing } = await supabase
+       const { data: existing, error: existingError } = await supabase
         .from('preferences')
         .select('id')
         .eq('user_id', user.id)
         .single();
+       if (existingError && existingError.code !== 'PGRST116') {
+         throw existingError;
+       }
 
       if (existing) {
-        await supabase.from('preferences').update(prefsData).eq('user_id', user.id);
+         const { error } = await supabase.from('preferences').update(prefsData).eq('user_id', user.id);
+         if (error) throw error;
       } else {
-        await supabase.from('preferences').insert(prefsData);
+         const { error } = await supabase.from('preferences').insert(prefsData);
+         if (error) throw error;
       }
 
-      return prefs;
+       await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(persistedPrefs));
+       return persistedPrefs;
     },
-    onSuccess: () => {
+     onMutate: async (nextPreferences) => {
+       await queryClient.cancelQueries({ queryKey: ['preferences', user?.id] });
+       const previous = queryClient.getQueryData<Preferences>(['preferences', user?.id]);
+       queryClient.setQueryData(
+         ['preferences', user?.id],
+         nextPreferences.colorTheme === 'mint'
+           ? { ...nextPreferences, colorTheme: 'warm' as const }
+           : nextPreferences,
+       );
+       return { previous };
+     },
+     onError: (error, _nextPreferences, context) => {
+       if (context?.previous) {
+         queryClient.setQueryData(['preferences', user?.id], context.previous);
+       }
+       console.error('[AppContext] Preference save failed:', error);
+     },
+     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['preferences', user?.id] });
     },
   });
@@ -1140,9 +1202,11 @@ export const [AppProvider, useApp] = createContextHook(() => {
   }, [activeChildLogs]);
 
   const saveProfile = useCallback((profile: UserProfile) => saveProfileMutate(profile), [saveProfileMutate]);
+  const saveProfileAsync = useCallback((profile: UserProfile) => saveProfileMutateAsync(profile), [saveProfileMutateAsync]);
   const saveLog = useCallback((entry: AnyLogEntry) => saveLogMutate(entry), [saveLogMutate]);
   const deleteLog = useCallback((logId: string) => deleteLogMutate(logId), [deleteLogMutate]);
   const savePreferences = useCallback((prefs: Preferences) => savePreferencesMutate(prefs), [savePreferencesMutate]);
+  const savePreferencesAsync = useCallback((prefs: Preferences) => savePreferencesMutateAsync(prefs), [savePreferencesMutateAsync]);
   const saveChatHistory = useCallback((messages: any[]) => saveChatHistoryMutate(messages), [saveChatHistoryMutate]);
   const clearChatHistory = useCallback(() => clearChatHistoryMutate(), [clearChatHistoryMutate]);
   const logout = useCallback((onSuccess?: () => void) => {
@@ -1192,9 +1256,11 @@ export const [AppProvider, useApp] = createContextHook(() => {
     streak,
     isLoading: profileQuery.isLoading || logsQuery.isLoading || preferencesQuery.isLoading || chatHistoryQuery.isLoading || sharedAccessQuery.isLoading || therapistNotesQuery.isLoading || chatMessagesQuery.isLoading,
     saveProfile,
+    saveProfileAsync,
     saveLog,
     deleteLog,
     savePreferences,
+    savePreferencesAsync,
     saveChatHistory,
     clearChatHistory,
     logout,
@@ -1206,7 +1272,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     saveChatMessage,
     markMessageAsRead,
     markConversationAsRead,
-  }), [isAuthenticated, profileQuery.data, profileQuery.isLoading, logsQuery.data, logsQuery.isLoading, preferencesQuery.data, preferencesQuery.isLoading, chatHistoryQuery.data, chatHistoryQuery.isLoading, sharedAccessQuery.data, sharedAccessQuery.isLoading, therapistNotesQuery.data, therapistNotesQuery.isLoading, chatMessagesQuery.data, chatMessagesQuery.isLoading, therapistClientsQuery.data, activeChild, activeChildLogs, streak, saveProfile, saveLog, deleteLog, savePreferences, saveChatHistory, clearChatHistory, logout, setActiveChild, saveSharedAccess, addSharedAccess, deleteSharedAccess, saveTherapistNote, saveChatMessage, markMessageAsRead, markConversationAsRead]);
+  }), [isAuthenticated, profileQuery.data, profileQuery.isLoading, logsQuery.data, logsQuery.isLoading, preferencesQuery.data, preferencesQuery.isLoading, chatHistoryQuery.data, chatHistoryQuery.isLoading, sharedAccessQuery.data, sharedAccessQuery.isLoading, therapistNotesQuery.data, therapistNotesQuery.isLoading, chatMessagesQuery.data, chatMessagesQuery.isLoading, therapistClientsQuery.data, activeChild, activeChildLogs, streak, saveProfile, saveProfileAsync, saveLog, deleteLog, savePreferences, savePreferencesAsync, saveChatHistory, clearChatHistory, logout, setActiveChild, saveSharedAccess, addSharedAccess, deleteSharedAccess, saveTherapistNote, saveChatMessage, markMessageAsRead, markConversationAsRead]);
 });
 
 export function useActiveChildLogs(startDate?: Date, endDate?: Date) {

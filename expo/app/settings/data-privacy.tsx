@@ -26,7 +26,7 @@ export default function DataPrivacyScreen() {
     try {
       const allData = {
         exportedAt: new Date().toISOString(),
-        appVersion: '1.0.0',
+        appVersion: '1.2.8',
         profile: profile ? {
           name: profile.caregiverName,
           email: profile.caregiverEmail,

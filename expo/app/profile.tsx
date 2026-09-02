@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScaledText from '@/components/ScaledText';
 import { X, Save, Edit2, User, GraduationCap, Heart, AlertCircle, Sparkles } from 'lucide-react-native';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import GlassCard from '@/components/GlassCard';
@@ -13,7 +14,7 @@ import AvatarPicker from '@/components/AvatarPicker';
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeChild, profile, saveProfile, preferences } = useApp();
+  const { activeChild, profile, saveProfileAsync, preferences } = useApp();
   const { user } = useAuth();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
@@ -21,7 +22,7 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedChild, setEditedChild] = useState(activeChild);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!profile || !editedChild) return;
 
     const updatedProfile = {
@@ -31,13 +32,17 @@ export default function ProfileScreen() {
       ),
     };
 
-    saveProfile(updatedProfile);
-    setIsEditing(false);
-    Alert.alert('Success', 'Profile updated successfully!');
+    try {
+      await saveProfileAsync(updatedProfile);
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+    } catch (error: any) {
+      Alert.alert('Could not save profile', error?.message || 'Please try again.');
+    }
   };
 
   const handleAvatarChange = useCallback(
-    (value: string) => {
+    async (value: string) => {
       if (!profile || !activeChild) return;
       const updatedProfile = {
         ...profile,
@@ -45,10 +50,10 @@ export default function ProfileScreen() {
           child.id === activeChild.id ? { ...child, avatar: value } : child
         ),
       };
-      saveProfile(updatedProfile);
+      await saveProfileAsync(updatedProfile);
       setEditedChild((prev) => (prev ? { ...prev, avatar: value } : prev));
     },
-    [profile, activeChild, saveProfile],
+    [profile, activeChild, saveProfileAsync],
   );
 
   if (!activeChild) {

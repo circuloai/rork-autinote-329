@@ -17,7 +17,7 @@ import { getColors } from '@/constants/colors';
 
 interface AvatarPickerProps {
   avatarValue?: string;
-  onChangeAvatar: (value: string) => void;
+  onChangeAvatar: (value: string) => void | Promise<void>;
   uploadTarget: AvatarUploadTarget;
   size?: number;
   colors: ReturnType<typeof getColors>;
@@ -45,7 +45,7 @@ export default function AvatarPicker({
     try {
       const uploadedUrl = await pickAndUploadAvatar(uploadTarget);
       if (uploadedUrl) {
-        onChangeAvatar(uploadedUrl);
+        await onChangeAvatar(uploadedUrl);
       }
     } catch (err: any) {
       console.error('[AvatarPicker] Upload failed:', err);
@@ -64,9 +64,20 @@ export default function AvatarPicker({
   }, []);
 
   const handleSelectPreset = useCallback(
-    (id: string) => {
-      onChangeAvatar(id);
-      setPresetGridVisible(false);
+    async (id: string) => {
+      setUploading(true);
+      try {
+        await onChangeAvatar(id);
+        setPresetGridVisible(false);
+      } catch (err: any) {
+        console.error('[AvatarPicker] Preset avatar save failed:', err);
+        Alert.alert(
+          'Avatar Not Saved',
+          err?.message || 'We could not save that avatar. Please try again.',
+        );
+      } finally {
+        setUploading(false);
+      }
     },
     [onChangeAvatar],
   );

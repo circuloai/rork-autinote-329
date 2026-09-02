@@ -126,6 +126,10 @@ export interface Preferences {
   journalCategories?: string[];
   journalDefaultTags?: string[];
   journalAiSuggestions?: boolean;
+  progressTimeRange?: 'week' | 'month' | '3months';
+  progressCharts?: ('mood' | 'sleep' | 'meltdowns' | 'behaviors')[];
+  progressShowTrends?: boolean;
+  progressShowGoals?: boolean;
   aiPreferences?: AiPreferences;
 }
 

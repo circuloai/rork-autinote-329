@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ChevronRight, User, Bell, Palette, BookOpen, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw, KeyRound } from 'lucide-react-native';
+import { ChevronRight, User, Bell, Palette, TrendingUp, Bot, Lock, BookMarked, Info, LogOut, TestTube, Users, RefreshCw, KeyRound } from 'lucide-react-native';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Platform, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
@@ -135,14 +135,6 @@ export default function SettingsScreen() {
           },
         },
         {
-          icon: <BookOpen size={24} color={Colors.text} />,
-          title: 'Journal Preferences',
-          subtitle: 'Customize logging categories',
-          onPress: () => {
-            router.push('/settings/journal-preferences' as any);
-          },
-        },
-        {
           icon: <TrendingUp size={24} color={Colors.text} />,
           title: 'Progress Settings',
           subtitle: 'Configure insights',
@@ -198,7 +190,7 @@ export default function SettingsScreen() {
           onPress: () => {
             Alert.alert(
               'AutiNote',
-              'Version 1.0.0 (Beta)\n\n📱 About the App:\nAutiNote is a comprehensive behavior tracking and mood logging app designed for parents and caregivers of autistic children. Track daily moods, behaviors, sleep patterns, and meltdowns while gaining insights through AI-powered analysis.\n\nFeatures:\n• Daily mood and behavior logging\n• AI chat assistant (Autumn)\n• Pattern recognition and insights\n• Calendar view of historical data\n• Meltdown tracking with severity ratings\n\n👩\u200d💻 About the Developer:\nCreated by Anika Kale, a high school student at Montgomery High School, passionate about creating tools that make a difference in people\'s lives.\n\nLearn more about AutiNote and its developer on our About page.\n\n✨ Crafted with love ✨',
+              'Version 1.2.8 (Beta)\n\n📱 About the App:\nAutiNote is a comprehensive behavior tracking and mood logging app designed for parents and caregivers of autistic children. Track daily moods, behaviors, sleep patterns, and meltdowns while gaining insights through AI-powered analysis.\n\nFeatures:\n• Daily mood and behavior logging\n• AI chat assistant (Autumn)\n• Pattern recognition and insights\n• Calendar view of historical data\n• Meltdown tracking with severity ratings\n\n👩\u200d💻 About the Developer:\nCreated by Anika Kale, a high school student at Montgomery High School, passionate about creating tools that make a difference in people\'s lives.\n\nLearn more about AutiNote and its developer on our About page.\n\n✨ Crafted with love ✨',
               [
                 { text: 'Close', style: 'cancel' },
                 { text: 'Open About', onPress: handleOpenAbout },

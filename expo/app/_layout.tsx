@@ -87,7 +87,6 @@ function RootLayoutNav() {
       <Stack.Screen name="settings/customization" options={{ headerShown: true, title: 'Customization' }} />
       <Stack.Screen name="settings/profile" options={{ headerShown: false, title: 'My Profile' }} />
       <Stack.Screen name="settings/forgot-password" options={{ headerShown: false, title: 'Reset Password' }} />
-      <Stack.Screen name="settings/journal-preferences" options={{ headerShown: false, title: 'Journal Preferences' }} />
       <Stack.Screen name="settings/progress-settings" options={{ headerShown: false, title: 'Progress Settings' }} />
       <Stack.Screen name="settings/data-privacy" options={{ headerShown: false, title: 'Data & Privacy' }} />
       <Stack.Screen name="settings/autumn-settings" options={{ headerShown: false, title: 'Customize Autumn' }} />

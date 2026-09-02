@@ -14,7 +14,7 @@ import AvatarPicker from '@/components/AvatarPicker';
 export default function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { profile, preferences, saveProfile } = useApp();
+  const { profile, preferences, saveProfileAsync } = useApp();
   const { user, signOut } = useAuth();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
@@ -38,11 +38,11 @@ export default function ProfileSettingsScreen() {
   const passwordValid = newPassword.length >= 8 && newPassword === confirmPassword && currentPassword.length > 0;
 
   const handleAvatarChange = useCallback(
-    (value: string) => {
+    async (value: string) => {
       if (!profile) return;
-      saveProfile({ ...profile, avatar: value });
+      await saveProfileAsync({ ...profile, avatar: value });
     },
-    [profile, saveProfile],
+    [profile, saveProfileAsync],
   );
 
   const handleSaveProfile = useCallback(async () => {
@@ -55,7 +55,7 @@ export default function ProfileSettingsScreen() {
         caregiverPhone: phone.trim() || undefined,
         caregiverEmail: email.trim() || undefined,
       };
-      saveProfile(updatedProfile);
+      await saveProfileAsync(updatedProfile);
 
       if (email.trim() && email.trim() !== user?.email) {
         const { error: emailErr } = await supabase.auth.updateUser({ email: email.trim() });
@@ -71,7 +71,7 @@ export default function ProfileSettingsScreen() {
     } finally {
       setIsSaving(false);
     }
-  }, [profile, name, phone, email, user, saveProfile]);
+  }, [profile, name, phone, email, user, saveProfileAsync]);
 
   const handleChangePassword = useCallback(async () => {
     if (!passwordValid) return;

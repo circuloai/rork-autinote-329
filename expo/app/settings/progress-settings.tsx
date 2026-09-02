@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ChevronLeft, TrendingUp, BarChart3, Activity, LineChart } from 'lucide-react-native';
 import ScaledText from '@/components/ScaledText';
 import { useColors } from '@/hooks/useColors';
+import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import GlassCard from '@/components/GlassCard';
 
@@ -27,22 +28,23 @@ const CHART_OPTIONS: { value: ChartType; label: string; icon: React.ReactNode }[
 export default function ProgressSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { preferences, savePreferences } = useApp();
+  const { preferences, savePreferencesAsync } = useApp();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
   const [timeRange, setTimeRange] = useState<TimeRange>(
-    (preferences as any)?.progressTimeRange || 'month'
+    preferences?.progressTimeRange || 'month'
   );
   const [showCharts, setShowCharts] = useState<ChartType[]>(
-    (preferences as any)?.progressCharts || ['mood', 'sleep', 'meltdowns', 'behaviors']
+    preferences?.progressCharts || ['mood', 'sleep', 'meltdowns', 'behaviors']
   );
   const [showTrends, setShowTrends] = useState<boolean>(
-    (preferences as any)?.progressShowTrends !== false
+    preferences?.progressShowTrends !== false
   );
   const [showGoals, setShowGoals] = useState<boolean>(
-    (preferences as any)?.progressShowGoals !== false
+    preferences?.progressShowGoals !== false
   );
+  const [isSaving, setIsSaving] = useState(false);
 
   const toggleChart = (chart: ChartType) => {
     setShowCharts((prev) =>
@@ -50,16 +52,23 @@ export default function ProgressSettingsScreen() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!preferences) return;
-    savePreferences({
-      ...preferences,
-      ...({ progressTimeRange: timeRange } as any),
-      ...({ progressCharts: showCharts } as any),
-      ...({ progressShowTrends: showTrends } as any),
-      ...({ progressShowGoals: showGoals } as any),
-    });
-    Alert.alert('Saved', 'Progress settings updated.');
+    setIsSaving(true);
+    try {
+      await savePreferencesAsync({
+        ...preferences,
+        progressTimeRange: timeRange,
+        progressCharts: showCharts,
+        progressShowTrends: showTrends,
+        progressShowGoals: showGoals,
+      });
+      Alert.alert('Saved', 'Progress settings updated.');
+    } catch (error: any) {
+      Alert.alert('Could not save progress settings', error?.message || 'Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -70,8 +79,8 @@ export default function ProgressSettingsScreen() {
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
         <ScaledText style={styles.headerTitle}>Progress Settings</ScaledText>
-        <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <ScaledText style={styles.saveBtnText}>Save</ScaledText>
+        <TouchableOpacity onPress={handleSave} style={styles.saveBtn} disabled={isSaving}>
+          <ScaledText style={styles.saveBtnText}>{isSaving ? 'Saving…' : 'Save'}</ScaledText>
         </TouchableOpacity>
       </View>
 

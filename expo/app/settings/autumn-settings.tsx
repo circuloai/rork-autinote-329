@@ -36,7 +36,7 @@ const VERBOSITY_LABELS: Record<Verbosity, string> = {
 export default function AutumnSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { preferences, savePreferences } = useApp();
+  const { preferences, savePreferencesAsync } = useApp();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
@@ -49,6 +49,7 @@ export default function AutumnSettingsScreen() {
   const [verbosity, setVerbosity] = useState<Verbosity>(
     preferences?.autumnVerbosity || 'balanced'
   );
+  const [isSaving, setIsSaving] = useState(false);
 
   const toggleFocus = (area: FocusArea) => {
     setFocusAreas((prev) =>
@@ -56,15 +57,22 @@ export default function AutumnSettingsScreen() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!preferences) return;
-    savePreferences({
-      ...preferences,
-      autumnStyle: responseStyle,
-      autumnFocus: focusAreas,
-      autumnVerbosity: verbosity,
-    });
-    Alert.alert('Saved', 'Autumn settings updated. New conversations will use these preferences.');
+    setIsSaving(true);
+    try {
+      await savePreferencesAsync({
+        ...preferences,
+        autumnStyle: responseStyle,
+        autumnFocus: focusAreas,
+        autumnVerbosity: verbosity,
+      });
+      Alert.alert('Saved', 'Autumn settings updated. New conversations will use these preferences.');
+    } catch (error: any) {
+      Alert.alert('Could not save Autumn settings', error?.message || 'Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -75,8 +83,8 @@ export default function AutumnSettingsScreen() {
           <ChevronLeft size={24} color={Colors.text} />
         </TouchableOpacity>
         <ScaledText style={styles.headerTitle}>Customize Autumn</ScaledText>
-        <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <ScaledText style={styles.saveBtnText}>Save</ScaledText>
+        <TouchableOpacity onPress={handleSave} style={styles.saveBtn} disabled={isSaving}>
+          <ScaledText style={styles.saveBtnText}>{isSaving ? 'Saving…' : 'Save'}</ScaledText>
         </TouchableOpacity>
       </View>
 
