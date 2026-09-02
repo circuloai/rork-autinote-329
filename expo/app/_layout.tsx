@@ -68,6 +68,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen name="explore" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(therapist)" options={{ headerShown: false }} />
       <Stack.Screen name="therapist/client/[childId]" options={{ headerShown: false }} />

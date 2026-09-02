@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
@@ -45,9 +46,10 @@ function toPlainTextFromMessageParts(parts: any[]): string {
 }
 
 export default function ChatScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeChild, chatHistory = [], saveChatHistory, clearChatHistory, preferences, savePreferences } = useApp();
-  const { user } = useAuth();
+  const { user, isAuthenticated: hasSession } = useAuth();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
   const [input, setInput] = useState<string>('');
@@ -228,6 +230,27 @@ export default function ChatScreen() {
       "What insights can you provide?",
       "Tips for logging effectively?",
     ];
+
+  if (!hasSession) {
+    return (
+      <View style={[styles.container, { backgroundColor: Colors.background }]}>
+        <View style={[styles.guestGate, { paddingTop: insets.top + 24 }]}>
+          <Sparkles size={36} color={Colors.secondary} />
+          <ScaledText style={styles.guestGateTitle}>Autumn is ready when you are</ScaledText>
+          <ScaledText style={styles.guestGateText}>
+            Sign in with a child profile to ask questions and keep your conversation private to your account.
+          </ScaledText>
+          <TouchableOpacity
+            style={[styles.guestGateButton, { backgroundColor: Colors.primary }]}
+            onPress={() => router.push('/login' as any)}
+            activeOpacity={0.8}
+          >
+            <ScaledText style={[styles.guestGateButtonText, { color: Colors.surface }]}>Sign in to chat</ScaledText>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
@@ -482,6 +505,37 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     fontSize: 14,
     color: Colors.textSecondary,
     fontStyle: 'italic' as const,
+  },
+  guestGate: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  guestGateTitle: {
+    marginTop: 16,
+    fontSize: 22,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  guestGateText: {
+    maxWidth: 360,
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: 22,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  guestGateButton: {
+    marginTop: 22,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderRadius: 12,
+  },
+  guestGateButtonText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
   },
   errorBubble: {
     backgroundColor: Colors.error + '20',

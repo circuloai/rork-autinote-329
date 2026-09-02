@@ -158,6 +158,18 @@ export default function HomeScreen() {
     ).length;
   }, [chatMessages, profile?.id]);
 
+  const handleAccountRoute = useCallback((path: string, needsChild = true) => {
+    if (!hasSession) {
+      router.push('/login' as any);
+      return;
+    }
+    if (needsChild && !activeChild) {
+      router.push('/onboarding' as any);
+      return;
+    }
+    router.push(path as any);
+  }, [activeChild, hasSession, router]);
+
   const recentChatSummaries = useMemo(() => {
     if (!chatHistory || chatHistory.length === 0) return [];
     const summaries: { question: string; answer: string }[] = [];
@@ -198,6 +210,14 @@ export default function HomeScreen() {
   }, [chatHistory]);
 
   const handleOpenChat = useCallback(() => {
+    if (!hasSession) {
+      router.push('/login' as any);
+      return;
+    }
+    if (!activeChild) {
+      router.push('/onboarding' as any);
+      return;
+    }
     const accepted = (sharedAccess || []).filter((sa) => sa.status === 'accepted');
     if (accepted.length === 0) {
       const goToAutumn = () => router.push('/(tabs)/chat' as any);
@@ -224,7 +244,7 @@ export default function HomeScreen() {
       return at - bt;
     })[0];
     router.push(`/therapist-chat?sharedAccessId=${primary.id}` as any);
-  }, [router, sharedAccess]);
+  }, [activeChild, hasSession, router, sharedAccess]);
 
   const triggers = activeChild?.commonTriggers ?? [];
   const visibleTriggers = triggers.slice(0, 3);
@@ -327,7 +347,7 @@ export default function HomeScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <TouchableOpacity
           style={styles.profileCard}
-          onPress={() => router.push('/profile' as any)}
+          onPress={() => handleAccountRoute('/profile')}
           activeOpacity={0.9}
         >
           {Platform.OS === 'ios' ? (
@@ -450,7 +470,7 @@ export default function HomeScreen() {
           
           <TouchableOpacity
             style={[styles.actionButton, styles.dailyLogAction]}
-            onPress={() => router.push('/log/daily' as any)}
+            onPress={() => handleAccountRoute('/log/daily')}
             activeOpacity={0.8}
           >
             <View style={styles.logIconContainer}>
@@ -467,7 +487,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={[styles.actionButton, styles.meltdownLogAction]}
-            onPress={() => router.push('/log/meltdown' as any)}
+            onPress={() => handleAccountRoute('/log/meltdown')}
             activeOpacity={0.8}
           >
             <View style={styles.logIconContainer}>
@@ -487,7 +507,7 @@ export default function HomeScreen() {
               <>
                 <TouchableOpacity
                   style={styles.secondaryAction}
-                  onPress={() => router.push('/calendar' as any)}
+                  onPress={() => handleAccountRoute('/calendar')}
                   activeOpacity={0.8}
                 >
                   <GlassCard style={styles.glassSecondaryAction} glassEffectStyle="clear" fallbackStyle={{ backgroundColor: Colors.surface }}>
@@ -519,7 +539,7 @@ export default function HomeScreen() {
               <>
                 <TouchableOpacity
                   style={[styles.secondaryAction, { backgroundColor: Colors.surface }]}
-                  onPress={() => router.push('/calendar' as any)}
+                  onPress={() => handleAccountRoute('/calendar')}
                   activeOpacity={0.8}
                 >
                   <CalendarIcon size={20} color={Colors.primary} />
@@ -558,7 +578,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={idx}
                   style={[styles.aiCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
-                  onPress={() => router.push('/(tabs)/chat' as any)}
+                  onPress={() => handleAccountRoute('/(tabs)/chat')}
                   activeOpacity={0.8}
                 >
                   <View style={styles.chatSummaryItem}>
@@ -576,7 +596,7 @@ export default function HomeScreen() {
               ))}
               <TouchableOpacity
                 style={[styles.continueChatButton, { backgroundColor: Colors.primary }]}
-                onPress={() => router.push('/(tabs)/chat' as any)}
+                onPress={() => handleAccountRoute('/(tabs)/chat')}
                 activeOpacity={0.8}
               >
                 <MessageCircle size={18} color={Colors.background} />
@@ -588,7 +608,7 @@ export default function HomeScreen() {
           ) : (
             <TouchableOpacity
               style={[styles.aiCard, { backgroundColor: Colors.surface, borderColor: Colors.secondary }]}
-              onPress={() => router.push('/(tabs)/chat' as any)}
+              onPress={() => handleAccountRoute('/(tabs)/chat')}
               activeOpacity={0.8}
             >
               <View style={styles.aiEmptyContent}>

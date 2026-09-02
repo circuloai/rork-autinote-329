@@ -46,7 +46,7 @@ export default function WelcomeScreen() {
   };
 
   const handleExplore = () => {
-    router.push('/(tabs)/home' as any);
+    router.push('/explore' as any);
   };
 
   return (

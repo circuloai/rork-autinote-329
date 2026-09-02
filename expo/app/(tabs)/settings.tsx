@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { getColors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
 import AppFooter from '@/components/AppFooter';
@@ -24,6 +25,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { logout, preferences } = useApp();
+  const { isAuthenticated: hasSession, isLoading: authLoading } = useAuth();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
 
@@ -202,6 +204,27 @@ export default function SettingsScreen() {
     },
   ];
 
+  if (!hasSession && !authLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: Colors.background }]}>
+        <View style={[styles.guestGate, { paddingTop: insets.top + 24 }]}>
+          <Lock size={36} color={Colors.primary} />
+          <ScaledText style={styles.guestGateTitle}>Settings belong to your account</ScaledText>
+          <ScaledText style={styles.guestGateText}>
+            Sign in to manage profiles, reminders, privacy, and therapist access without mixing settings between accounts.
+          </ScaledText>
+          <TouchableOpacity
+            style={[styles.guestGateButton, { backgroundColor: Colors.primary }]}
+            onPress={() => router.push('/login' as any)}
+            activeOpacity={0.8}
+          >
+            <ScaledText style={[styles.guestGateButtonText, { color: Colors.surface }]}>Sign in to settings</ScaledText>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: Colors.background }]}>
@@ -365,5 +388,36 @@ const createStyles = (Colors: ReturnType<typeof getColors>) => StyleSheet.create
     fontSize: 16,
     fontWeight: '600' as const,
     color: Colors.error,
+  },
+  guestGate: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  guestGateTitle: {
+    marginTop: 16,
+    fontSize: 22,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  guestGateText: {
+    maxWidth: 360,
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: 22,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  guestGateButton: {
+    marginTop: 22,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderRadius: 12,
+  },
+  guestGateButtonText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
   },
 });
