@@ -15,6 +15,7 @@
     "postinstall": "node scripts/patch-freeport.cjs"
   },
   "dependencies": {
+    "@expo/config-plugins": "~54.0.4",
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo/config-plugins": "~54.0.4",
