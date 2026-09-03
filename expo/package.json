@@ -11,7 +11,8 @@
     "start-web-dev": "DEBUG=expo* bunx rork start -p i3iytomcfmnnh5v3rdwxs --web",
     "lint": "expo lint",
     "test:autumn": "bun test backend/trpc/routes/ai/autumn/*.test.ts",
-    "postinstall": "node scripts/patch-freeport.cjs"
+    "postinstall": "node scripts/patch-freeport.cjs",
+    "check-lockfile": "node scripts/check-lockfile.cjs"
   },
   "dependencies": {
     "@expo/config-plugins": "~54.0.4",
