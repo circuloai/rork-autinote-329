@@ -171,24 +171,37 @@ export default function ChatScreen() {
     }
   }, [preferences, savePreferencesAsync]);
 
+  const clearHistory = useCallback(() => {
+    clearedRef.current = true;
+    clearChatHistory();
+    setLocalMessages([]);
+  }, [clearChatHistory]);
+
   const handleClearHistory = useCallback(() => {
+    const title = 'Clear Chat History';
+    const message = 'This will delete all previous conversations. This cannot be undone.';
+
+    if (Platform.OS === 'web') {
+      const confirmed = typeof window !== 'undefined' && window.confirm(`${title}\n\n${message}`);
+      if (confirmed) {
+        clearHistory();
+      }
+      return;
+    }
+
     Alert.alert(
-      'Clear Chat History',
-      'This will delete all previous conversations. This cannot be undone.',
+      title,
+      message,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear',
           style: 'destructive',
-          onPress: () => {
-            clearedRef.current = true;
-            clearChatHistory();
-            setLocalMessages([]);
-          },
+          onPress: clearHistory,
         },
       ]
     );
-  }, [clearChatHistory]);
+  }, [clearHistory]);
 
   const suggestedQuestions = activeChild?.diagnosis
     ? [

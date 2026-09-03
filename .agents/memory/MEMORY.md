@@ -6,5 +6,6 @@
 - [Supabase auth configuration](supabase-auth-configuration.md) — Treat public Supabase settings as runtime configuration; a legacy fallback can silently target an unavailable project.
 - [EAS Bun lockfiles](eas-bun-lockfiles.md) — EAS clean installs need public npm tarball URLs; Replit-internal package-firewall URLs can make Bun install fail.
 - [Bun frozen installs](bun-frozen-installs.md) — Keep expo/package.json and expo/bun.lock synchronized before merge hooks run with --frozen-lockfile.
+- [Web confirmation dialogs](web-confirmation-dialogs.md) — React Native Web's Alert.alert is a no-op; browser confirmations need window.confirm.
 - [Settings persistence](settings-persistence.md) — Await settings saves and normalize legacy defaults without overwriting deliberate theme choices.
 - [Reasoning model output budgets](reasoning-model-output-budgets.md) — gpt-5-mini can spend small output budgets on reasoning and return no visible text; budget Autumn accordingly.
