@@ -117,7 +117,10 @@ export default protectedProcedure
     try {
       const response = await generateAutumnResponse({
         ...prompt,
-        maxOutputTokens: input.verbosity === "detailed" ? 450 : input.verbosity === "short" ? 140 : 280,
+        // gpt-5-mini uses the output budget for reasoning as well as visible
+        // text. The smaller budgets can complete with reasoning only, which
+        // leaves the client with an apparently empty response.
+        maxOutputTokens: input.verbosity === "detailed" ? 1200 : input.verbosity === "short" ? 800 : 1000,
       });
       console.log("[ai] Autumn response completed", {
         model: process.env.OPENAI_AUTUMN_MODEL || "gpt-5-mini",

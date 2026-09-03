@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
 import { useColors } from '@/hooks/useColors';
@@ -11,7 +11,7 @@ import GlassCard from '@/components/GlassCard';
 import ScaledText from '@/components/ScaledText';
 import { trpcClient } from '@/lib/trpc';
 import type { Preferences } from '@/types';
-import AiConsentModal, { getStoredAiConsent } from '@/components/AiConsentModal';
+import AiConsentModal from '@/components/AiConsentModal';
 
 type ChatRole = 'user' | 'assistant';
 
@@ -30,25 +30,10 @@ function makeId(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-function toPlainTextFromMessageParts(parts: any[]): string {
-  try {
-    return (parts || [])
-      .map((p) => {
-        if (!p || typeof p !== 'object') return '';
-        if (p.type === 'text') return String(p.text ?? '');
-        return '';
-      })
-      .join('\n')
-      .trim();
-  } catch {
-    return '';
-  }
-}
-
 export default function ChatScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeChild, chatHistory = [], saveChatHistory, clearChatHistory, preferences, savePreferences } = useApp();
+  const { activeChild, chatHistory = [], saveChatHistory, clearChatHistory, preferences, savePreferencesAsync } = useApp();
   const { user, isAuthenticated: hasSession } = useAuth();
   const Colors = useColors(preferences);
   const styles = useMemo(() => createStyles(Colors), [Colors]);
@@ -57,21 +42,10 @@ export default function ChatScreen() {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [consentPending, setConsentPending] = useState<string | null>(null);
   const [consentGrantedThisSession, setConsentGrantedThisSession] = useState(false);
-  const [storedAiConsent, setStoredAiConsent] = useState(false);
   const [historyOwner, setHistoryOwner] = useState(user?.id || 'guest');
   const scrollViewRef = useRef<ScrollView>(null);
   const clearedRef = useRef(false);
   const accountKey = user?.id || 'guest';
-
-  useEffect(() => {
-    let mounted = true;
-    void getStoredAiConsent().then((accepted) => {
-      if (mounted) setStoredAiConsent(accepted);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const appendLocalTextMessage = useCallback((role: ChatRole, text: string) => {
     const msg: ChatMessage = {
@@ -153,8 +127,7 @@ export default function ChatScreen() {
 
     if (
       !consentGrantedThisSession &&
-      preferences?.aiPreferences?.consentStatus !== 'granted' &&
-      !storedAiConsent
+      preferences?.aiPreferences?.consentStatus !== 'granted'
     ) {
       setConsentPending(text);
       return;
@@ -179,10 +152,9 @@ export default function ChatScreen() {
         [{ text: 'OK' }]
       );
     }
-  }, [appendLocalTextMessage, sendChat, input, sending, preferences?.aiPreferences?.consentStatus, consentGrantedThisSession, storedAiConsent]);
+  }, [appendLocalTextMessage, sendChat, input, sending, preferences?.aiPreferences?.consentStatus, consentGrantedThisSession]);
 
-  const acceptConsent = useCallback(() => {
-    setConsentPending(null);
+  const acceptConsent = useCallback(async () => {
     if (preferences) {
       const nextPreferences: Preferences = {
         ...preferences,
@@ -193,10 +165,11 @@ export default function ChatScreen() {
           personalizationEnabled: true,
         },
       };
-      savePreferences(nextPreferences);
+      await savePreferencesAsync(nextPreferences);
       setConsentGrantedThisSession(true);
+      setConsentPending(null);
     }
-  }, [preferences, savePreferences]);
+  }, [preferences, savePreferencesAsync]);
 
   const handleClearHistory = useCallback(() => {
     Alert.alert(
@@ -375,10 +348,7 @@ export default function ChatScreen() {
         <AiConsentModal
           visible={consentPending !== null}
           onCancel={() => setConsentPending(null)}
-          onAgree={() => {
-            setStoredAiConsent(true);
-            acceptConsent();
-          }}
+          onAgree={acceptConsent}
           providerName="OpenAI"
           preferences={preferences}
         />

@@ -13,7 +13,7 @@ const getBaseUrl = () => {
     return process.env.EXPO_PUBLIC_API_BASE_URL.replace(/\/+$/, '');
   }
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:3001`;
+    return window.location.origin;
   }
   const hostUri = Constants.expoConfig?.hostUri;
   const host = hostUri?.split(':')[0];
