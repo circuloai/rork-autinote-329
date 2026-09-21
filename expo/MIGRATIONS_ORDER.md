@@ -19,6 +19,7 @@ the database in an insecure intermediate state.
 | 8 | `MIGRATION_PASSWORD_RESET.sql` | Standalone — creates `password_reset_codes` table and SECURITY DEFINER reset functions. No ordering constraint relative to steps 2–7. |
 | 9 | `MIGRATION_RATE_LIMIT_RESET_CODES.sql` | **Must run after step 8.** Adds `attempt_count`/`locked_until` columns to `password_reset_codes` and recreates the reset functions with brute-force protection (5-attempt lockout + 60-second request cooldown). |
 | 10 | `MIGRATION_AUTUMN_AI_PREFERENCES.sql` | Standalone — adds the nullable, versioned Autumn AI consent/preferences column. Apply before enabling Autumn for signed-in users. |
+| 11 | `MIGRATION_ACCOUNT_DELETION.sql` | Standalone — creates the service-role-only atomic account data deletion RPC. Apply before enabling permanent account deletion. |
 
 ## Why ordering matters for steps 2–5
 

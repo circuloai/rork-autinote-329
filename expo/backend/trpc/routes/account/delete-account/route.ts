@@ -5,18 +5,6 @@ import { getServiceRoleClient } from "@/backend/trpc/supabase-client";
 type SupabaseServiceClient = ReturnType<typeof getServiceRoleClient>;
 type IdRow = { id: string };
 
-async function deleteByIds(
-  supabase: SupabaseServiceClient,
-  table: string,
-  column: string,
-  ids: string[],
-) {
-  if (ids.length === 0) return;
-
-  const { error } = await (supabase.from(table) as any).delete().in(column, ids);
-  if (error) throw error;
-}
-
 async function selectIds(
   supabase: SupabaseServiceClient,
   table: string,
@@ -68,56 +56,26 @@ export const deleteAccount = protectedProcedure.mutation(async ({ ctx }) => {
 
     const profileIds = ((profiles ?? []) as IdRow[]).map((profile) => profile.id);
 
-    const [children, parentAccess, therapistAccess] = await Promise.all([
-      selectIds(supabase, "children", "profile_id", profileIds),
-      selectIds(supabase, "shared_access", "parent_id", profileIds),
-      selectIds(supabase, "shared_access", "therapist_id", profileIds),
-    ]);
-
-    const childIds = children.map((child) => child.id);
-    const childAccess = await selectIds(supabase, "shared_access", "child_id", childIds);
-    const sharedAccessIds = Array.from(
-      new Set([
-        ...parentAccess.map((access) => access.id),
-        ...therapistAccess.map((access) => access.id),
-        ...childAccess.map((access) => access.id),
-      ]),
+    const children = await selectIds(
+      supabase,
+      "children",
+      "profile_id",
+      profileIds,
     );
+    const childIds = children.map((child) => child.id);
 
-    // Collect notes before deleting their child/access rows so comments can
-    // be removed explicitly even when the database does not cascade them.
-    const notesResult = await (async () => {
-      const queries: Promise<IdRow[]>[] = [];
-      if (childIds.length > 0) {
-        queries.push(selectIds(supabase, "therapist_notes", "child_id", childIds));
-      }
-      if (profileIds.length > 0) {
-        queries.push(selectIds(supabase, "therapist_notes", "therapist_id", profileIds));
-      }
-      if (sharedAccessIds.length > 0) {
-        queries.push(selectIds(supabase, "therapist_notes", "shared_access_id", sharedAccessIds));
-      }
-
-      const results = await Promise.all(queries);
-      return results.flat();
-    })();
-
-    const noteIds = Array.from(new Set(notesResult.map((note) => note.id)));
-
-    // Delete dependent records first. This handles both caregiver-owned data
-    // and records created through therapist sharing relationships.
+    // Storage objects cannot participate in the PostgreSQL transaction below.
+    // Remove them first so a storage failure leaves all database rows intact.
     await deleteAvatarFiles(supabase, userId, childIds);
-    await deleteByIds(supabase, "note_comments", "note_id", noteIds);
-    await deleteByIds(supabase, "note_comments", "commenter_id", profileIds);
-    await deleteByIds(supabase, "therapist_notes", "id", noteIds);
-    await deleteByIds(supabase, "chat_messages", "shared_access_id", sharedAccessIds);
-    await deleteByIds(supabase, "chat_messages", "sender_id", profileIds);
-    await deleteByIds(supabase, "log_entries", "child_id", childIds);
-    await deleteByIds(supabase, "shared_access", "id", sharedAccessIds);
-    await deleteByIds(supabase, "children", "id", childIds);
-    await deleteByIds(supabase, "preferences", "user_id", [userId]);
-    await deleteByIds(supabase, "profiles", "id", profileIds);
 
+    const { error: dataDeleteError } = await (supabase as any).rpc(
+      "delete_account_data",
+      { p_user_id: userId },
+    );
+    if (dataDeleteError) throw dataDeleteError;
+
+    // The auth user is deliberately deleted last. If this call fails, the
+    // account data RPC is safe to retry and will simply find no rows.
     const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
     if (authDeleteError) throw authDeleteError;
 

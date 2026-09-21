@@ -7,6 +7,8 @@ type Fixture = {
   tables: Tables;
   removedAvatarPaths: string[];
   deletedAuthUsers: string[];
+  rpcCalls: { name: string; args: Record<string, string> }[];
+  rpcError?: Error;
 };
 
 let activeFixture: Fixture;
@@ -17,10 +19,17 @@ function createFixture(tables: Tables): Fixture {
     tables,
     removedAvatarPaths: [],
     deletedAuthUsers: [],
+    rpcCalls: [],
   };
 }
 
 function createFakeServiceClient(fixture: Fixture) {
+  const removeRows = (table: string, shouldRemove: (row: Row) => boolean) => {
+    const rows = fixture.tables[table];
+    if (!rows) return;
+    fixture.tables[table] = rows.filter((row) => !shouldRemove(row));
+  };
+
   return {
     from(table: string) {
       const filters = new Map<string, string[]>();
@@ -57,6 +66,66 @@ function createFakeServiceClient(fixture: Fixture) {
         },
       };
       return builder;
+    },
+    rpc: async (name: string, args: Record<string, string>) => {
+      fixture.rpcCalls.push({ name, args });
+      if (fixture.rpcError) return { data: null, error: fixture.rpcError };
+
+      const profileIds = new Set(
+        (fixture.tables.profiles ?? [])
+          .filter((profile) => profile.user_id === args.p_user_id)
+          .map((profile) => profile.id),
+      );
+      const childIds = new Set(
+        (fixture.tables.children ?? [])
+          .filter((child) => profileIds.has(child.profile_id))
+          .map((child) => child.id),
+      );
+      const sharedAccessIds = new Set(
+        (fixture.tables.shared_access ?? [])
+          .filter(
+            (access) =>
+              profileIds.has(access.parent_id) ||
+              profileIds.has(access.therapist_id) ||
+              childIds.has(access.child_id),
+          )
+          .map((access) => access.id),
+      );
+      const noteIds = new Set(
+        (fixture.tables.therapist_notes ?? [])
+          .filter(
+            (note) =>
+              childIds.has(note.child_id) ||
+              profileIds.has(note.therapist_id) ||
+              sharedAccessIds.has(note.shared_access_id),
+          )
+          .map((note) => note.id),
+      );
+
+      removeRows(
+        "note_comments",
+        (comment) => profileIds.has(comment.commenter_id) || noteIds.has(comment.note_id),
+      );
+      removeRows(
+        "therapist_notes",
+        (note) =>
+          childIds.has(note.child_id) ||
+          profileIds.has(note.therapist_id) ||
+          sharedAccessIds.has(note.shared_access_id),
+      );
+      removeRows(
+        "chat_messages",
+        (message) =>
+          profileIds.has(message.sender_id) ||
+          sharedAccessIds.has(message.shared_access_id),
+      );
+      removeRows("log_entries", (entry) => childIds.has(entry.child_id));
+      removeRows("shared_access", (access) => sharedAccessIds.has(access.id));
+      removeRows("children", (child) => childIds.has(child.id));
+      removeRows("preferences", (preferences) => preferences.user_id === args.p_user_id);
+      removeRows("profiles", (profile) => profileIds.has(profile.id));
+
+      return { data: null, error: null };
     },
     storage: {
       from: () => ({
@@ -170,6 +239,9 @@ describe("account.deleteAccount", () => {
       "user-caregiver/children/child-owned/avatar.jpg",
     ]);
     expect(activeFixture.deletedAuthUsers).toEqual(["user-caregiver"]);
+    expect(activeFixture.rpcCalls).toEqual([
+      { name: "delete_account_data", args: { p_user_id: "user-caregiver" } },
+    ]);
   });
 
   test("deletes therapist-linked access, notes, comments, and messages", async () => {
@@ -208,6 +280,31 @@ describe("account.deleteAccount", () => {
     });
     expect(activeFixture.removedAvatarPaths).toEqual(["user-therapist/profile.jpg"]);
     expect(activeFixture.deletedAuthUsers).toEqual(["user-therapist"]);
+    expect(activeFixture.rpcCalls).toEqual([
+      { name: "delete_account_data", args: { p_user_id: "user-therapist" } },
+    ]);
+  });
+
+  test("preserves database rows and auth user when atomic cleanup fails", async () => {
+    authenticatedUserId = "user-retry";
+    activeFixture = createFixture({
+      profiles: [{ id: "profile-retry", user_id: "user-retry" }],
+      children: [{ id: "child-retry", profile_id: "profile-retry" }],
+      preferences: [{ id: "preferences-retry", user_id: "user-retry" }],
+    });
+    activeFixture.rpcError = new Error("database cleanup failed");
+    const before = structuredClone(activeFixture.tables);
+
+    await expect(authenticatedCaller().account.deleteAccount()).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "We could not delete your account. Please try again.",
+    });
+
+    expect(activeFixture.tables).toEqual(before);
+    expect(activeFixture.deletedAuthUsers).toEqual([]);
+    expect(activeFixture.rpcCalls).toEqual([
+      { name: "delete_account_data", args: { p_user_id: "user-retry" } },
+    ]);
   });
 
   test("does not delete records when authentication fails", async () => {
