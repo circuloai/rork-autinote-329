@@ -4,6 +4,7 @@
 - [Metro cache after clean install](metro-cache-after-clean-install.md) — clear .expo/ and /tmp/metro-* after rm -rf node_modules to prevent file-watcher SHA-1 errors
 - [Expo Bun watcher compatibility](expo-bun-watcher-compatibility.md) — Bun’s port probe and Metro fallback watcher need a postinstall workaround plus Watchman in this workspace.
 - [Supabase auth configuration](supabase-auth-configuration.md) — Treat public Supabase settings as runtime configuration; a legacy fallback can silently target an unavailable project.
+- [Supabase integration test runtime](supabase-integration-test-runtime.md) — Real deletion fixtures need valid non-production secrets injected into the test process, not placeholders.
 - [EAS Bun lockfiles](eas-bun-lockfiles.md) — EAS clean installs need public npm tarball URLs; Replit-internal package-firewall URLs can make Bun install fail.
 - [Bun frozen installs](bun-frozen-installs.md) — Keep expo/package.json and expo/bun.lock synchronized before merge hooks run with --frozen-lockfile.
 - [Web confirmation dialogs](web-confirmation-dialogs.md) — React Native Web's Alert.alert is a no-op; browser confirmations need window.confirm.
