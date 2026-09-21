@@ -96,8 +96,10 @@ export default function ProfileSettingsScreen() {
 
   const handleDeleteAccount = useCallback(async () => {
     try {
-      // TODO: Replace this stub with the authenticated backend account-deletion
-      // request that removes the user's account and associated server data.
+      // TODO: Insert the authenticated backend API call here to permanently
+      // delete the user's database record and authentication token.
+      // The backend must verify the current session and remove all associated
+      // account data before this client signs out.
       await Promise.resolve();
 
       const { error } = await signOut();
@@ -112,7 +114,7 @@ export default function ProfileSettingsScreen() {
   const confirmDeleteAccount = useCallback(() => {
     Alert.alert(
       'Delete Account',
-      'Are you sure you want to permanently delete your account and all associated data? This action cannot be undone.',
+      'Are you sure? This will permanently delete your account and all associated data. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
