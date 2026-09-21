@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { beforeAll, describe, expect, test } from "bun:test";
 import { appRouter } from "../../../app-router";
+import { createTRPCRouter, protectedProcedure } from "../../../create-context";
 import { getServiceRoleClient } from "../../../supabase-client";
 
 const integrationEnabled =
@@ -28,6 +29,12 @@ type Fixture = {
 const describeIntegration = describe.skipIf(
   !integrationEnabled || !nonProductionConfirmed,
 );
+
+const protectedAccountProbe = createTRPCRouter({
+  readAccount: protectedProcedure.query(({ ctx }) => ({
+    userId: ctx.auth.user.id,
+  })),
+});
 
 function requiredEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -354,6 +361,17 @@ async function runDeletionFixture(role: "caregiver" | "therapist") {
       await service.auth.admin.getUserById(fixture.targetUserId);
     expect(deletedUser).toBeNull();
     expect(deletedUserError).not.toBeNull();
+
+    await expect(
+      protectedAccountProbe.createCaller({
+        req: new Request("http://integration.test/api/trpc/account.readAccount", {
+          headers: { authorization: `Bearer ${session.session.access_token}` },
+        }),
+      }).readAccount(),
+    ).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      message: "Your session has expired. Please sign in again.",
+    });
 
     const { data: relatedProfile, error: relatedProfileError } =
       await service.from("profiles").select("id").eq("user_id", fixture.relatedUserId);

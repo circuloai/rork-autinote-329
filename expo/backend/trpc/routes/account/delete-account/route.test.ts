@@ -152,9 +152,17 @@ mock.module("@/backend/trpc/supabase-client", () => ({
     auth: {
       getUser: async () => ({
         data: {
-          user: authenticatedUserId ? { id: authenticatedUserId } : null,
+          user:
+            authenticatedUserId &&
+            !activeFixture.deletedAuthUsers.includes(authenticatedUserId)
+              ? { id: authenticatedUserId }
+              : null,
         },
-        error: authenticatedUserId ? null : new Error("invalid token"),
+        error:
+          authenticatedUserId &&
+          !activeFixture.deletedAuthUsers.includes(authenticatedUserId)
+            ? null
+            : new Error("invalid token"),
       }),
     },
   }),
@@ -166,19 +174,42 @@ mock.module("../../../supabase-client", () => ({
     auth: {
       getUser: async () => ({
         data: {
-          user: authenticatedUserId ? { id: authenticatedUserId } : null,
+          user:
+            authenticatedUserId &&
+            !activeFixture.deletedAuthUsers.includes(authenticatedUserId)
+              ? { id: authenticatedUserId }
+              : null,
         },
-        error: authenticatedUserId ? null : new Error("invalid token"),
+        error:
+          authenticatedUserId &&
+          !activeFixture.deletedAuthUsers.includes(authenticatedUserId)
+            ? null
+            : new Error("invalid token"),
       }),
     },
   }),
 }));
 
+const { createTRPCRouter, protectedProcedure } = await import("@/backend/trpc/create-context");
 const { appRouter } = await import("../../../app-router");
+
+const protectedAccountProbe = createTRPCRouter({
+  readAccount: protectedProcedure.query(({ ctx }) => ({
+    userId: ctx.auth.user.id,
+  })),
+});
 
 function authenticatedCaller() {
   return appRouter.createCaller({
     req: new Request("http://localhost/api/trpc/account.deleteAccount", {
+      headers: { authorization: "Bearer valid-token" },
+    }),
+  });
+}
+
+function preDeletionTokenCaller() {
+  return protectedAccountProbe.createCaller({
+    req: new Request("http://localhost/api/trpc/account.readAccount", {
       headers: { authorization: "Bearer valid-token" },
     }),
   });
@@ -242,6 +273,10 @@ describe("account.deleteAccount", () => {
     expect(activeFixture.rpcCalls).toEqual([
       { name: "delete_account_data", args: { p_user_id: "user-caregiver" } },
     ]);
+    await expect(preDeletionTokenCaller().readAccount()).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      message: "Your session has expired. Please sign in again.",
+    });
   });
 
   test("deletes therapist-linked access, notes, comments, and messages", async () => {
@@ -283,6 +318,10 @@ describe("account.deleteAccount", () => {
     expect(activeFixture.rpcCalls).toEqual([
       { name: "delete_account_data", args: { p_user_id: "user-therapist" } },
     ]);
+    await expect(preDeletionTokenCaller().readAccount()).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      message: "Your session has expired. Please sign in again.",
+    });
   });
 
   test("preserves database rows and auth user when atomic cleanup fails", async () => {
