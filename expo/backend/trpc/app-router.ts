@@ -2,6 +2,7 @@ import { createTRPCRouter } from "./create-context";
 import hiRoute from "./routes/example/hi/route";
 import { requestCode, verifyCode, resetPassword } from "./routes/auth/forgot-password/route";
 import autumnRoute from "./routes/ai/autumn/route";
+import { deleteAccount } from "./routes/account/delete-account/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -13,6 +14,9 @@ export const appRouter = createTRPCRouter({
       verifyCode,
       resetPassword,
     }),
+  }),
+  account: createTRPCRouter({
+    deleteAccount,
   }),
   ai: createTRPCRouter({
     autumn: autumnRoute,

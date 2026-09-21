@@ -171,13 +171,20 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     try {
       console.log('[Auth] Signing out...');
       const { error } = await supabase.auth.signOut();
-      if (!error) {
+      if (error) {
+        console.warn('[Auth] Server sign out failed; clearing the local session:', error.message);
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } catch (localSignOutError) {
+          console.warn('[Auth] Local sign out cleanup failed:', localSignOutError);
+        }
+      } else {
         console.log('[Auth] Sign out successful');
-        await clearLocalFallbackData();
-        queryClient.clear();
-        setSession(null);
-        setUser(null);
       }
+      await clearLocalFallbackData();
+      queryClient.clear();
+      setSession(null);
+      setUser(null);
       return { error };
     } catch (err) {
       console.error('[Auth] SignOut error:', err);

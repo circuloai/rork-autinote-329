@@ -9,6 +9,7 @@ import ScaledText from '@/components/ScaledText';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { trpcClient } from '@/lib/trpc';
 import AvatarPicker from '@/components/AvatarPicker';
 
 export default function ProfileSettingsScreen() {
@@ -32,6 +33,7 @@ export default function ProfileSettingsScreen() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
 
   const profileChanged = name !== (profile?.caregiverName || '') || phone !== (profile?.caregiverPhone || '') || email !== (profile?.caregiverEmail || user?.email || '');
@@ -95,23 +97,38 @@ export default function ProfileSettingsScreen() {
   }, [newPassword, passwordValid]);
 
   const handleDeleteAccount = useCallback(async () => {
+    if (isDeletingAccount) return;
+    setIsDeletingAccount(true);
     try {
-      // TODO: Insert the authenticated backend API call here to permanently
-      // delete the user's database record and authentication token.
-      // The backend must verify the current session and remove all associated
-      // account data before this client signs out.
-      await Promise.resolve();
+      const result = await trpcClient.account.deleteAccount.mutate();
+      if (!result.deleted) {
+        throw new Error('Account deletion was not completed.');
+      }
 
-      const { error } = await signOut();
-      if (error) throw error;
+      // The auth user has already been deleted server-side. Local cleanup must
+      // still happen if Supabase rejects the now-invalid server sign-out call.
+      const { error: signOutError } = await signOut();
+      if (signOutError) {
+        console.warn('[Account] Server sign-out after deletion returned an error:', signOutError.message);
+      }
       router.replace('/login' as any);
     } catch (error: any) {
       console.error('[Account] Delete account failed:', error?.message || error);
       Alert.alert('Delete Account', 'We could not complete account deletion. Please try again.');
+    } finally {
+      setIsDeletingAccount(false);
     }
-  }, [router, signOut]);
+  }, [isDeletingAccount, router, signOut]);
 
   const confirmDeleteAccount = useCallback(() => {
+    if (isDeletingAccount) return;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm('Are you sure? This will permanently delete your account and all associated data. This cannot be undone.')) {
+        void handleDeleteAccount();
+      }
+      return;
+    }
+
     Alert.alert(
       'Delete Account',
       'Are you sure? This will permanently delete your account and all associated data. This cannot be undone.',
@@ -124,7 +141,7 @@ export default function ProfileSettingsScreen() {
         },
       ],
     );
-  }, [handleDeleteAccount]);
+  }, [handleDeleteAccount, isDeletingAccount]);
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.background }]}>
@@ -408,6 +425,7 @@ export default function ProfileSettingsScreen() {
             <TouchableOpacity
               style={styles.deleteAccountButton}
               onPress={confirmDeleteAccount}
+              disabled={isDeletingAccount}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel="Delete Account"
@@ -419,6 +437,7 @@ export default function ProfileSettingsScreen() {
                   Permanently remove your account and associated data
                 </ScaledText>
               </View>
+                {isDeletingAccount && <ActivityIndicator size="small" color={Colors.error} />}
             </TouchableOpacity>
           </View>
 
