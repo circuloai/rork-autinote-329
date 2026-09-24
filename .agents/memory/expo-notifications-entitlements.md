@@ -1,10 +1,14 @@
 ---
 name: Expo Notifications entitlements
-description: Why AutiNote should keep Expo's standard APNs entitlement even though it currently schedules only local notifications.
+description: EAS provisioning must match the Push Notifications capability required by expo-notifications.
 ---
 
-Expo Notifications adds `aps-environment` during automatic plugin processing after user plugins. Do not add a config plugin that tries to remove it; introspected and generated iOS output is the source of truth.
+This project ships through EAS Build, not Replit Expo Launch. EAS manages iOS signing credentials against the user's Apple Developer account. Do not assume Replit manages iOS capabilities.
 
-**Why:** The former dynamic-config workaround did not remove the final entitlement. Replit Expo Launch manages the matching iOS capability during signing, while the standard Expo plugin configuration preserves local notification support.
+`expo-notifications` adds `aps-environment` to the iOS entitlements. This is correct and expected. Do not add a config plugin to strip it, and do not reintroduce `expo/app.config.js` for this purpose.
 
-**How to apply:** Keep `expo-notifications` in static `app.json`, avoid dynamic Expo config, and verify entitlement behavior with a clean iOS prebuild when changing notification configuration.
+The App ID `app.rork.autinote` must have the Push Notifications capability enabled in the Apple Developer portal. After any entitlement change, the EAS provisioning profile must be regenerated. The user performs this external credentials step with `npx eas-cli credentials -p ios`; it cannot be done from Replit.
+
+**Why:** The EAS-managed provisioning profile must include the same Push Notifications capability required by the app's expected `aps-environment` entitlement. Apple Developer capabilities and EAS signing credentials are outside project code.
+
+**How to apply:** If an iOS build reports that its provisioning profile “doesn't include the aps-environment entitlement,” escalate to the user to enable Push Notifications for the App ID and regenerate the EAS profile. Fix the credentials, not the app configuration.
