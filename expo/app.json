@@ -15,6 +15,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "icon": "./assets/images/ios-icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.autinote",
       "infoPlist": {
