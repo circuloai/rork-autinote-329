@@ -1,0 +1,57 @@
+The EAS iOS production build is failing before installation with:
+
+  npm error code EOVERRIDE
+  npm error Override for expo-constants@~18.0.14 conflicts with direct dependency
+
+Root cause: npm requires that when a package appears in BOTH "dependencies"
+and "overrides" in package.json, the two version specs must be byte-
+identical. In expo/package.json, expo-constants is declared as "~18.0.14"
+in dependencies but "18.0.14" in overrides. Same version number, different
+spec string, so npm rejects the manifest.
+
+Bun does not perform this validation, which is why installs succeed in
+Replit and only fail on EAS. Do not conclude this is fixed just because
+`bun install` works here.
+
+Note: this is NOT an eas.json problem. EAS reports it as "Failed to read
+the build profile production from eas.json" because npm exits non-zero
+while EAS is resolving the project. eas.json is valid — do not edit it.
+
+Please make exactly this change in expo/package.json:
+
+In the "overrides" block, replace the hardcoded specs for the six packages
+that are also direct dependencies with npm's reference syntax, which tells
+npm to reuse the direct dependency's spec:
+
+  "expo-constants":    "$expo-constants"
+  "expo-location":     "$expo-location"
+  "hono":              "$hono"
+  "@trpc/server":      "$@trpc/server"
+  "@trpc/client":      "$@trpc/client"
+  "@trpc/react-query": "$@trpc/react-query"
+
+Leave every other entry in the overrides block exactly as it is — all 20
+remaining pins are valid and resolve on the registry. Leave the
+"dependencies" block completely unchanged.
+
+Rationale for using "$name" instead of just matching the strings: the
+mismatch was introduced by `expo install --check`, which updates the
+dependency but not the override. The "$name" form stays correct
+automatically and prevents this from recurring.
+
+CONSTRAINTS:
+- Do NOT run bun install, npm install, expo install, or any other
+  dependency command. Edit package.json as text only.
+- Do NOT change any version in "dependencies" or "devDependencies".
+- Do NOT modify expo/eas.json, expo/app.json, or expo/bun.lock.
+
+Then verify by printing the result of this check and confirming it reports
+no mismatches:
+
+  cd expo && node -e "const p=require('./package.json');const d={...p.dependencies,...p.devDependencies};const bad=Object.entries(p.overrides||{}).filter(([k,v])=>d[k]&&v!==d[k]&&v!=='\$'+k);console.log(bad.length?'MISMATCH: '+JSON.stringify(bad):'overrides OK')"
+
+Also add this check to expo/scripts/check-lockfile.cjs so it runs
+alongside the existing lockfile validation, exiting 1 on any mismatch.
+
+Commit with the message:
+"Fix EOVERRIDE: use \$name reference syntax for overrides of direct deps"
