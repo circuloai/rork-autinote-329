@@ -6,8 +6,7 @@
 - [Supabase auth configuration](supabase-auth-configuration.md) — Treat public Supabase settings as runtime configuration; a legacy fallback can silently target an unavailable project.
 - [Supabase integration test runtime](supabase-integration-test-runtime.md) — Real deletion fixtures need valid non-production secrets injected into the test process, not placeholders.
 - [EAS Bun lockfiles](eas-bun-lockfiles.md) — EAS clean installs need public npm tarball URLs; Replit-internal package-firewall URLs can make Bun install fail.
-- [Expo Notifications entitlements](expo-notifications-entitlements.md) — Keep the plugin-added `aps-environment`; the matching Apple App ID capability and EAS profile are external signing state.
-- [EAS iOS signing boundary](expo-notifications-entitlements.md) — Apple capability and EAS profile updates are user-managed and must be escalated instead of changed in app code.
+- [Expo Notifications entitlements](expo-notifications-entitlements.md) — Local-only notifications omit the config plugin; remote push requires restoring it and regenerating iOS credentials.
 - [Bun frozen installs](bun-frozen-installs.md) — Keep expo/package.json and expo/bun.lock synchronized before merge hooks run with --frozen-lockfile.
 - [Protected deletion validation](account-deletion-staging-validation.md) — Destructive Supabase deletion checks must run only in CI against an externally matched staging URL.
 - [Web confirmation dialogs](web-confirmation-dialogs.md) — React Native Web's Alert.alert is a no-op; browser confirmations need window.confirm.

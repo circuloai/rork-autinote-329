@@ -1,14 +1,18 @@
 ---
 name: Expo Notifications entitlements
-description: EAS provisioning must match the Push Notifications capability required by expo-notifications.
+description: Local notifications intentionally omit the expo-notifications config plugin and its remote-push entitlement.
 ---
 
 This project ships through EAS Build, not Replit Expo Launch. EAS manages iOS signing credentials against the user's Apple Developer account. Do not assume Replit manages iOS capabilities.
 
-`expo-notifications` adds `aps-environment` to the iOS entitlements. This is correct and expected. Do not add a config plugin to strip it, and do not reintroduce `expo/app.config.js` for this purpose.
+The `expo-notifications` config plugin is not auto-applied. It runs only when `expo-notifications` is listed in the app config's plugins array. This was verified against `expo-notifications` 0.32.17: its module config declares native modules and app-delegate subscribers, but no config plugin.
 
-The App ID `app.rork.autinote` must have the Push Notifications capability enabled in the Apple Developer portal. After any entitlement change, the EAS provisioning profile must be regenerated. The user performs this external credentials step with `npx eas-cli credentials -p ios`; it cannot be done from Replit.
+This app uses local notifications only, so it does not need the iOS `aps-environment` entitlement. Keep the `expo-notifications` dependency for native-module autolinking, but intentionally omit its config plugin from the plugins array.
 
-**Why:** The EAS-managed provisioning profile must include the same Push Notifications capability required by the app's expected `aps-environment` entitlement. Apple Developer capabilities and EAS signing credentials are outside project code.
+If remote push is added later through push-token APIs or server-side sending, re-add the config plugin and have the user regenerate iOS credentials with `npx eas-cli credentials -p ios`. That external credential step cannot be performed from Replit.
 
-**How to apply:** If an iOS build reports that its provisioning profile “doesn't include the aps-environment entitlement,” escalate to the user to enable Push Notifications for the App ID and regenerate the EAS profile. Fix the credentials, not the app configuration.
+Do not add a custom plugin that deletes `aps-environment`. Plugin ordering can make the Notifications plugin restore the entitlement after dynamic configuration resolves.
+
+**Why:** The explicit Notifications config plugin adds a remote-push entitlement that is unnecessary for local scheduling and causes signing to fail when the provisioning profile does not include Push Notifications.
+
+**How to apply:** Keep the plugin omitted while the app remains local-notification-only. If remote push becomes a product requirement, restore the plugin and regenerate matching EAS-managed iOS credentials.
