@@ -1,0 +1,61 @@
+The EAS iOS production build is failing at codesigning with:
+
+  Provisioning profile "*[expo] app.rork.autinote AppStore
+  2026-04-02T15:39:50.890Z" doesn't support the Push Notifications
+  capability.
+  Provisioning profile "..." doesn't include the aps-environment
+  entitlement.
+
+Root cause: "expo-notifications" is listed in the plugins array of
+expo/app.json. Its config plugin (plugin/build/withNotificationsIOS.js)
+unconditionally writes `aps-environment` into the iOS entitlements. The
+EAS provisioning profile predates that entitlement, so codesigning fails.
+
+This app uses LOCAL notifications only. lib/notifications.ts calls
+setNotificationHandler and scheduleNotificationAsync and nothing else.
+There is no getExpoPushTokenAsync, no getDevicePushTokenAsync, and no
+server-side push sending anywhere in backend/. Local notifications do not
+require the aps-environment entitlement.
+
+Please make exactly this change:
+
+1. In expo/app.json, remove the string "expo-notifications" from the
+   "plugins" array. Leave the other three plugin entries (expo-router,
+   expo-font, expo-web-browser) exactly as they are.
+
+2. Keep "expo-notifications" in the "dependencies" block of
+   expo/package.json. Do NOT uninstall it. The native module is wired up
+   by expo-modules-autolinking via its expo-module.config.json, which does
+   NOT declare a config plugin — so local notifications continue to work
+   without the plugin entry.
+
+3. Rewrite .agents/memory/expo-notifications-entitlements.md. The current
+   content is factually wrong. It should now say:
+   - expo-notifications' config plugin is NOT auto-applied. It runs only
+     when "expo-notifications" is listed in the plugins array of app.json.
+     Verified against expo-module.config.json in expo-notifications
+     0.32.17, which declares native modules only and no config plugin.
+   - This app uses local notifications only, so the aps-environment
+     entitlement is not needed and expo-notifications is intentionally
+     omitted from the plugins array.
+   - If remote push is ever added (getExpoPushTokenAsync or server-side
+     sending), the plugin must be re-added to the plugins array AND the
+     user must regenerate iOS credentials with
+     `npx eas-cli credentials -p ios`. That step cannot be done from
+     Replit.
+   - Do not reintroduce a config plugin that deletes aps-environment. That
+     approach fails due to mod ordering: plugins-array plugins run after
+     the dynamic config resolves, and withNotificationsIOS re-adds the key
+     because it only writes it when absent.
+
+CONSTRAINTS:
+- Do NOT run bun install, npm install, expo install, or any other
+  dependency command.
+- Do NOT modify expo/eas.json, expo/package.json, or expo/bun.lock.
+- Do NOT create expo/app.config.js.
+- Do NOT change lib/notifications.ts.
+
+Then report the "plugins" array from expo/app.json to confirm the change.
+
+Commit with the message:
+"Remove expo-notifications plugin entry; app uses local notifications only"
