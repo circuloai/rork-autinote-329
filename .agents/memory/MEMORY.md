@@ -12,3 +12,4 @@
 - [Web confirmation dialogs](web-confirmation-dialogs.md) — React Native Web's Alert.alert is a no-op; browser confirmations need window.confirm.
 - [Settings persistence](settings-persistence.md) — Await settings saves and normalize legacy defaults without overwriting deliberate theme choices.
 - [Reasoning model output budgets](reasoning-model-output-budgets.md) — gpt-5-mini can spend small output budgets on reasoning and return no visible text; budget Autumn accordingly.
+- [One-off Python tooling](one-off-python-tooling.md) — Python package installs can scaffold a second project and alter system dependencies in an Expo workspace.

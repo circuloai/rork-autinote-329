@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "pr-nj1PKB-QBG2-yU5Xqm"
+uri = "file://icon.png"
+type = "image"
+title = "AutiNote icon.png"
+description = "1024×1024 square logo with 15% horizontal inset and sampled cream background (#FEF3ED)."
+logical_id = "4ff77f18-d4c9-4564-875a-111996098b5c"
+content_hash = "sha256:f168fa82e8cac22c5c3d466587e9875dce429e348a8dcc480398a3a76c6b88a4"
+size = 259822
+mtime_ms = 1790221431090
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:912fa239-d4f8-480e-bbfc-0d9fe2acbcf5/4ff77f18-d4c9-4564-875a-111996098b5c/956aa24e-feb7-495b-9f4d-799197602455"
+storage_version_token = "1790221520018936"
+content_type = "image/png"
