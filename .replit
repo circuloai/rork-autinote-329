@@ -23,6 +23,10 @@ args = "Start application"
 task = "workflow.run"
 args = "Start Backend"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "account-deletion-staging"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -46,6 +50,17 @@ outputType = "console"
 task = "shell.exec"
 args = "cd expo && bun backend/server.ts"
 waitForPort = 3001
+
+[[workflows.workflow]]
+name = "account-deletion-staging"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd expo && CI=true bun run test:account-deletion:staging"
 
 [[ports]]
 localPort = 3001

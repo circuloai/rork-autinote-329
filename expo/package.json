@@ -12,6 +12,7 @@
     "lint": "expo lint",
     "test:autumn": "bun test backend/trpc/routes/ai/autumn/*.test.ts",
     "test:account-deletion:integration": "SUPABASE_ACCOUNT_DELETION_INTEGRATION=true SUPABASE_ACCOUNT_DELETION_ENV=non-production bun test backend/trpc/routes/account/delete-account/route.integration.test.ts",
+    "test:account-deletion:staging": "bun scripts/run-account-deletion-staging.cjs",
     "postinstall": "node scripts/patch-freeport.cjs",
     "check-lockfile": "node scripts/check-lockfile.cjs"
   },

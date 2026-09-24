@@ -6,8 +6,15 @@ import { getServiceRoleClient } from "../../../supabase-client";
 
 const integrationEnabled =
   process.env.SUPABASE_ACCOUNT_DELETION_INTEGRATION === "true";
-const nonProductionConfirmed =
-  process.env.SUPABASE_ACCOUNT_DELETION_ENV === "non-production";
+const deletionEnvironment = process.env.SUPABASE_ACCOUNT_DELETION_ENV;
+const safeEnvironmentConfirmed =
+  deletionEnvironment === "non-production" || deletionEnvironment === "staging";
+
+if (integrationEnabled && !safeEnvironmentConfirmed) {
+  throw new Error(
+    "SUPABASE_ACCOUNT_DELETION_ENV must be non-production or staging when the account-deletion integration suite is enabled",
+  );
+}
 
 type ServiceClient = ReturnType<typeof getServiceRoleClient>;
 type Fixture = {
@@ -27,7 +34,7 @@ type Fixture = {
 };
 
 const describeIntegration = describe.skipIf(
-  !integrationEnabled || !nonProductionConfirmed,
+  !integrationEnabled || !safeEnvironmentConfirmed,
 );
 
 const protectedAccountProbe = createTRPCRouter({
@@ -107,6 +114,7 @@ async function createFixture(service: ServiceClient, role: "caregiver" | "therap
   const password = `Deletion-test-${crypto.randomUUID()}-Aa1!`;
 
   const createdUsers: string[] = [];
+  let targetAvatarPaths: string[] = [];
   try {
     const target = await service.auth.admin.createUser({
       email: targetEmail,
@@ -227,7 +235,7 @@ async function createFixture(service: ServiceClient, role: "caregiver" | "therap
     });
     if (logError) throw logError;
 
-    const targetAvatarPaths = [
+    targetAvatarPaths = [
       `${targetUserId}/profile.jpg`,
       ...(targetIsCaregiver
         ? [`${targetUserId}/children/${ids.childId}/avatar.jpg`]
@@ -259,21 +267,28 @@ async function createFixture(service: ServiceClient, role: "caregiver" | "therap
       password,
     };
   } catch (error) {
-    await cleanupFixture(service, {
-      targetUserId: createdUsers[0] ?? "",
-      relatedUserId: createdUsers[1] ?? "",
-      targetEmail,
-      targetProfileId: ids.targetProfileId,
-      relatedProfileId: ids.relatedProfileId,
-      childId: ids.childId,
-      sharedAccessId: ids.sharedAccessId,
-      noteId: ids.noteId,
-      commentId: ids.commentId,
-      messageId: ids.messageId,
-      logEntryId: ids.logEntryId,
-      targetAvatarPaths: [],
-      password,
-    }).catch(() => undefined);
+    try {
+      await cleanupFixture(service, {
+        targetUserId: createdUsers[0] ?? "",
+        relatedUserId: createdUsers[1] ?? "",
+        targetEmail,
+        targetProfileId: ids.targetProfileId,
+        relatedProfileId: ids.relatedProfileId,
+        childId: ids.childId,
+        sharedAccessId: ids.sharedAccessId,
+        noteId: ids.noteId,
+        commentId: ids.commentId,
+        messageId: ids.messageId,
+        logEntryId: ids.logEntryId,
+        targetAvatarPaths,
+        password,
+      });
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [error, cleanupError],
+        "Account deletion fixture setup and cleanup failed",
+      );
+    }
     throw error;
   }
 }
